@@ -1,11 +1,12 @@
 # @chrisdudek/yg
 
-Yggdrasil — architectural knowledge infrastructure for AI agents.
+**Make your repository self-aware.**
 
-`yg` is a deterministic CLI that adds a graph layer (`.yggdrasil/`) between
-requirements and code. Instead of searching thousands of files, AI agents can
-work with bounded context built from nodes, relations, constraints, and
-artifacts.
+Yggdrasil gives your repository a persistent semantic memory graph. The `yg` CLI
+maintains the system's intent, rules, and boundaries in structured Markdown and
+YAML inside `.yggdrasil/`. When an AI agent works on your code, Yggdrasil
+deterministically assembles a precise context package for the exact component
+the agent is modifying.
 
 No API keys. No network dependency. Just local files, validation, and context
 builds.
@@ -17,6 +18,15 @@ npm install -g @chrisdudek/yg
 ```
 
 Requirements: Node.js 22+
+
+## Initialize
+
+```bash
+cd your-project
+yg init --platform <platform>
+```
+
+Done. Your repository is now self-aware.
 
 ## Quick Start
 

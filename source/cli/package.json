@@ -1,7 +1,7 @@
 {
   "name": "@chrisdudek/yg",
   "version": "0.1.0",
-  "description": "Yggdrasil — architectural knowledge infrastructure for AI agents",
+  "description": "Make your repository self-aware. Persistent semantic memory and deterministic context assembly for AI agents.",
   "type": "module",
   "bin": {
     "yg": "./dist/bin.js"
