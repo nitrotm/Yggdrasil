@@ -8,6 +8,8 @@ export const AGENT_RULES_CONTENT = `# Yggdrasil - System Semantic Memory (Operat
 You are working in a repository managed by Yggdrasil.
 Yggdrasil is a persistent, structured semantic memory graph stored in \`.yggdrasil/\`. It maps the repository, dictates system rules, and assembles implementation contexts.
 
+**Why:** AI agents degrade with project size — too little context breaks contracts, too much context drowns in noise. The graph is persistent semantic memory: agents need exactly the right tokens for the task, not the whole repo. Small, precise context beats massive noisy. A repository with Yggdrasil is self-aware.
+
 THIS PROMPT IS YOUR ENTIRE OPERATING MANUAL. Read it carefully. Follow it strictly.
 
 ---
@@ -31,13 +33,14 @@ THIS PROMPT IS YOUR ENTIRE OPERATING MANUAL. Read it carefully. Follow it strict
 5. **Tools Read, You Write:** The \`yg\` CLI tools only read, validate, and manage metadata. YOU must create and edit graph directories, \`.yaml\` files, and \`.md\` artifacts manually.
 6. **English Only for Artifacts:** All graph artifact files (filenames from \`config.artifacts\`, in the same directory as \`node.yaml\`) MUST be written in English. Conversation can be in the user's language.
 7. **Never Touch Operational Metadata:** NEVER manually edit \`.yggdrasil/.drift-state\` or \`.yggdrasil/.journal.yaml\`.
-8. **Ask, Never Infer:** If graph and code diverge in a way with multiple valid resolutions, or if a required decision is ambiguous — STOP. State the ambiguity. List interpretations. Ask the user to decide. Never silently choose. Never patch without confirmation.
+8. **Ask, Never Infer:** If graph and code diverge in a way with multiple valid resolutions, or if a required decision is ambiguous — STOP. State the ambiguity. List interpretations. Ask the user to decide. Never silently choose. Never patch without confirmation. When you stop, always explain the context and available options clearly so the user can make an informed choice.
 
 ---
 
 ## 1.5 FAILURE STATES
 
 You have fundamentally broken Yggdrasil if you do any of the following:
+- ❌ You modified source code without having run \`yg owner --file <path>\` for each modified file in the SAME response.
 - ❌ You modified source code without updating graph artifacts in the SAME response.
 - ❌ You modified graph files without verifying/updating source code alignment in the SAME response.
 - ❌ You resolved a code↔graph inconsistency without asking the user first.
@@ -53,7 +56,7 @@ You have fundamentally broken Yggdrasil if you do any of the following:
 You do not need explicit "session" commands. Follow these conversational triggers:
 
 ### A. Preflight (First message of the conversation)
-Always execute these commands before doing anything else. *(Exception: If the user's request is clearly read-only, like "explain this", run ONLY step 1).*
+Always execute these commands before doing anything else. *(Exception: If the user's request is clearly read-only, run ONLY step 1).* **Read-only** means the user asks only for explanation, clarification, analysis, or evaluation — no code or graph modification will occur. Examples: "explain this", "evaluate X", "what does Y do?", "analyze Z". If unsure, run full preflight.
 1. \`yg journal-read\` -> If entries exist, consolidate them into the graph, then \`yg journal-archive\`.
 2. \`yg drift\` -> If divergence is detected, present states (\`ok\`, \`drift\`, \`missing\`, \`unmaterialized\`). Ask the user: Absorb (update graph) or Reject (re-materialize code from graph)?
 3. \`yg status\` -> Report graph health.
@@ -72,6 +75,8 @@ Triggered by phrases like: "we're done", "wrap up", "that's enough", "done".
 ## 3. WORKFLOW: MODIFYING OR CREATING FILES (Code-First)
 
 You are NOT ALLOWED to edit or create source code without establishing graph coverage first.
+
+**Gate:** Before using any tool that modifies files, you MUST have run \`yg owner --file <path>\` for each file you intend to modify. If you have not — run it first, then proceed. No exceptions. Gate applies to **source files** (files outside \`.yggdrasil/\`). For graph files (\`.yggdrasil/model/\`, \`.yggdrasil/aspects/\`, etc.), follow the Graph Modification Checklist in section 4 instead.
 
 **Step 1: Check coverage** -> Run \`yg owner --file <path>\`
 
@@ -152,11 +157,11 @@ Your ultimate goal when describing a file or node is **Context Reproducibility**
 However, you must NOT dump all knowledge into a single file. Yggdrasil's context package is **multi-layered** and hierarchically assembled. When you map existing code or design new code, you must deconstruct the knowledge and place it at the correct abstraction layer so the engine can mechanically reassemble it.
 
 ### CRITICAL RULE: CAPTURE INTENT, BUT NEVER INVENT IT
-The graph is not just a structural map; it is the semantic meaning of the system. Code explains "what" and "how". The graph MUST explain "WHY". 
+The graph is not just a structural map; it is the semantic meaning of the system. Code explains "what" and "how". The graph MUST explain "WHY".
 
 1. **ALWAYS Capture the User's "Why":** If the user explains the business reason, intent, or rationale behind a request (e.g., "We need to do X because Y"), you MUST permanently record this reasoning in the relevant graph artifacts (e.g., \`responsibility.md\`, \`constraints.md\`, \`decisions.md\`). Do not let the conversation context evaporate.
-2. **NEVER Invent the "Why":** Files that imply human judgment (like \`decisions.md\` or \`knowledge/invariants\`) must reflect ACTUAL human choices. 
-3. **NO Hallucinations:** You MUST NEVER infer or hallucinate a rationale, an architectural decision, or a business rule. 
+2. **NEVER Invent the "Why":** Files that imply human judgment (like \`decisions.md\` or \`knowledge/invariants\`) must reflect ACTUAL human choices.
+3. **NO Hallucinations:** You MUST NEVER infer or hallucinate a rationale, an architectural decision, or a business rule.
 4. **Ask if Missing:** If the user requests a significant architectural or business logic change but does not provide the rationale, you MUST ask them "Why are we making this change?" before documenting the decision in the graph.
 
 When mapping a file, execute this mental routing:
@@ -190,7 +195,7 @@ When mapping a file, execute this mental routing:
   * If the file reveals an undocumented global invariant or decision: Ask the user to confirm it. If confirmed, create it under \`.yggdrasil/knowledge/<category>/\` so all future nodes inherit it.
 
 **THE COMPLETENESS CHECK:**
-Before finishing a mapping, ask yourself: *"If I delete the source file and give another agent ONLY the output of \`yg build-context\`, can they recreate it perfectly based on the configured artifacts, AND will they understand EXACTLY WHY this code exists and why it was designed this way?"* 
+Before finishing a mapping, ask yourself: *"If I delete the source file and give another agent ONLY the output of \`yg build-context\`, can they recreate it perfectly based on the configured artifacts, AND will they understand EXACTLY WHY this code exists and why it was designed this way?"*
 - If no -> You missed a local constraint, a relation, or you failed to capture the user's provided rationale.
 - If yes, but the local files are bloated -> You failed to deconstruct knowledge into Tags, Aspects, Flows, and Hierarchy. Fix the routing.
 
