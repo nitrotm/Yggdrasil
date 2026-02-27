@@ -53,6 +53,21 @@ Done. Your repository is now self-aware.
 
 ---
 
+## Upgrade
+
+```bash
+# 1. Update the CLI globally
+npm install -g @chrisdudek/yg
+
+# 2. In your project directory, refresh rules (config and graph stay unchanged)
+cd your-project
+yg init --platform <platform> --upgrade
+```
+
+`--upgrade` overwrites only the rules file. Your `.yggdrasil/` config and graph are not modified.
+
+---
+
 ## Supported platforms
 
 Yggdrasil natively configures behavioral rules for:
