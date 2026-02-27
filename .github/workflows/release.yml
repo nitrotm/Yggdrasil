@@ -1,17 +1,29 @@
 name: Release
 
 on:
+  workflow_run:
+    workflows: ['Tag Release']
+    types: [completed]
+    branches: [main]
   push:
     tags: ['v*']
 
 jobs:
   publish:
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Get version
+        id: version
+        run: echo "tag=v$(jq -r '.version' source/cli/package.json)" >> $GITHUB_OUTPUT
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -26,4 +38,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
