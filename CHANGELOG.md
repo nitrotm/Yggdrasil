@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Bidirectional drift detection:** `yg drift` now tracks changes to graph artifacts
+  (aspects, flows, parent nodes, dependency context) alongside source files.
+- New drift statuses: `source-drift`, `graph-drift`, `full-drift` replace the old
+  `drift` status for finer-grained reporting.
+- `--drifted-only` flag for `yg drift` to reduce output by hiding ok entries.
+- `path` field on `FlowDef` for flow directory resolution.
+
+### Changed
+
+- `.drift-state` format extended — entries now include hashes for both source and
+  graph files that contribute to a node's context package.
+- `yg drift` output split into two sections: "Source drift" and "Graph drift".
+- `yg drift-sync --node` now captures hashes for all tracked files (source + graph),
+  not just mapping files.
+
+### Removed
+
+- Legacy flat string format in `.drift-state` (entries must be objects with `hash`
+  and `files`).
+- `getCanonicalHash` and `getFileHashes` helpers from drift-state-store (no longer
+  needed with typed `DriftState`).
+
 ### Breaking
 
 - **Context format:** Aspects in hierarchy/own/flow blocks via `aspects="id1,id2"` attribute; no `source` on `<aspect>`.
