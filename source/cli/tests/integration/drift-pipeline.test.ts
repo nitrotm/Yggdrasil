@@ -6,7 +6,8 @@ import { cp, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { loadGraph } from '../../src/core/graph-loader.js';
-import { detectDrift } from '../../src/core/drift-detector.js';
+import { detectDrift, syncDriftState } from '../../src/core/drift-detector.js';
+import { readDriftState, writeDriftState } from '../../src/io/drift-state-store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PROJECT = path.join(__dirname, '../fixtures/sample-project');
@@ -26,40 +27,60 @@ function supportsAbsorbAllOption(): boolean {
 describe('drift-pipeline', () => {
   it('load fixture graph → detectDrift → verify correct states per node', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
-    const report = await detectDrift(graph);
 
-    expect(report.totalChecked).toBeGreaterThan(0);
-    expect(report.entries.length).toBe(report.totalChecked);
+    // Sync auth/auth-api so it has a valid baseline (including graph files)
+    await syncDriftState(graph, 'auth/auth-api');
 
-    // OK: auth/auth-api has matching hash
-    const okEntry = report.entries.find((e) => e.nodePath === 'auth/auth-api' && e.status === 'ok');
-    expect(okEntry).toBeDefined();
+    try {
+      const report = await detectDrift(graph);
 
-    // SOURCE-DRIFT: orders/order-service has different hash
-    const driftEntry = report.entries.find(
-      (e) => e.nodePath === 'orders/order-service' && e.status === 'source-drift',
-    );
-    expect(driftEntry).toBeDefined();
-    expect(driftEntry?.details).toContain('Changed files:');
+      expect(report.totalChecked).toBeGreaterThan(0);
+      expect(report.entries.length).toBe(report.totalChecked);
 
-    // users/missing-service: missing or unmaterialized (no drift state + file does not exist)
-    const missingEntry = report.entries.find((e) => e.nodePath === 'users/missing-service');
-    expect(missingEntry).toBeDefined();
-    expect(['missing', 'unmaterialized']).toContain(missingEntry!.status);
+      // OK: auth/auth-api has matching hash (just synced)
+      const okEntry = report.entries.find((e) => e.nodePath === 'auth/auth-api' && e.status === 'ok');
+      expect(okEntry).toBeDefined();
 
-    // UNMATERIALIZED or OK: auth/auth-api (we have drift state for it)
-    const authApiEntry = report.entries.find((e) => e.nodePath === 'auth/auth-api');
-    expect(authApiEntry).toBeDefined();
+      // orders/order-service has bogus stored hash — should drift
+      const driftEntry = report.entries.find(
+        (e) => e.nodePath === 'orders/order-service',
+      );
+      expect(driftEntry).toBeDefined();
+      expect(['source-drift', 'graph-drift', 'full-drift']).toContain(driftEntry!.status);
+      expect(driftEntry?.details).toContain('Changed files:');
 
-    // Counts match
-    expect(report.sourceDriftCount).toBe(report.entries.filter((e) => e.status === 'source-drift').length);
-    expect(report.graphDriftCount).toBe(report.entries.filter((e) => e.status === 'graph-drift').length);
-    expect(report.fullDriftCount).toBe(report.entries.filter((e) => e.status === 'full-drift').length);
-    expect(report.missingCount).toBe(report.entries.filter((e) => e.status === 'missing').length);
-    expect(report.unmaterializedCount).toBe(
-      report.entries.filter((e) => e.status === 'unmaterialized').length,
-    );
-    expect(report.okCount).toBe(report.entries.filter((e) => e.status === 'ok').length);
+      // users/missing-service: missing (stored entry exists but source files are gone)
+      const missingEntry = report.entries.find((e) => e.nodePath === 'users/missing-service');
+      expect(missingEntry).toBeDefined();
+      expect(missingEntry!.status).toBe('missing');
+
+      // auth/auth-api entry exists
+      const authApiEntry = report.entries.find((e) => e.nodePath === 'auth/auth-api');
+      expect(authApiEntry).toBeDefined();
+
+      // Counts match
+      expect(report.sourceDriftCount).toBe(report.entries.filter((e) => e.status === 'source-drift').length);
+      expect(report.graphDriftCount).toBe(report.entries.filter((e) => e.status === 'graph-drift').length);
+      expect(report.fullDriftCount).toBe(report.entries.filter((e) => e.status === 'full-drift').length);
+      expect(report.missingCount).toBe(report.entries.filter((e) => e.status === 'missing').length);
+      expect(report.unmaterializedCount).toBe(
+        report.entries.filter((e) => e.status === 'unmaterialized').length,
+      );
+      expect(report.okCount).toBe(report.entries.filter((e) => e.status === 'ok').length);
+    } finally {
+      // Restore original drift-state for other tests
+      const origState = await readDriftState(graph.rootPath);
+      origState['auth/auth-api'] = {
+        hash: 'ce5a1dad287732d8a4407fdc9a9bad3abd0d77ca91d309d0ad31ada0974a76b1',
+        files: {
+          'src/auth/auth.controller.ts':
+            '5386573056ba5e059eb98f3615d57c3680dc888f003b197584805429d6df3521',
+          'src/auth/login.service.ts':
+            '5d5bbfd0dc749783000cff2f27ca31212044629a99746a8508d32b3f8ec7c344',
+        },
+      };
+      await writeDriftState(graph.rootPath, origState);
+    }
   });
 
   it('drift --absorb-all reports JSON summary fields', async () => {

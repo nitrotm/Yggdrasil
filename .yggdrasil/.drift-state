@@ -63,9 +63,9 @@ cli/commands/validation:
     source/cli/src/cli/validate.ts: 8e1be4a1290ee0c1a6c7caa0be1dfcfcfc2d0440d1ea332ff426bc20f49143f8
     source/cli/src/cli/build-context.ts: f9757070c21cc1d8ac7cf53810d33eef647d3ca07001a90955170e36471003ca
 cli/commands/drift:
-  hash: a83b92b75d512d5db95c04c85de87fc95f39265219e67ca41d43ba16486be601
+  hash: a811a4253b95edcb9c2d82689ee7e8d5a6b5494cf8eefb8eadb945091aa01c2a
   files:
-    source/cli/src/cli/drift.ts: c35f7e663e82b0559a7380e8d1065b4662fdf1dc6789a07bbd4973c02c083b3d
+    source/cli/src/cli/drift.ts: eaecf0d9cbbef189e26240510208137e55a35e140c66ed54ab8ca300a9426ef3
     source/cli/src/cli/drift-sync.ts: a78c47391165b289fe15a130dc2c5e1bcb6ac35c953c3cb5a6a834472169ddc1
 cli/commands/journal:
   hash: 03bd0217e34fbbe462103b7b159f7474c0410038882498e3d88da6bb69382225
@@ -74,13 +74,13 @@ cli/commands/journal:
     source/cli/src/cli/journal-read.ts: fc864082c5cdea63c79e5eb8460236d0c2543f9de7eac1b6693fc4f7cca09dc5
     source/cli/src/cli/journal-archive.ts: 7f82b08311355bdd2b34493af0a7c1e347eb3231b26c691d54b39754dbea7663
 cli/commands/graph-ops:
-  hash: 53d4b964e5ffb3db2d71166ee1480b0801056cbee6747b11e2179e27332c3f82
+  hash: 940aac59d9496c655ad0d06ab6b91592a2916aa1621f2bcb025444b2f4c631d5
   files:
     source/cli/src/cli/tree.ts: 16737878e0c4c9acc86739d5087a043d253666a0dc8cecc6a492d682f725e9ab
     source/cli/src/cli/owner.ts: 33baba8da8e2ea4bffd8e524107d44811408c1e4fb67c784ac28fa426b8d2f56
     source/cli/src/cli/deps.ts: 3c8fdba935c13c6490205ea3d04d9e0ed3764abeb80eb10bb8fdd29701b7d3a9
     source/cli/src/cli/impact.ts: e047fb95d0e99e6dda222438e9802052635d2f0c31e1cd7ee3131011d5a0ed95
-    source/cli/src/cli/status.ts: dbf59815d7dd27092439e0d99ede43757dd856c4154361a8c5d50bdabf051a8e
+    source/cli/src/cli/status.ts: 4fc59d2416fb4c2a30e2be54970447f384e217f1878a5a80f6155097adfddcfb
 cli/core/loader:
   hash: ad0a00ba5826bed391dd30ca64783ad57e1b69ccc88f11b92b99626407b65ea1
   files:

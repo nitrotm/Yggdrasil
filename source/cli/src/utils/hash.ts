@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { type Ignore, type Options as IgnoreOptions } from 'ignore';
+import type { TrackedFile } from '../core/context-files.js';
 
 const require = createRequire(import.meta.url);
 const ignoreFactory = require('ignore') as (options?: IgnoreOptions) => Ignore;
@@ -180,4 +181,43 @@ export async function hashForMapping(
     .map((e) => `${e.path}:${e.hash}`)
     .join('\n');
   return createHash('sha256').update(digestInput).digest('hex');
+}
+
+/**
+ * Hash all tracked files (source + graph) for bidirectional drift detection.
+ * Directories in the tracked list are expanded to their contained files.
+ * Returns a canonical hash (sorted path:hash digest) and per-file hashes.
+ */
+export async function hashTrackedFiles(
+  projectRoot: string,
+  trackedFiles: TrackedFile[],
+): Promise<{ canonicalHash: string; fileHashes: Record<string, string> }> {
+  const fileHashes: Record<string, string> = {};
+
+  for (const tf of trackedFiles) {
+    const absPath = path.join(projectRoot, tf.path);
+    try {
+      const st = await stat(absPath);
+      if (st.isDirectory()) {
+        // Expand directory (for source mapping directories)
+        const dirHashes = await collectDirectoryFileHashes(absPath, absPath, { projectRoot });
+        for (const entry of dirHashes) {
+          const fullRelPath = path.join(tf.path, entry.path).replace(/\\/g, '/');
+          fileHashes[fullRelPath] = entry.hash;
+        }
+      } else {
+        fileHashes[tf.path] = await hashFile(absPath);
+      }
+    } catch {
+      // File doesn't exist — skip (will be caught by drift detection)
+      continue;
+    }
+  }
+
+  // Canonical hash: sorted path:hash pairs
+  const sorted = Object.entries(fileHashes).sort(([a], [b]) => a.localeCompare(b));
+  const digest = sorted.map(([p, h]) => `${p}:${h}`).join('\n');
+  const canonicalHash = hashString(digest);
+
+  return { canonicalHash, fileHashes };
 }

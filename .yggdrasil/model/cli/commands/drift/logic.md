@@ -7,9 +7,13 @@
 3. If scope !== 'all': validate node exists; validate node has mapping (else exit 1)
 4. scopeNode = scope === 'all' ? undefined : scope
 5. detectDrift(graph, scopeNode)
-6. Output per entry: status (ok/drift/missing/unmaterialized), nodePath, mappingPaths; chalk colors
-7. Summary line: driftCount, missingCount, unmaterializedCount, okCount
-8. Exit 1 if any drift/missing/unmaterialized; else exit 0
+6. printReport(report, driftedOnly):
+   - Split entries into two sections via classifyForSection():
+     - Source section: source-drift, full-drift, missing, unmaterialized (+ ok unless --drifted-only)
+     - Graph section: graph-drift, full-drift (+ ok unless --drifted-only)
+   - For each section: print header, then per entry: status tag + nodePath, then changedFiles filtered by category
+   - Summary: source-drift, graph-drift, full-drift, missing, unmaterialized counts. "(N ok hidden)" when --drifted-only, else ok count.
+7. Exit 1 if any drift/missing/unmaterialized; else exit 0
 
 ## drift-sync command
 

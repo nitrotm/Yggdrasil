@@ -5,7 +5,7 @@
 1. loadGraph, detectDrift, validate
 2. Count nodes by type (typeCounts Map); blackboxCount
 3. Count relations: structural (uses/calls/extends/implements) vs event
-4. Output: Graph name, Nodes (type breakdown + blackbox), Relations, Aspects, Flows, Knowledge, Drift counts, Validation (errors, warnings)
+4. Output: Graph name, Nodes (type breakdown + blackbox), Relations, Aspects, Flows, Drift line (source-drift, graph-drift, full-drift, missing, unmaterialized, ok), Validation (errors, warnings)
 5. Pluralize: 1 module vs 2 modules
 
 ## tree
