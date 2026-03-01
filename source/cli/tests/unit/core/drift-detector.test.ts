@@ -7,7 +7,6 @@ import { detectDrift, syncDriftState } from '../../../src/core/drift-detector.js
 import {
   readDriftState,
   writeDriftState,
-  getCanonicalHash,
 } from '../../../src/io/drift-state-store.js';
 import { hashString } from '../../../src/utils/hash.js';
 
@@ -24,15 +23,14 @@ describe('drift-detector', () => {
         (e) => e.nodePath === 'auth/auth-api' && e.status === 'ok',
       );
       expect(okEntry).toBeDefined();
-      expect(okEntry?.mappingPaths).toContain('src/auth/auth.controller.ts');
     });
 
-    it('reports DRIFT when file hash differs from stored hash', async () => {
+    it('reports SOURCE-DRIFT when file hash differs from stored hash', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const report = await detectDrift(graph);
 
       const driftEntry = report.entries.find(
-        (e) => e.nodePath === 'orders/order-service' && e.status === 'drift',
+        (e) => e.nodePath === 'orders/order-service' && e.status === 'source-drift',
       );
       expect(driftEntry).toBeDefined();
       expect(driftEntry?.details).toContain('Changed files:');
@@ -121,7 +119,15 @@ mapping:
       const digestInput = `src/multi/file-a.ts:${hashA}\nsrc/multi/file-b.ts:${hashB}`;
       const combinedHash = hashString(digestInput);
 
-      await writeFile(path.join(yggRoot, '.drift-state'), `multi/multi-service: ${combinedHash}\n`);
+      await writeDriftState(yggRoot, {
+        'multi/multi-service': {
+          hash: combinedHash,
+          files: {
+            'src/multi/file-a.ts': hashA,
+            'src/multi/file-b.ts': hashB,
+          },
+        },
+      });
 
       const graph = await loadGraph(tmpDir);
       const reportBefore = await detectDrift(graph);
@@ -132,7 +138,7 @@ mapping:
 
       const reportAfter = await detectDrift(graph);
       const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'multi/multi-service');
-      expect(driftAfter?.status).toBe('drift');
+      expect(driftAfter?.status).toBe('source-drift');
       expect(driftAfter?.details).toContain('Changed files:');
     });
 
@@ -166,7 +172,7 @@ mapping:
 
       const reportBefore = await detectDrift(graph);
       const driftBefore = reportBefore.entries.find((e) => e.nodePath === 'orders/order-service');
-      expect(driftBefore?.status).toBe('drift');
+      expect(driftBefore?.status).toBe('source-drift');
 
       await syncDriftState(graph, 'orders/order-service');
 
@@ -174,7 +180,7 @@ mapping:
       const storedEntry = driftState['orders/order-service'];
       expect(storedEntry).toBeDefined();
 
-      const storedHash = getCanonicalHash(storedEntry!);
+      const storedHash = storedEntry!.hash;
       const currentContent = await readFile(orderServicePath, 'utf-8');
       const fileHash = hashString(currentContent);
       const expectedHash = hashString(`src/orders/order.service.ts:${fileHash}`);
@@ -184,7 +190,7 @@ mapping:
       const okAfter = reportAfter.entries.find((e) => e.nodePath === 'orders/order-service');
       expect(okAfter?.status).toBe('ok');
 
-      const { writeDriftState } = await import('../../../src/io/drift-state-store.js');
+      // Restore original state for other tests
       driftState['orders/order-service'] = {
         hash: '0000000000000000000000000000000000000000000000000000000000000000',
         files: {
@@ -249,7 +255,7 @@ mapping:
 
       const reportAfter = await detectDrift(graph);
       const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'svc/file-svc');
-      expect(driftAfter?.status).toBe('drift');
+      expect(driftAfter?.status).toBe('source-drift');
       expect(driftAfter?.details).toContain('src/file.ts');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
@@ -287,7 +293,7 @@ mapping:
       const graph = await loadGraph(tmpDir);
       const report = await detectDrift(graph);
       const entry = report.entries.find((e) => e.nodePath === 'svc/dir-svc');
-      expect(entry?.status).toBe('drift');
+      expect(entry?.status).toBe('source-drift');
       expect(entry?.details).toContain('deleted');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
@@ -316,18 +322,18 @@ mapping:
       const graph = await loadGraph(tmpDir);
       const report = await detectDrift(graph);
       const entry = report.entries.find((e) => e.nodePath === 'svc/exist-svc');
-      expect(entry?.status).toBe('drift');
+      expect(entry?.status).toBe('source-drift');
       expect(entry?.details).toContain('files exist');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
-  it('reports drift when stored entry has no files (legacy format)', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-legacy');
+  it('reports ok when stored entry has matching hash (with files)', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-with-files');
     const yggRoot = path.join(tmpDir, '.yggdrasil');
     const srcDir = path.join(tmpDir, 'src');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'legacy-svc'), { recursive: true });
+    await mkdir(path.join(yggRoot, 'model', 'svc', 'files-svc'), { recursive: true });
     await mkdir(srcDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
@@ -335,19 +341,21 @@ mapping:
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
     await writeFile(
-      path.join(yggRoot, 'model', 'svc', 'legacy-svc', 'node.yaml'),
-      'name: L\ntype: service\nmapping:\n  paths:\n    - src/legacy.ts',
+      path.join(yggRoot, 'model', 'svc', 'files-svc', 'node.yaml'),
+      'name: L\ntype: service\nmapping:\n  paths:\n    - src/files.ts',
     );
-    await writeFile(path.join(srcDir, 'legacy.ts'), 'content');
+    await writeFile(path.join(srcDir, 'files.ts'), 'content');
 
     const contentHash = hashString('content');
-    const aggregateHash = hashString(`src/legacy.ts:${contentHash}`);
-    await writeDriftState(yggRoot, { 'svc/legacy-svc': { hash: aggregateHash } });
+    const aggregateHash = hashString(`src/files.ts:${contentHash}`);
+    await writeDriftState(yggRoot, {
+      'svc/files-svc': { hash: aggregateHash, files: { 'src/files.ts': contentHash } },
+    });
 
     try {
       const graph = await loadGraph(tmpDir);
       const report = await detectDrift(graph);
-      const entry = report.entries.find((e) => e.nodePath === 'svc/legacy-svc');
+      const entry = report.entries.find((e) => e.nodePath === 'svc/files-svc');
       expect(entry?.status).toBe('ok');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
@@ -389,7 +397,7 @@ mapping:
       const report = await detectDrift(graph);
       const entry = report.entries.find((e) => e.nodePath === 'svc/catch-svc');
       expect(entry).toBeDefined();
-      expect(entry?.status).toBe('drift');
+      expect(entry?.status).toBe('source-drift');
       expect(entry?.details).toContain('File(s) modified');
     } finally {
       perFileHashesSpy.mockRestore();
@@ -403,7 +411,9 @@ mapping:
 
     expect(report.totalChecked).toBe(report.entries.length);
     expect(report.okCount).toBe(report.entries.filter((e) => e.status === 'ok').length);
-    expect(report.driftCount).toBe(report.entries.filter((e) => e.status === 'drift').length);
+    expect(report.sourceDriftCount).toBe(report.entries.filter((e) => e.status === 'source-drift').length);
+    expect(report.graphDriftCount).toBe(report.entries.filter((e) => e.status === 'graph-drift').length);
+    expect(report.fullDriftCount).toBe(report.entries.filter((e) => e.status === 'full-drift').length);
     expect(report.missingCount).toBe(report.entries.filter((e) => e.status === 'missing').length);
     expect(report.unmaterializedCount).toBe(
       report.entries.filter((e) => e.status === 'unmaterialized').length,

@@ -55,8 +55,9 @@ export function registerStatusCommand(program: Command): void {
         process.stdout.write(
           `Aspects: ${graph.aspects.length}    Flows: ${flowCount}\n`,
         );
+        const totalDrift = drift.sourceDriftCount + drift.graphDriftCount + drift.fullDriftCount;
         process.stdout.write(
-          `Drift: ${drift.driftCount} drift, ${drift.missingCount} missing, ${drift.unmaterializedCount} unmaterialized, ${drift.okCount} ok\n`,
+          `Drift: ${totalDrift} drift, ${drift.missingCount} missing, ${drift.unmaterializedCount} unmaterialized, ${drift.okCount} ok\n`,
         );
         process.stdout.write(`Validation: ${errorCount} errors, ${warningCount} warnings\n`);
       } catch (error) {

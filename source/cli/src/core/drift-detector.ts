@@ -8,8 +8,6 @@ import type {
 import {
   readDriftState,
   writeDriftState,
-  getCanonicalHash,
-  getFileHashes,
 } from '../io/drift-state-store.js';
 import { hashForMapping, perFileHashes } from '../utils/hash.js';
 import { normalizeMappingPaths } from '../utils/paths.js';
@@ -35,8 +33,7 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
       const allMissing = await allPathsMissing(projectRoot, mappingPaths);
       entries.push({
         nodePath,
-        mappingPaths,
-        status: allMissing ? 'unmaterialized' : 'drift',
+        status: allMissing ? 'unmaterialized' : 'source-drift',
         details: allMissing
           ? 'No drift state recorded, files do not exist'
           : 'No drift state recorded, files exist (run drift-sync after materialization)',
@@ -44,18 +41,18 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
       continue;
     }
 
-    const storedHash = getCanonicalHash(storedEntry);
+    const storedHash = storedEntry.hash;
     let status: DriftStatus = 'ok';
     let details = '';
 
     try {
       const currentHash = await hashForMapping(projectRoot, mapping);
       if (currentHash !== storedHash) {
-        status = 'drift';
+        status = 'source-drift';
         const changedFiles = await diagnoseChangedFiles(
           projectRoot,
           mapping,
-          getFileHashes(storedEntry),
+          storedEntry.files,
         );
         details =
           changedFiles.length > 0
@@ -67,14 +64,16 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
       details = 'Mapped path(s) do not exist';
     }
 
-    entries.push({ nodePath, mappingPaths, status, details });
+    entries.push({ nodePath, status, details });
   }
 
   return {
     entries,
     totalChecked: entries.length,
     okCount: entries.filter((e) => e.status === 'ok').length,
-    driftCount: entries.filter((e) => e.status === 'drift').length,
+    sourceDriftCount: entries.filter((e) => e.status === 'source-drift').length,
+    graphDriftCount: entries.filter((e) => e.status === 'graph-drift').length,
+    fullDriftCount: entries.filter((e) => e.status === 'full-drift').length,
     missingCount: entries.filter((e) => e.status === 'missing').length,
     unmaterializedCount: entries.filter((e) => e.status === 'unmaterialized').length,
   };
@@ -83,13 +82,10 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
 async function diagnoseChangedFiles(
   projectRoot: string,
   mapping: { paths?: string[] },
-  storedFileHashes: Record<string, string> | undefined,
+  storedFileHashes: Record<string, string>,
 ): Promise<string[]> {
   try {
     const currentHashes = await perFileHashes(projectRoot, mapping);
-    if (!storedFileHashes) {
-      return currentHashes.map((h) => h.path).sort();
-    }
 
     const changed: string[] = [];
     const storedPaths = new Set(Object.keys(storedFileHashes));
@@ -138,7 +134,7 @@ export async function syncDriftState(
   const currentHash = await hashForMapping(projectRoot, mapping);
   const driftState = await readDriftState(graph.rootPath);
   const previousEntry = driftState[nodePath];
-  const previousHash = previousEntry ? getCanonicalHash(previousEntry) : undefined;
+  const previousHash = previousEntry ? previousEntry.hash : undefined;
 
   const fileHashes = await perFileHashes(projectRoot, mapping);
   const files: Record<string, string> = {};

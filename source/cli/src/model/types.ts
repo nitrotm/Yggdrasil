@@ -210,28 +210,40 @@ export interface ValidationResult {
 // Drift
 // ============================================================
 
-export type DriftStatus = 'ok' | 'drift' | 'missing' | 'unmaterialized';
+/** Category of a drifted file — source (mapping) or graph (.yggdrasil/) */
+export type DriftCategory = 'source' | 'graph';
+
+/** Per-file drift detail */
+export interface DriftFileChange {
+  filePath: string;
+  category: DriftCategory;
+}
+
+export type DriftStatus = 'ok' | 'source-drift' | 'graph-drift' | 'full-drift' | 'missing' | 'unmaterialized';
 
 export interface DriftEntry {
   nodePath: string;
-  mappingPaths: string[];
   status: DriftStatus;
+  /** Changed files with their category (source or graph) */
+  changedFiles?: DriftFileChange[];
   details?: string;
 }
 
 export interface DriftNodeState {
   hash: string;
-  files?: Record<string, string>;
+  files: Record<string, string>;  // path → sha256 hex — now required, not optional
 }
 
-/** Map: node-path → hash (legacy) or DriftNodeState (extended with per-file hashes) */
-export type DriftState = Record<string, string | DriftNodeState>;
+/** Map: node-path → DriftNodeState. Legacy string format no longer supported. */
+export type DriftState = Record<string, DriftNodeState>;
 
 export interface DriftReport {
   entries: DriftEntry[];
   totalChecked: number;
   okCount: number;
-  driftCount: number;
+  sourceDriftCount: number;
+  graphDriftCount: number;
+  fullDriftCount: number;
   missingCount: number;
   unmaterializedCount: number;
 }

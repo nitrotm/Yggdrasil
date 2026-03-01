@@ -29,28 +29,36 @@ export function registerDriftCommand(program: Command): void {
         const report = await detectDrift(graph, scopeNode);
         process.stdout.write('Drift:\n');
         for (const entry of report.entries) {
-          const paths = entry.mappingPaths.join(', ');
           switch (entry.status) {
             case 'ok':
-              process.stdout.write(chalk.green(`  ok       ${entry.nodePath} -> ${paths}\n`));
+              process.stdout.write(chalk.green(`  ok         ${entry.nodePath}\n`));
               break;
-            case 'drift':
-              process.stdout.write(chalk.red(`  drift    ${entry.nodePath} -> ${paths}\n`));
-              if (entry.details) process.stdout.write(`           ${entry.details}\n`);
+            case 'source-drift':
+              process.stdout.write(chalk.red(`  src-drift  ${entry.nodePath}\n`));
+              if (entry.details) process.stdout.write(`             ${entry.details}\n`);
+              break;
+            case 'graph-drift':
+              process.stdout.write(chalk.magenta(`  gph-drift  ${entry.nodePath}\n`));
+              if (entry.details) process.stdout.write(`             ${entry.details}\n`);
+              break;
+            case 'full-drift':
+              process.stdout.write(chalk.red(`  full-drift ${entry.nodePath}\n`));
+              if (entry.details) process.stdout.write(`             ${entry.details}\n`);
               break;
             case 'missing':
-              process.stdout.write(chalk.yellow(`  missing  ${entry.nodePath} -> ${paths}\n`));
+              process.stdout.write(chalk.yellow(`  missing    ${entry.nodePath}\n`));
               break;
             case 'unmaterialized':
-              process.stdout.write(chalk.dim(`  unmat.   ${entry.nodePath} -> ${paths}\n`));
+              process.stdout.write(chalk.dim(`  unmat.     ${entry.nodePath}\n`));
               break;
           }
         }
+        const totalDrift = report.sourceDriftCount + report.graphDriftCount + report.fullDriftCount;
         process.stdout.write(
-          `\nSummary: ${report.driftCount} drift, ${report.missingCount} missing, ${report.unmaterializedCount} unmaterialized, ${report.okCount} ok\n`,
+          `\nSummary: ${totalDrift} drift (${report.sourceDriftCount} source, ${report.graphDriftCount} graph, ${report.fullDriftCount} full), ${report.missingCount} missing, ${report.unmaterializedCount} unmaterialized, ${report.okCount} ok\n`,
         );
 
-        if (report.driftCount > 0 || report.missingCount > 0 || report.unmaterializedCount > 0) {
+        if (totalDrift > 0 || report.missingCount > 0 || report.unmaterializedCount > 0) {
           process.exit(1);
         }
         process.exit(0);

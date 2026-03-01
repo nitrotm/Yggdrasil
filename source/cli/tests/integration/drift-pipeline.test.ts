@@ -35,9 +35,9 @@ describe('drift-pipeline', () => {
     const okEntry = report.entries.find((e) => e.nodePath === 'auth/auth-api' && e.status === 'ok');
     expect(okEntry).toBeDefined();
 
-    // DRIFT: orders/order-service has different hash
+    // SOURCE-DRIFT: orders/order-service has different hash
     const driftEntry = report.entries.find(
-      (e) => e.nodePath === 'orders/order-service' && e.status === 'drift',
+      (e) => e.nodePath === 'orders/order-service' && e.status === 'source-drift',
     );
     expect(driftEntry).toBeDefined();
     expect(driftEntry?.details).toContain('Changed files:');
@@ -52,7 +52,9 @@ describe('drift-pipeline', () => {
     expect(authApiEntry).toBeDefined();
 
     // Counts match
-    expect(report.driftCount).toBe(report.entries.filter((e) => e.status === 'drift').length);
+    expect(report.sourceDriftCount).toBe(report.entries.filter((e) => e.status === 'source-drift').length);
+    expect(report.graphDriftCount).toBe(report.entries.filter((e) => e.status === 'graph-drift').length);
+    expect(report.fullDriftCount).toBe(report.entries.filter((e) => e.status === 'full-drift').length);
     expect(report.missingCount).toBe(report.entries.filter((e) => e.status === 'missing').length);
     expect(report.unmaterializedCount).toBe(
       report.entries.filter((e) => e.status === 'unmaterialized').length,
