@@ -6,7 +6,7 @@ Type library — exports TypeScript interfaces and types only. No runtime functi
 
 **Node:** Graph, GraphNode, NodeMeta, Relation, RelationType, NodeMapping, Artifact
 
-**Graph elements:** AspectDef, FlowDef, SchemaDef
+**Graph elements:** AspectDef, FlowDef (includes `path` — directory name under flows/), SchemaDef
 
 **SchemaDef:** `{ schemaType: string }` — inferred from filename stem (node, aspect, flow). Populated by loadSchemas from .yggdrasil/schemas/.
 

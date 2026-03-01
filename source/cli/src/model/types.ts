@@ -96,6 +96,8 @@ export interface AspectDef {
 // ============================================================
 
 export interface FlowDef {
+  /** Directory name under flows/, e.g. "checkout-flow" */
+  path: string;
   name: string;
   nodes: string[];
   /** Optional aspect ids — aspects propagate to all participants */

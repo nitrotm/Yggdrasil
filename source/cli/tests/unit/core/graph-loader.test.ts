@@ -49,6 +49,13 @@ describe('graph-loader', () => {
     expect(graph.flows[0].nodes).toContain('orders/order-service');
   });
 
+  it('populates flow.path with the directory name', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+
+    expect(graph.flows).toHaveLength(1);
+    expect(graph.flows[0].path).toBe('checkout-flow');
+  });
+
   it('loads aspects correctly', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
 

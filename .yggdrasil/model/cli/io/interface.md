@@ -20,7 +20,7 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## flow-parser.ts
 
 - `parseFlow(flowDir: string, flowYamlPath: string): Promise<FlowDef>`
-  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding flow.yaml.
+  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
 
 ## knowledge-parser.ts
 
