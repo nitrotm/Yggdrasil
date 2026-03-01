@@ -63,16 +63,7 @@ Each step is deterministic.
 3.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
                   artifact filenames)
 
-4.  RELATIONAL
-      for each structural relation of N (uses, calls, extends, implements):
-        - artifacts of target with structural_context (e.g. responsibility, interface, constraints, errors)
-        - consumes annotation from the relation field (if declared)
-        - failure annotation from the relation field (if declared)
-      for each event relation of N (emits, listens):
-        - event name and type
-        - consumes annotation from the relation field (if declared)
-
-5.  ASPECTS       Each block (hierarchy, own, flow) declares its own aspects. No inheritance —
+4.  ASPECTS       Each block (hierarchy, own, flow) declares its own aspects. No inheritance —
                   each block has an `aspects` field (comma-separated tags; omit if empty).
                   Hierarchy block: each ancestor may have `aspects="tag1,tag2"` in its metadata.
                   Own block: node.yaml has `aspects="tag1,tag2"` (or tags list).
@@ -84,8 +75,16 @@ Each step is deterministic.
                   output — aspects are rendered without provenance. Aspects section = union of
                   tags from hierarchy + own + flow blocks, expand implies, render content.
 
-6.  FLOWS         for each flow listing N or any of N's ancestors as a participant:
-                  - flow content artifacts
+5.  RELATIONAL
+      for each structural relation of N (uses, calls, extends, implements):
+        - artifacts of target with structural_context (e.g. responsibility, interface, constraints, errors)
+        - consumes annotation from the relation field (if declared)
+        - failure annotation from the relation field (if declared)
+      for each event relation of N (emits, listens):
+        - event name and type
+        - consumes annotation from the relation field (if declared)
+      for each flow listing N or any of N's ancestors as a participant:
+        - flow content artifacts
 ```
 
 The result is a single document — the context package. Its size is bounded regardless of
@@ -94,21 +93,22 @@ project size because each step attaches only what is directly relevant to node `
 ### Mapping Conceptual Layers to Algorithm Steps
 
 The output uses **section names from the algorithm** (Global, Hierarchy, OwnArtifacts,
-Dependencies, Aspects, Flows). The table below maps these to conceptual layers for understanding:
+Aspects, Relational). The table below maps these to conceptual layers for understanding:
 
 | Conceptual Layer | Algorithm Steps                         | Section in output |
 | ---------------- | --------------------------------------- | ---------------- |
 | World Identity   | Step 1 (global config)                  | Global           |
 | Domain Context   | Step 2 (hierarchical ancestors)         | Hierarchy        |
 | Unit Identity    | Step 3 (node.yaml + own artifacts)     | OwnArtifacts     |
-| Surroundings     | Steps 4–6 (relational, aspects, flows) | Dependencies, Aspects, Flows |
+| Cross-cutting    | Step 4 (aspects from all blocks)        | Aspects          |
+| Surroundings     | Step 5 (relations, events, flows)       | Relational       |
 
 Layers are the conceptual model — they describe the _kinds_ of content in the package.
 Steps are the mechanics — they describe _where_ content comes from.
 
 ### Relational Annotations
 
-Step 8 does **not** parse the content of Markdown artifacts. Tools copy the full content of
+Step 5 does **not** parse the content of Markdown artifacts. Tools copy the full content of
 each structural-context artifact of the target and then append annotations from the YAML
 relation fields.
 
@@ -571,10 +571,10 @@ Context package for `orders/order-service` contains:
 Step 1.  config.yaml: standards and stack
 Step 2.  Domain context of orders/ module artifacts
 Step 3.  Own artifacts of OrderService: responsibility, interface, constraints, state
-Step 4.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
+Step 4.  Aspect: Audit logging  [tag requires-audit]
+Step 5.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
          + annotation: consumes charge, refund; on failure: retry 3x, then payment-failed
-Step 5.  Aspect: Audit logging  [tag requires-audit]
-Step 6.  Flow: Checkout flow  [description.md, sequence.md]
+         Flow: Checkout flow  [description.md, sequence.md]
 ```
 
 ---

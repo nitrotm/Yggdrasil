@@ -459,17 +459,17 @@ Assemble a context package for the specified node. The main operation of the sys
 
 **Behavior:**
 
-The 6-step algorithm defined in the [Engine](engine) document. Summary:
+The 5-step algorithm defined in the [Engine](engine) document. Summary:
 
 1. **Global** — `config.yaml` (stack, standards).
 2. **Hierarchical** — ancestor artifacts (from `model/` root down to the node's parent).
 3. **Own** — the node's `node.yaml` (raw) and content artifacts.
-4. **Relational** — for structural relations: interface + errors of the target with consumes
-   and failure annotations. For event relations: event name and type with consumes annotation.
-5. **Aspects** — union of tags from hierarchy blocks, own block, and flow blocks (each block
+4. **Aspects** — union of tags from hierarchy blocks, own block, and flow blocks (each block
    declares its own; no inheritance). Expand implies recursively. Render content of each
    matching aspect. No source attribute on aspect output.
-6. **Flows** — artifacts of flows listing this node or any ancestor as a participant.
+5. **Relational** — for structural relations: interface + errors of the target with consumes
+   and failure annotations. For event relations: event name and type with consumes annotation.
+   Flow artifacts for flows listing this node or any ancestor as a participant.
 
 Token estimation: ~4 characters per token (heuristic from the [Engine](engine) document).
 
