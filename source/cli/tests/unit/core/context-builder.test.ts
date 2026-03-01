@@ -11,7 +11,13 @@ import {
 } from '../../../src/core/context-builder.js';
 import { formatContextMarkdown } from '../../../src/formatters/markdown.js';
 import { loadGraph } from '../../../src/core/graph-loader.js';
-import type { Graph, GraphNode, YggConfig, Relation } from '../../../src/model/types.js';
+import type {
+  Graph,
+  GraphNode,
+  YggConfig,
+  Relation,
+  AspectDef,
+} from '../../../src/model/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PROJECT = path.join(__dirname, '../../fixtures/sample-project');
@@ -240,6 +246,86 @@ describe('context-builder', () => {
   });
 
   describe('node tags (v2.2: no propagation)', () => {
+    it('includes implied aspects in context package', async () => {
+      const auditAspect: AspectDef = {
+        name: 'Audit',
+        tag: 'requires-audit',
+        artifacts: [{ filename: 'content.md', content: 'Audit rules' }],
+      };
+      const hipaaAspect: AspectDef = {
+        name: 'HIPAA',
+        tag: 'requires-hipaa',
+        implies: ['requires-audit'],
+        artifacts: [{ filename: 'content.md', content: 'HIPAA rules' }],
+      };
+      const node: GraphNode = {
+        path: 'test/node',
+        meta: { name: 'TestNode', type: 'service', tags: ['requires-hipaa'] },
+        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+        children: [],
+        parent: null,
+      };
+      const graph: Graph = {
+        config: {
+          name: 'T',
+          stack: {},
+          standards: '',
+          tags: ['requires-hipaa', 'requires-audit'],
+          node_types: [{ name: 'service' }],
+          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+        },
+        nodes: new Map([['test/node', node]]),
+        aspects: [auditAspect, hipaaAspect],
+        flows: [],
+        schemas: [],
+        rootPath: '/tmp',
+      };
+      const pkg = await buildContext(graph, 'test/node');
+      const aspectLayers = pkg.layers.filter((l) => l.type === 'aspects');
+      expect(aspectLayers.map((l) => l.label)).toContain('Audit (tag: requires-audit)');
+      expect(aspectLayers.map((l) => l.label)).toContain('HIPAA (tag: requires-hipaa)');
+    });
+
+    it('throws when aspect implies cycle detected', async () => {
+      const a: AspectDef = {
+        name: 'A',
+        tag: 'tag-a',
+        implies: ['tag-b'],
+        artifacts: [],
+      };
+      const b: AspectDef = {
+        name: 'B',
+        tag: 'tag-b',
+        implies: ['tag-a'],
+        artifacts: [],
+      };
+      const node: GraphNode = {
+        path: 'test/node',
+        meta: { name: 'TestNode', type: 'service', tags: ['tag-a'] },
+        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+        children: [],
+        parent: null,
+      };
+      const graph: Graph = {
+        config: {
+          name: 'T',
+          stack: {},
+          standards: '',
+          tags: ['tag-a', 'tag-b'],
+          node_types: [{ name: 'service' }],
+          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+        },
+        nodes: new Map([['test/node', node]]),
+        aspects: [a, b],
+        flows: [],
+        schemas: [],
+        rootPath: '/tmp',
+      };
+      await expect(buildContext(graph, 'test/node')).rejects.toThrow(
+        "Aspect implies cycle detected involving tag 'tag-a'",
+      );
+    });
+
     it('node with own tags includes aspects in context', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const orderService = graph.nodes.get('orders/order-service')!;

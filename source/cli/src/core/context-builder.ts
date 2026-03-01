@@ -51,13 +51,10 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
     }
   }
 
-  // 5. Aspects
-  for (const tag of nodeTags) {
-    for (const aspect of graph.aspects) {
-      if (aspect.tag === tag) {
-        layers.push(buildAspectLayer(aspect));
-      }
-    }
+  // 5. Aspects (including implied)
+  const aspectsToInclude = expandAspectsForTags(nodeTags, graph.aspects);
+  for (const aspect of aspectsToInclude) {
+    layers.push(buildAspectLayer(aspect));
   }
 
   // 6. Flows (node + all ancestors)
@@ -83,6 +80,42 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
 function collectParticipatingFlows(graph: Graph, node: GraphNode): FlowDef[] {
   const paths = new Set<string>([node.path, ...collectAncestors(node).map((a) => a.path)]);
   return graph.flows.filter((f) => f.nodes.some((n) => paths.has(n)));
+}
+
+/** Expand tags to aspects including implied (recursive, with cycle detection). */
+export function expandAspectsForTags(
+  tags: Iterable<string>,
+  aspects: AspectDef[],
+): AspectDef[] {
+  const tagToAspect = new Map<string, AspectDef>();
+  for (const a of aspects) {
+    tagToAspect.set(a.tag, a);
+  }
+  const result: AspectDef[] = [];
+  const visited = new Set<string>();
+  const stack = new Set<string>();
+
+  function collect(tag: string): void {
+    if (stack.has(tag)) {
+      throw new Error(`Aspect implies cycle detected involving tag '${tag}'`);
+    }
+    if (visited.has(tag)) return;
+    stack.add(tag);
+    visited.add(tag);
+    const aspect = tagToAspect.get(tag);
+    if (aspect) {
+      result.push(aspect);
+      for (const implied of aspect.implies ?? []) {
+        collect(implied);
+      }
+    }
+    stack.delete(tag);
+  }
+
+  for (const tag of tags) {
+    collect(tag);
+  }
+  return result;
 }
 
 // --- Layer builders (exported for testing) ---
