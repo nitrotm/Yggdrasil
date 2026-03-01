@@ -25,12 +25,10 @@ function createGraph(nodes: Array<[string, GraphNode]>): Graph {
       tags: [],
       node_types: ['service'],
       artifacts: { responsibility: { required: 'always', description: 'x' } },
-      knowledge_categories: [],
     },
     nodes: new Map(nodes),
     aspects: [],
     flows: [],
-    knowledge: [],
     templates: [],
     rootPath: '/workspace/project/.yggdrasil',
   };

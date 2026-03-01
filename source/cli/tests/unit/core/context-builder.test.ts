@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import {
   buildContext,
   buildGlobalLayer,
-  buildKnowledgeLayer,
   buildAspectLayer,
   buildStructuralRelationLayer,
   buildEventRelationLayer,
@@ -27,7 +26,6 @@ describe('context-builder', () => {
         tags: [],
         node_types: ['service'],
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-        knowledge_categories: [],
       };
       const layer = buildGlobalLayer(config);
 
@@ -40,22 +38,6 @@ describe('context-builder', () => {
       expect(layer.content).toContain('**Standards:**');
       expect(layer.content).toContain('ESLint');
       expect(layer.content).toContain('Jest');
-    });
-  });
-
-  describe('buildKnowledgeLayer', () => {
-    it('formats knowledge with category label', () => {
-      const layer = buildKnowledgeLayer({
-        path: 'decisions/001',
-        name: 'Choice',
-        category: 'decisions',
-        scope: 'global',
-        artifacts: [{ filename: 'content.md', content: 'We chose X' }],
-      });
-      expect(layer.type).toBe('knowledge');
-      expect(layer.label).toBe('Decisions: Choice');
-      expect(layer.content).toContain('### content.md');
-      expect(layer.content).toContain('We chose X');
     });
   });
 
@@ -85,7 +67,6 @@ describe('context-builder', () => {
         'errors.md': { required: 'never', description: 'x', structural_context: true },
         'description.md': { required: 'never', description: 'x' },
       },
-      knowledge_categories: [],
     };
 
     it('includes consumes and failure when present', () => {
@@ -392,7 +373,6 @@ describe('context-builder', () => {
           tags: [],
           node_types: ['module', 'service'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([
           ['orders', parent],
@@ -403,12 +383,10 @@ describe('context-builder', () => {
           {
             name: 'Checkout Flow',
             nodes: ['orders'],
-            knowledge: [],
             artifacts: [{ filename: 'description.md', content: 'Parent-only flow' }],
           },
         ],
-        knowledge: [],
-        templates: [],
+        schemas: [],
         rootPath: '/tmp',
       };
 
@@ -446,7 +424,6 @@ describe('context-builder', () => {
           tags: [],
           node_types: ['service'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([
           ['events/emitter', emitter],
@@ -454,8 +431,7 @@ describe('context-builder', () => {
         ]),
         aspects: [],
         flows: [],
-        knowledge: [],
-        templates: [],
+        schemas: [],
         rootPath: '/tmp',
       };
 
@@ -494,7 +470,6 @@ describe('context-builder', () => {
           tags: [],
           node_types: ['service'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([
           ['events/listener', listener],
@@ -502,8 +477,7 @@ describe('context-builder', () => {
         ]),
         aspects: [],
         flows: [],
-        knowledge: [],
-        templates: [],
+        schemas: [],
         rootPath: '/tmp',
       };
 
@@ -544,357 +518,17 @@ describe('context-builder', () => {
           tags: [],
           node_types: ['service'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([['svc', node]]),
         aspects: [],
-        flows: [{ name: 'F1', nodes: ['svc'], knowledge: [], artifacts: [] }],
-        knowledge: [],
-        templates: [],
+        flows: [{ name: 'F1', nodes: ['svc'], artifacts: [] }],
+        schemas: [],
         rootPath: '/tmp',
       };
 
       const pkg = await buildContext(graph, 'svc');
       const flowLayer = pkg.layers.find((l) => l.type === 'flows');
       expect(flowLayer?.content).toContain('no artifacts');
-    });
-
-    it('flow with knowledge adds knowledge layer (trailing slash normalized)', async () => {
-      const node: GraphNode = {
-        path: 'svc',
-        meta: { name: 'Svc', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc', node]]),
-        aspects: [],
-        flows: [
-          {
-            name: 'F1',
-            nodes: ['svc'],
-            knowledge: ['decisions/001/'],
-            artifacts: [],
-          },
-        ],
-        knowledge: [
-          {
-            path: 'decisions/001',
-            name: 'D1',
-            category: 'decisions',
-            scope: 'global',
-            artifacts: [{ filename: 'content.md', content: 'decision' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('D1'))).toBe(true);
-    });
-
-    it('flow knowledge matches via kPath when item has trailing slash', async () => {
-      const node: GraphNode = {
-        path: 'svc',
-        meta: { name: 'Svc', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc', node]]),
-        aspects: [],
-        flows: [
-          {
-            name: 'F1',
-            nodes: ['svc'],
-            knowledge: ['decisions/002/'],
-            artifacts: [],
-          },
-        ],
-        knowledge: [
-          {
-            path: 'decisions/002/',
-            name: 'D2',
-            category: 'decisions',
-            scope: 'global',
-            artifacts: [{ filename: 'content.md', content: 'decision' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('D2'))).toBe(true);
-    });
-
-    it('flow adds knowledge from flow.knowledge when not already in package (from flow scope)', async () => {
-      const node: GraphNode = {
-        path: 'svc',
-        meta: { name: 'Svc', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc', node]]),
-        aspects: [],
-        flows: [
-          {
-            name: 'F1',
-            nodes: ['svc'],
-            knowledge: ['decisions/flow-only'],
-            artifacts: [],
-          },
-        ],
-        knowledge: [
-          {
-            path: 'decisions/flow-only',
-            name: 'FlowOnly',
-            category: 'decisions',
-            scope: { nodes: ['other-node'] },
-            artifacts: [{ filename: 'content.md', content: 'only via flow' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('FlowOnly'))).toBe(true);
-      expect(knowledgeLayers.some((l) => l.label.includes('from flow'))).toBe(true);
-    });
-
-    it('includes knowledge with scope nodes when node is listed', async () => {
-      const node: GraphNode = {
-        path: 'svc',
-        meta: { name: 'Svc', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc', node]]),
-        aspects: [],
-        flows: [],
-        knowledge: [
-          {
-            path: 'decisions/node-scoped',
-            name: 'NodeScoped',
-            category: 'decisions',
-            scope: { nodes: ['svc'] },
-            artifacts: [{ filename: 'content.md', content: 'for svc only' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('NodeScoped'))).toBe(true);
-    });
-
-    it('includes knowledge with scope tags when node has matching tag', async () => {
-      const nodeWithTag: GraphNode = {
-        path: 'svc/tagged',
-        meta: { name: 'Tagged', type: 'service', tags: ['audit'] },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: ['audit'],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc/tagged', nodeWithTag]]),
-        aspects: [],
-        flows: [],
-        knowledge: [
-          {
-            path: 'patterns/001',
-            name: 'P1',
-            category: 'patterns',
-            scope: { tags: ['audit'] },
-            artifacts: [{ filename: 'content.md', content: 'pattern' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc/tagged');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('P1'))).toBe(true);
-    });
-
-    it('excludes knowledge with scope tags when node has no matching tag', async () => {
-      const nodeNoTag: GraphNode = {
-        path: 'svc/untagged',
-        meta: { name: 'Untagged', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: ['audit'],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc/untagged', nodeNoTag]]),
-        aspects: [],
-        flows: [],
-        knowledge: [
-          {
-            path: 'patterns/002',
-            name: 'P2',
-            category: 'patterns',
-            scope: { tags: ['audit'] },
-            artifacts: [{ filename: 'content.md', content: 'pattern' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc/untagged');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('P2'))).toBe(false);
-    });
-
-    it('includes knowledge with scope nodes when node is in scope', async () => {
-      const node: GraphNode = {
-        path: 'svc/scoped',
-        meta: { name: 'Scoped', type: 'service' },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc/scoped', node]]),
-        aspects: [],
-        flows: [],
-        knowledge: [
-          {
-            path: 'decisions/002',
-            name: 'D2',
-            category: 'decisions',
-            scope: { nodes: ['svc/scoped'] },
-            artifacts: [{ filename: 'content.md', content: 'decision' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc/scoped');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('D2'))).toBe(true);
-    });
-
-    it('includes knowledge declared by node.meta.knowledge', async () => {
-      const node: GraphNode = {
-        path: 'svc',
-        meta: {
-          name: 'Svc',
-          type: 'service',
-          knowledge: ['decisions/003'],
-        },
-        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
-        children: [],
-        parent: null,
-      };
-      const graph: Graph = {
-        config: {
-          name: 'T',
-          stack: {},
-          standards: '',
-          tags: [],
-          node_types: ['service'],
-          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
-        },
-        nodes: new Map([['svc', node]]),
-        aspects: [],
-        flows: [],
-        knowledge: [
-          {
-            path: 'decisions/003',
-            name: 'D3',
-            category: 'decisions',
-            scope: { nodes: ['other-node'] },
-            artifacts: [{ filename: 'content.md', content: 'decision' }],
-          },
-        ],
-        templates: [],
-        rootPath: '/tmp',
-      };
-
-      const pkg = await buildContext(graph, 'svc');
-      const knowledgeLayers = pkg.layers.filter((l) => l.type === 'knowledge');
-      expect(knowledgeLayers.some((l) => l.label.includes('D3'))).toBe(true);
     });
 
     it('builds sections in canonical contract order', async () => {
@@ -965,7 +599,6 @@ describe('context-builder', () => {
           tags: ['tag-a', 'tag-b'],
           node_types: ['module', 'service'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([
           ['mod', parent],
@@ -984,8 +617,7 @@ describe('context-builder', () => {
           },
         ],
         flows: [],
-        knowledge: [],
-        templates: [],
+        schemas: [],
         rootPath: '/tmp/ygg',
       };
 
@@ -1025,13 +657,11 @@ describe('context-builder', () => {
           tags: [],
           node_types: ['module'],
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-          knowledge_categories: [],
         },
         nodes: new Map([['bare', node]]),
         aspects: [],
         flows: [],
-        knowledge: [],
-        templates: [],
+        schemas: [],
         rootPath: '/tmp/ygg',
       };
 

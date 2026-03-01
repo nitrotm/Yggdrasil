@@ -7,9 +7,6 @@ relations:
     type: uses
     consumes: [DEFAULT_CONFIG, installRulesForPlatform, PLATFORMS, Platform]
 
-knowledge:
-  - patterns/command-error-handling
-
 mapping:
   paths:
     - source/cli/src/cli/init.ts

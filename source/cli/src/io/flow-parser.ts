@@ -20,16 +20,12 @@ export async function parseFlow(flowDir: string, flowYamlPath: string): Promise<
   if (nodePaths.length === 0) {
     throw new Error(`flow.yaml at ${flowYamlPath}: 'nodes' must contain string node paths`);
   }
-  const knowledge = Array.isArray(raw.knowledge)
-    ? (raw.knowledge as unknown[]).filter((k): k is string => typeof k === 'string')
-    : undefined;
 
   const artifacts = await readArtifacts(flowDir, ['flow.yaml']);
 
   return {
     name: (raw.name as string).trim(),
     nodes: nodePaths,
-    knowledge,
     artifacts,
   };
 }

@@ -19,8 +19,6 @@ relations:
     type: uses
     consumes: [registerStatusCommand, registerTreeCommand, registerOwnerCommand, registerDepsCommand, registerImpactCommand]
 
-knowledge: []
-
 mapping:
   paths:
     - source/cli/src/bin.ts

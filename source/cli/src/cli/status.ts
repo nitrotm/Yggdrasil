@@ -32,7 +32,6 @@ export function registerStatusCommand(program: Command): void {
         }
 
         const flowCount = graph.flows.length;
-        const knowledgeCount = graph.knowledge.length;
 
         const drift = await detectDrift(graph);
         const validation = await validate(graph, 'all');
@@ -54,7 +53,7 @@ export function registerStatusCommand(program: Command): void {
           `Relations: ${structuralRelations} structural, ${eventRelations} event\n`,
         );
         process.stdout.write(
-          `Aspects: ${graph.aspects.length}    Flows: ${flowCount}    Knowledge: ${knowledgeCount}\n`,
+          `Aspects: ${graph.aspects.length}    Flows: ${flowCount}\n`,
         );
         process.stdout.write(
           `Drift: ${drift.driftCount} drift, ${drift.missingCount} missing, ${drift.unmaterializedCount} unmaterialized, ${drift.okCount} ok\n`,

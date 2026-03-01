@@ -9,7 +9,7 @@ End-to-end flow for `yg build-context`: assemble a context package for a node.
 - `cli/commands/validation` — orchestrates loadGraph, validate, buildContext, formatContextMarkdown
 - `cli/core/loader` — loads graph from `.yggdrasil/`
 - `cli/core/validator` — structural checks; build-context blocks if any errors
-- `cli/core/context` — 10-step layer assembly (global, knowledge, hierarchy, own, relational, aspects, flows)
+- `cli/core/context` — 6-step layer assembly (global, hierarchy, own, relational, aspects, flows)
 - `cli/formatters` — formats context package as Markdown
 
 **Output:** Markdown document to stdout; token count and budget status appended.

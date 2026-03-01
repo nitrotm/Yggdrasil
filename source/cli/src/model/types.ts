@@ -9,7 +9,6 @@ export interface YggConfig {
   tags: string[];
   node_types: string[];
   artifacts: Record<string, ArtifactConfig>;
-  knowledge_categories: KnowledgeCategory[];
   quality?: QualityConfig;
 }
 
@@ -20,16 +19,10 @@ export interface ArtifactConfig {
   structural_context?: boolean;
 }
 
-export interface KnowledgeCategory {
-  name: string;
-  description: string;
-}
-
 export interface QualityConfig {
   min_artifact_length: number;
   max_direct_relations: number;
   context_budget: { warning: number; error: number };
-  knowledge_staleness_days: number;
 }
 
 // ============================================================
@@ -44,7 +37,6 @@ export interface NodeMeta {
   tags?: string[];
   blackbox?: boolean;
   relations?: Relation[];
-  knowledge?: string[];
   mapping?: NodeMapping;
 }
 
@@ -99,19 +91,6 @@ export interface AspectDef {
 export interface FlowDef {
   name: string;
   nodes: string[];
-  knowledge?: string[];
-  artifacts: Artifact[];
-}
-
-// ============================================================
-// Knowledge
-// ============================================================
-
-export interface KnowledgeItem {
-  name: string;
-  scope: 'global' | { tags: string[] } | { nodes: string[] };
-  category: string;
-  path: string;
   artifacts: Artifact[];
 }
 
@@ -120,7 +99,7 @@ export interface KnowledgeItem {
 // ============================================================
 
 export interface SchemaDef {
-  /** Inferred from filename: 'node' | 'aspect' | 'flow' | 'knowledge' */
+  /** Inferred from filename: 'node' | 'aspect' | 'flow' */
   schemaType: string;
 }
 
@@ -148,7 +127,6 @@ export interface Graph {
   nodes: Map<string, GraphNode>;
   aspects: AspectDef[];
   flows: FlowDef[];
-  knowledge: KnowledgeItem[];
   schemas: SchemaDef[];
   /** Absolute path to the .yggdrasil/ directory */
   rootPath: string;
@@ -160,7 +138,6 @@ export interface Graph {
 
 export type ContextSectionKey =
   | 'Global'
-  | 'Knowledge'
   | 'Hierarchy'
   | 'OwnArtifacts'
   | 'Dependencies'
@@ -177,7 +154,7 @@ export interface ContextPackage {
 }
 
 export interface ContextLayer {
-  type: 'global' | 'knowledge' | 'hierarchy' | 'own' | 'relational' | 'aspects' | 'flows';
+  type: 'global' | 'hierarchy' | 'own' | 'relational' | 'aspects' | 'flows';
   label: string;
   content: string;
   source?: string;

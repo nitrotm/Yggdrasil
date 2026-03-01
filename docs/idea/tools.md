@@ -5,7 +5,7 @@
 The [Foundation](foundation) document defines the problem and invariants. The [Graph](graph) document defines the
 structure of semantic memory. The [Engine](engine) document defines deterministic mechanics.
 The [Integration](integration) document defines the behavioral contract with agents. The [Materialization](materialization)
-document defines how knowledge becomes an output.
+document defines how context becomes output.
 
 This document defines **formal contracts** — graph file schemas and tool operation
 specifications.
@@ -85,21 +85,12 @@ artifacts: # map, required, non-empty — keys are full filenames (e.g. responsi
     required: never
     description: "Local design decisions and rationale — choices specific to this node, not system-wide"
 
-knowledge_categories: # list, required (can be empty) (snake_case)
-  - name: decisions # string, unique
-    description: "Semantic decisions and their rationale"
-  - name: patterns
-    description: "Implementation conventions with examples"
-  - name: invariants
-    description: "System truths that must never be violated"
-
 quality: # map, optional (has default values) — all keys snake_case
   min_artifact_length: 50 # int, default 50
   max_direct_relations: 10 # int, default 10
   context_budget:
     warning: 10000 # int, default 10000 (tokens)
     error: 20000 # int, default 20000 (tokens)
-  knowledge_staleness_days: 90 # int, default 90 (snake_case)
 ```
 
 **Artifact requirement conditions:**
@@ -118,8 +109,6 @@ quality: # map, optional (has default values) — all keys snake_case
 - `node_types` must contain at least one element.
 - `artifacts` must contain at least one element.
 - Artifact filenames cannot be `node.yaml` (reserved in every node directory).
-- Knowledge category names must be unique.
-- Each category name must correspond to a subdirectory in `knowledge/`.
 - `has_tag:<name>` conditions must refer to tags from the `tags` list.
 - `quality.context_budget.error` must be ≥ `quality.context_budget.warning`.
 
@@ -139,9 +128,6 @@ relations: # list, optional
     consumes: [charge, refund] # list of strings, optional
     failure: "retry 3x, then payment-failed" # string, optional
     # For event relations (emits, listens): event_name (optional) — display name, e.g. OrderPlaced
-
-knowledge: # list of strings, optional
-  - decisions/002-event-sourcing # path relative to knowledge/
 
 mapping: # map, optional
   type: file # string, required — file | directory | files
@@ -175,7 +161,6 @@ mapping: # map, optional
 - Each tag must be from the `config.tags` list.
 - Each `relations[].target` must resolve to an existing node.
 - Each `relations[].type` must be from the table above.
-- Each `knowledge[]` must resolve to an existing knowledge element.
 - Paths in `mapping` must be relative to the repository root.
 - When `type` = `file` or `directory`, the `path` field must be present.
 - When `type` = `files`, the `paths` field must be present and non-empty.
@@ -208,8 +193,6 @@ name: Checkout flow # string, required
 nodes: # list of strings, required, non-empty
   - orders/order-service # path relative to model/
   - payments/payment-service
-knowledge: # list of strings, optional
-  - patterns/saga-pattern # path relative to knowledge/
 ```
 
 All files in the flow directory except `flow.yaml` are content attached to the context
@@ -220,61 +203,19 @@ packages of the listed nodes and their descendants (flows propagate down the hie
 - `name` must be non-empty.
 - `nodes` must be non-empty.
 - Each element in `nodes[]` must resolve to an existing node.
-- Each element in `knowledge[]` must resolve to an existing knowledge element.
-
-### knowledge.yaml
-
-Knowledge element metadata.
-
-```yaml
-name: PostgreSQL for persistence # string, required
-scope: global # scope — required (see variants)
-```
-
-**Scope variants:**
-
-```yaml
-# Global scope — attached to every context package
-scope: global
-
-# Tag scope — attached when the node carries at least one of the tags
-scope:
-  tags: [service, controller]
-
-# Node scope — attached only for listed nodes
-scope:
-  nodes:
-    - orders/order-service
-    - users/user-repository
-```
-
-The element's category is inferred from its subdirectory: `knowledge/decisions/001-foo/`
-is a decision because `decisions` is a configured category.
-
-All files in the knowledge element directory except `knowledge.yaml` are content attached
-to the context package.
-
-**Validation rules:**
-
-- `name` must be non-empty.
-- `scope` must be one of the three variants.
-- Tags in `scope.tags` must be from the `config.tags` list.
-- Paths in `scope.nodes` must resolve to existing nodes.
-- The parent subdirectory must correspond to a configured knowledge category.
 
 ### templates/ schemas
 
 The `templates/` directory contains schema files — one per graph layer. Initialization copies
-`node.yaml`, `aspect.yaml`, `flow.yaml`, and `knowledge.yaml` from the CLI package. Each file
+`node.yaml`, `aspect.yaml`, and `flow.yaml` from the CLI package. Each file
 shows the expected YAML structure for its element type. The agent reads the schema before
 creating or editing that element (see the [Graph](graph) document, Templates section).
 
-| File             | Element type | Describes structure of                          |
-| ---------------- | ------------ | ------------------------------------------------ |
-| `node.yaml`      | Nodes        | `node.yaml` in model directories                 |
-| `aspect.yaml`    | Aspects      | `aspect.yaml` in aspects directories             |
-| `flow.yaml`      | Flows        | `flow.yaml` in flows directories                 |
-| `knowledge.yaml` | Knowledge    | `knowledge.yaml` in knowledge element directories|
+| File          | Element type | Describes structure of              |
+| ------------- | ------------ | ----------------------------------- |
+| `node.yaml`   | Nodes        | `node.yaml` in model directories    |
+| `aspect.yaml` | Aspects      | `aspect.yaml` in aspects directories|
+| `flow.yaml`   | Flows        | `flow.yaml` in flows directories    |
 
 ### .drift-state
 
@@ -342,7 +283,7 @@ a clean state (see the [Engine](engine) document).
 ## Operations
 
 Each operation is described by its purpose, parameters, step-by-step behavior, result, and
-error conditions. Operations do not modify knowledge in the graph — they only create, read,
+error conditions. Operations do not modify semantic content in the graph — they only create, read,
 or modify operational metadata (`.yggdrasil/.drift-state`, `.yggdrasil/.journal.yaml`). The only exception is
 initialization, which creates the starting structure.
 
@@ -398,10 +339,6 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
    ├── model/
    ├── aspects/
    ├── flows/
-   ├── knowledge/
-   │   ├── decisions/
-   │   ├── patterns/
-   │   └── invariants/
    └── templates/
    ```
 
@@ -475,21 +412,12 @@ artifacts:
     required: never
     description: "Local design decisions and rationale — choices specific to this node, not system-wide"
 
-knowledge_categories:
-  - name: decisions
-    description: "Global semantic decisions and their rationale"
-  - name: patterns
-    description: "Implementation conventions with examples"
-  - name: invariants
-    description: "System truths that must never be violated"
-
 quality:
   min_artifact_length: 50
   max_direct_relations: 10
   context_budget:
     warning: 10000
     error: 20000
-  knowledge_staleness_days: 90
 ```
 
 The agent fills in `name`, `stack`, and `standards` after initialization.
@@ -513,22 +441,15 @@ Assemble a context package for the specified node. The main operation of the sys
 
 **Behavior:**
 
-The 10-step algorithm defined in the [Engine](engine) document. Summary:
+The 6-step algorithm defined in the [Engine](engine) document. Summary:
 
 1. **Global** — `config.yaml` (stack, standards).
-2. **Global knowledge** — knowledge elements with `scope: global`.
-3. **Tag knowledge** — knowledge elements with `scope.tags` matching the node's tags.
-4. **Node knowledge** — knowledge elements with `scope.nodes` listing this node.
-5. **Declared knowledge** — elements from the `knowledge[]` list in `node.yaml`.
-6. **Hierarchical** — ancestor artifacts (from `model/` root down to the node's parent).
-7. **Own** — the node's `node.yaml` (raw) and content artifacts.
-8. **Relational** — for structural relations: interface + errors of the target with consumes
+2. **Hierarchical** — ancestor artifacts (from `model/` root down to the node's parent).
+3. **Own** — the node's `node.yaml` (raw) and content artifacts.
+4. **Relational** — for structural relations: interface + errors of the target with consumes
    and failure annotations. For event relations: event name and type with consumes annotation.
-9. **Aspects** — content of aspects matching the node's tags.
-10. **Flows** — artifacts of flows listing this node or any ancestor as a participant + knowledge referenced by the flow.
-
-Deduplication: each knowledge element appears at most once in the package, regardless of
-the number of paths leading to it.
+5. **Aspects** — content of aspects matching the node's tags.
+6. **Flows** — artifacts of flows listing this node or any ancestor as a participant.
 
 Token estimation: ~4 characters per token (heuristic from the [Engine](engine) document).
 
@@ -593,7 +514,7 @@ Summary of the graph state: numbers, metrics, problems.
 
 1. Count nodes (broken down by types and blackbox/non-blackbox).
 2. Count relations (broken down by structural/event).
-3. Count aspects, flows, knowledge elements.
+3. Count aspects and flows.
 4. Read drift state for mapped nodes.
 5. Run validation (only counting errors and warnings, without full messages).
 
@@ -713,7 +634,7 @@ simulates the impact of planned changes on context packages.
 1. Find all nodes whose structural relations point to the specified node (reverse graph edge).
 2. Recursively follow reverse edges (transitive reverse dependencies).
 3. Find flows listing the specified node.
-4. Find aspects and knowledge whose scope covers the specified node.
+4. Find aspects whose scope covers the specified node.
 
 **Simulation mode behavior** (`simulate: true`):
 
@@ -786,18 +707,14 @@ Two levels of severity defined in the [Engine](engine) document.
 | `E002` | `unknown-node-type`          | Node type is not in `config.node_types`                |
 | `E003` | `unknown-tag`                | Tag is not in `config.tags`                            |
 | `E004` | `broken-relation`            | Relation target does not resolve to an existing node   |
-| `E005` | `broken-knowledge-ref`       | Knowledge reference does not resolve                   |
 | `E006` | `broken-flow-ref`            | Flow participant does not resolve                      |
 | `E007` | `broken-aspect-tag`          | Aspect tag does not exist in configuration             |
-| `E008` | `broken-scope-ref`           | Reference in knowledge scope does not resolve          |
 | `E009` | `overlapping-mapping`        | Two nodes map to the same file/directory               |
 | `E010` | `structural-cycle`           | Cycle in structural relations (cycles involving blackbox are tolerated) |
-| `E011` | `unknown-knowledge-category` | Subdirectory in `knowledge/` does not match a category |
 | `E012` | `invalid-config`             | `config.yaml` fails to parse or is invalid             |
 | `E013` | `invalid-artifact-condition` | Condition `has_tag:<name>` refers to an undefined tag  |
 | `E014` | `duplicate-aspect-binding`   | Tag is bound to multiple aspects                       |
 | `E015` | `missing-node-yaml`          | Directory in `model/` has content but no `node.yaml`   |
-| `E017` | `missing-knowledge-category-dir` | Category in config has no corresponding `knowledge/<category>/` directory |
 
 **Warnings (completeness signals):**
 
@@ -805,12 +722,9 @@ Two levels of severity defined in the [Engine](engine) document.
 | ------ | ----------------------- | ----------------------------------------------------------------------------------- |
 | `W001` | `missing-artifact`      | Missing required artifact                                                           |
 | `W002` | `shallow-artifact`      | Artifact below minimum length                                                       |
-| `W003` | `unreachable-knowledge` | Knowledge element does not reach any context package                                |
-| `W004` | `missing-example`       | Pattern without an example file                                                     |
 | `W005` | `budget-warning`        | Context package exceeds warning threshold                                           |
 | `W006` | `budget-error`          | Context package exceeds error threshold (blocks materialization); severity: warning |
 | `W007` | `high-fan-out`          | Node exceeds maximum number of relations                                            |
-| `W008` | `stale-knowledge`       | Knowledge element is potentially stale                                              |
 | `W009` | `unpaired-event`        | Event relation without complement on the other side                                 |
 
 **Message format:**
@@ -1062,7 +976,7 @@ documents the behavioral contract; the implementation provides the canonical tex
 
 - **Start of every conversation:** Preflight — (1) `yg journal-read` (consolidate, archive if entries exist),
   (2) `yg drift` (present states `ok`/`drift`/`missing`/`unmaterialized`, ask absorb or reject),
-  (3) `yg status` (report health), (4) `yg validate` (if W008, update knowledge artifacts).
+  (3) `yg status` (report health), (4) `yg validate` (fix any errors, address warnings).
   _Exception:_ Read-only requests run only step 1.
 - **User signals closing the topic** (e.g. "we're done", "wrap up", "that's enough", "done"): Consolidate journal (if used),
   archive, drift, validate, report exactly what nodes and files were changed.

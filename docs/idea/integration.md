@@ -10,7 +10,7 @@ behavioral contract between the system and the agents that use it.
 
 ## The main idea
 
-Yggdrasil does not give agents a new workflow. It gives them a **better source of knowledge**
+Yggdrasil does not give agents a new workflow. It gives them a **better source of context**
 within the existing workflow.
 
 Today an agent reads files, makes changes, and verifies outputs. With Yggdrasil the same agent
@@ -73,8 +73,8 @@ A user who never uses an explicit trigger still benefits from ambient integratio
 ## The agent writes the graph directly
 
 The agent creates and edits graph files — both YAML metadata (`node.yaml`, `flow.yaml`,
-`aspect.yaml`, `knowledge.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`,
-`content.md`, etc.). Tools have no write operations to the graph — they are readers and validators of semantic knowledge. Tools do write operational metadata (`.drift-state`, `.journal.yaml`) for drift tracking and session buffering; see the [Engine](engine) document.
+`aspect.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`,
+`content.md`, etc.). Tools have no write operations to the graph — they are readers and validators of semantic content. Tools do write operational metadata (`.drift-state`, `.journal.yaml`) for drift tracking and session buffering; see the [Engine](engine) document.
 
 ### Condition: the agent knows how
 
@@ -83,7 +83,7 @@ format and conventions (described in detail in the Learning mechanisms section b
 
 1. The rules file tells it **when** to act
 2. The configuration (`config.yaml`) tells it **what** is allowed
-3. The templates (`templates/`) show **how** files look — schemas for each graph layer (node, aspect, flow, knowledge)
+3. The templates (`templates/`) show **how** files look — schemas for each graph layer (node, aspect, flow)
 4. The existing graph shows **how** it looks in this project
 5. Tool validation tells it **what** is wrong
 
@@ -113,8 +113,7 @@ prior knowledge of conventions.
 | Node Markdown artifacts                                             | Agent                     |
 | Aspect directories in `aspects/` + `aspect.yaml`                    | Agent                     |
 | Flow directories in `flows/` + `flow.yaml`                          | Agent                     |
-| Knowledge directories in `knowledge/<category>/` + `knowledge.yaml` | Agent                     |
-| Schemas in `templates/` (node, aspect, flow, knowledge)             | Initialization (copied)  |
+| Schemas in `templates/` (node, aspect, flow)                       | Initialization (copied)  |
 | Platform rules file                                                 | Initialization (one time) |
 
 Tools create infrastructure (initialization). The agent creates content (everything after init).
@@ -138,7 +137,7 @@ This repository uses Yggdrasil. The graph is in .yggdrasil/
 === SESSION OPEN (reconciliation) ===
 - Consolidate pending notes from the previous sessions journal
 - Detect drift — files may have changed outside the previous session
-- Check potentially stale knowledge (staleness)
+- Check drift and validation status
 - Report status: what needs attention before you start
 
 *Exception:* Read-only requests (e.g. "explain this") run only step 1.
@@ -186,7 +185,6 @@ By reading it, the agent immediately knows:
 - Which tags exist (requires-audit, high-throughput, …)
 - Which artifacts exist, when they are required, and what they should contain
   (each has a `description`)
-- Which knowledge categories exist and what they mean
 - Which quality thresholds apply
 
 One file, two audiences, zero duplication: tools read it to validate; the agent reads it to
@@ -195,7 +193,7 @@ know what is allowed.
 ### 3) Templates → HOW files look
 
 Schemas in `.yggdrasil/templates/` define the structure of each graph layer: `node.yaml` for
-nodes, `aspect.yaml` for aspects, `flow.yaml` for flows, `knowledge.yaml` for knowledge elements.
+nodes, `aspect.yaml` for aspects, `flow.yaml` for flows.
 The agent reads the schema for the element type it is creating or editing.
 
 ### 4) Existing graph → HOW it looks in this project
@@ -298,7 +296,7 @@ Each conversation is work. The agent does not wait for explicit session open/clo
 
 - **Start of every conversation:** Preflight — (1) `yg journal-read` (consolidate, archive if entries exist),
   (2) `yg drift` (present states `ok`/`drift`/`missing`/`unmaterialized`, ask absorb or reject),
-  (3) `yg status` (report health), (4) `yg validate` (if W008, update knowledge artifacts).
+  (3) `yg status` (report health), (4) `yg validate` (fix any errors, address warnings).
   *Exception:* Read-only requests run only step 1.
 - **User signals closing the topic** (e.g. "end", "wrap up", "that's enough", "done"): Consolidate journal (if used),
   archive, drift, validate, report exactly what nodes and files were changed.

@@ -1,7 +1,7 @@
 # Engine
 
 The [Foundation](foundation) document defines the problem and invariants.
-The [Graph](graph) document defines knowledge structure.
+The [Graph](graph) document defines graph structure.
 The [Integration](integration) document defines how agents use these mechanics.
 This document defines the deterministic mechanics — algorithms and tools that operate on the
 graph: context assembly, validation, drift detection, and tool operations.
@@ -56,26 +56,14 @@ Each step is deterministic.
 ```
 1.  GLOBAL        config.yaml: stack, standards
 
-2.  KNOWLEDGE     global scope
-                  every knowledge element where scope = global
-
-3.  KNOWLEDGE     tag match
-                  every knowledge element where scope.tags ∩ T ≠ ∅
-
-4.  KNOWLEDGE     node scope
-                  every knowledge element where P ∈ scope.nodes
-
-5.  KNOWLEDGE     node-declared
-                  every element listed in N.knowledge
-
-6.  HIERARCHICAL  for each ancestor from model/ root down to N's parent:
+2.  HIERARCHICAL  for each ancestor from model/ root down to N's parent:
                   include all configured artifacts of that ancestor (every artifact type from config
                   that exists in the ancestor's directory)
 
-7.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
+3.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
                   artifact filenames)
 
-8.  RELATIONAL
+4.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
         - artifacts of target with structural_context (e.g. responsibility, interface, constraints, errors)
         - consumes annotation from the relation field (if declared)
@@ -84,38 +72,29 @@ Each step is deterministic.
         - event name and type
         - consumes annotation from the relation field (if declared)
 
-9.  ASPECTS       for each tag in T: content of the matching aspect
+5.  ASPECTS       for each tag in T: content of the matching aspect
 
-10. FLOWS         for each flow listing N or any of N's ancestors as a participant:
+6.  FLOWS         for each flow listing N or any of N's ancestors as a participant:
                   - flow content artifacts
-                  - knowledge elements referenced by the flow (flow.knowledge)
 ```
 
 The result is a single document — the context package. Its size is bounded regardless of
 project size because each step attaches only what is directly relevant to node `N`.
 
-**Deduplication**: knowledge elements are deduplicated globally within the package. If a
-knowledge element is reachable via multiple paths (global scope, tag scope, node scope,
-node-declared in step 5, flow reference in step 10), it appears at most once regardless of
-the number of paths leading to it.
-
 ### Mapping Conceptual Layers to Algorithm Steps
 
-The output uses **section names from the algorithm** (Global, Knowledge, Hierarchy, OwnArtifacts,
+The output uses **section names from the algorithm** (Global, Hierarchy, OwnArtifacts,
 Dependencies, Aspects, Flows). The table below maps these to conceptual layers for understanding:
 
 | Conceptual Layer | Algorithm Steps                         | Section in output |
 | ---------------- | --------------------------------------- | ---------------- |
 | World Identity   | Step 1 (global config)                  | Global           |
-| Long-term Memory | Steps 2–5 (all knowledge scopes)        | Knowledge        |
-| Domain Context   | Step 6 (hierarchical ancestors)         | Hierarchy        |
-| Unit Identity    | Step 7 (node.yaml + own artifacts)     | OwnArtifacts     |
-| Surroundings     | Steps 8–10 (relational, aspects, flows) | Dependencies, Aspects, Flows |
+| Domain Context   | Step 2 (hierarchical ancestors)         | Hierarchy        |
+| Unit Identity    | Step 3 (node.yaml + own artifacts)     | OwnArtifacts     |
+| Surroundings     | Steps 4–6 (relational, aspects, flows) | Dependencies, Aspects, Flows |
 
-Layers are the conceptual model — they describe the _kinds_ of knowledge in the package.
-Steps are the mechanics — they describe _where_ knowledge comes from. One conceptual layer
-can span multiple steps; long-term memory uses four scope types, and one step can contribute
-to multiple layers (step 10 attaches both flow artifacts and knowledge referenced by the flow).
+Layers are the conceptual model — they describe the _kinds_ of content in the package.
+Steps are the mechanics — they describe _where_ content comes from.
 
 ### Relational Annotations
 
@@ -166,7 +145,7 @@ annotate it with metadata from YAML. The agent interprets.
 ### Context Package Format
 
 The context package is a Markdown document with clearly separated sections. Section headers
-match the algorithm steps (Global, Knowledge, Hierarchy, OwnArtifacts, Dependencies, Aspects, Flows):
+match the algorithm steps (Global, Hierarchy, OwnArtifacts, Dependencies, Aspects, Flows):
 
 ```markdown
 # Context Package: OrderService
@@ -188,18 +167,6 @@ match the algorithm steps (Global, Knowledge, Hierarchy, OwnArtifacts, Dependenc
 
 **Standards:**
 Strict TypeScript, JSDoc on public functions
-
----
-
-## Knowledge
-
-### Invariant: No direct access to other services' databases
-
-<content>
-
-### Decision: Event Sourcing
-
-<content>
 
 ---
 
@@ -313,21 +280,17 @@ Consumes: reserve, release
 <description.md>
 <sequence.md>
 
-### Long-term Memory (from flow): Saga Pattern
-
-<content>
-
 ---
 
 Context size: 3,200 tokens
-Layers: global, knowledge, hierarchy, own, relational, aspects, flows
+Layers: global, hierarchy, own, relational, aspects, flows
 ```
 
 Markdown is the natural format for agents — they read it fluently. The format is fixed — the
 same section layout regardless of project. Content is variable — depends on project config and
 the specific node.
 
-**The context package contains only graph knowledge, not source code.** The agent fetches
+**The context package contains only graph content, not source code.** The agent fetches
 source files separately when it needs implementation details. If a person places code
 fragments inside Markdown artifacts (e.g., in `interface.md` as an API specification),
 that is their choice — tools treat artifacts as text and attach content without parsing it.
@@ -370,7 +333,6 @@ a graph with errors cannot produce reliable context packages.
 **Referential integrity**:
 
 - Every relation target must resolve to an existing node.
-- Every knowledge reference must resolve to an existing knowledge element.
 - Every flow participant must resolve to an existing node.
 - Every tag must be defined in `config.yaml`.
 
@@ -392,27 +354,12 @@ Warnings flag quality issues that don't break the graph but reduce context packa
 
 **Shallow content**: artifacts that exist but are shorter than the configured minimum length.
 
-**Unreachable knowledge**: a knowledge element that reaches no context package — neither through
-scope matching to existing nodes nor through explicit references from node `knowledge` fields.
-It was written but is dead.
-
-**Missing examples**: a pattern directory without an example file. A pattern describes a
-convention but provides no reference implementation.
-
 **Context budget**: a complex context package exceeding the configured warning threshold.
 Exceeding the error threshold (W006 budget-error) is a **behavioral** block: the agent may
 consciously proceed, but should warn the user about the risk and recommend splitting the node.
 
 **High fan-out**: a node whose direct relation count exceeds the configured maximum — a signal
 of excessive coupling.
-
-**Stale knowledge** (W008): a knowledge element whose scoped nodes evolved more recently than
-the element itself — the semantic memory may not have kept pace with node evolution. Detection
-uses a **Proxy based on Git commit timestamps** (not file modification dates, which are not
-semantic after clone). For knowledge element `K` at `knowledge/<cat>/<name>/`: `tK` = timestamp
-of last commit touching `K`. For each node `P` in `K`'s scope: `tP` = timestamp of last commit
-touching `.yggdrasil/model/<P>/`. If `max(tP) - tK > knowledge_staleness_days`, report W008
-stale-knowledge for `K`.
 
 **Unmatched event relations**: a node declares an `emits` relation to a target but the target
 has no matching `listens`, or vice versa — event-based communication is declared unilaterally.
@@ -497,8 +444,8 @@ after window fill), interruptible (the user ends the session at any point), and 
 
 Any semantic knowledge living only in conversation is at risk of loss.
 
-A full graph update — creating a Markdown artifact, expanding `node.yaml`, adding a knowledge
-element — requires focus and interrupts the creative flow. The agent faces a trade-off: save
+A full graph update — creating a Markdown artifact, expanding `node.yaml`, adding an aspect
+or flow — requires focus and interrupts the creative flow. The agent faces a trade-off: save
 to graph immediately (risk of interrupting flow) or defer until later (risk of loss on context
 compression or session interruption).
 
@@ -628,7 +575,7 @@ Read operations modify nothing. They can be called as frequently as needed.
 
 **Impact analysis** in simulation mode runs the context assembly algorithm on a hypothetical
 graph state: current state with proposed changes applied. Output is a list of affected context
-packages with diffs relative to current state — added or removed knowledge elements, changed
+packages with diffs relative to current state — added or removed content, changed
 dependency artifacts, budget shifts. The assembly algorithm is the same; only the input changes.
 
 ### Validation Operations
@@ -665,8 +612,8 @@ configures integration with the agent platform.
 
 ### Responsibility Boundary
 
-Tools do **not** write semantic knowledge to the graph. They do not create nodes, add relations,
-write artifacts, or manage knowledge elements. That is creative work belonging to the agent.
+Tools do **not** write semantic content to the graph. They do not create nodes, add relations,
+write artifacts, or manage aspects and flows. That is creative work belonging to the agent.
 
 Tools maintain only operational metadata:
 
@@ -676,7 +623,7 @@ Tools maintain only operational metadata:
 
 This model is analogous to the programmer–compiler relationship: the programmer writes code,
 the compiler checks correctness. The only exception is initialization, which creates the
-starting structure and config. After initialization, all knowledge changes in the graph are
+starting structure and config. After initialization, all content changes in the graph are
 the work of the agent or human — tools only read.
 
 ---
@@ -690,39 +637,23 @@ config.yaml                          tags: service, requires-audit, data-access
 model/orders/order-service/node.yaml tags: requires-audit
                                      relations: calls payments/payment-service
                                                         consumes: charge, refund
-                                     knowledge: decisions/002-event-sourcing
 
 aspects/audit-logging/aspect.yaml    bound to tag: requires-audit
 
-knowledge/invariants/no-cross-service-db/knowledge.yaml  scope: global
-knowledge/patterns/error-handling/knowledge.yaml         scope tags: service
-knowledge/decisions/002-event-sourcing/knowledge.yaml    scope nodes: orders/order-service
-
 flows/checkout/flow.yaml             lists orders/order-service as participant
-                                     references: knowledge/patterns/saga-pattern
 ```
 
 Context package for `orders/order-service` contains:
 
 ```
 Step 1.  config.yaml: standards and stack
-Step 2.  Invariant: No direct access to other services' databases  [global scope]
-Step 3.  (no tag-scoped match — node has requires-audit, not service)
-Step 4.  Decision: Event Sourcing  [node scope: lists this node]
-Step 5.  Decision: Event Sourcing  [node-declared reference — DEDUPLICATED with step 4]
-Step 6.  Domain context of orders/ module artifacts
-Step 7.  Own artifacts of OrderService: responsibility, interface, constraints, state
-Step 8.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
+Step 2.  Domain context of orders/ module artifacts
+Step 3.  Own artifacts of OrderService: responsibility, interface, constraints, state
+Step 4.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
          + annotation: consumes charge, refund; on failure: retry 3x, then payment-failed
-Step 9.  Aspect: Audit logging  [tag requires-audit]
-Step 10. Flow: Checkout flow  [description.md, sequence.md]
-         Saga Pattern  [flow knowledge reference]
+Step 5.  Aspect: Audit logging  [tag requires-audit]
+Step 6.  Flow: Checkout flow  [description.md, sequence.md]
 ```
-
-Note: `knowledge/patterns/error-handling` is **not** included — it has tag scope `service`
-and this node's tags are `requires-audit`. For the pattern to reach this node, either add
-the `service` tag to the node, or add the pattern to the node's `knowledge` list. The system
-never guesses.
 
 ---
 

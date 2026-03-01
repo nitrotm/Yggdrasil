@@ -1,7 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Graph, ValidationResult, ValidationIssue, ArtifactConfig } from '../model/types.js';
-import { getLastCommitTimestamp } from '../utils/git.js';
 import { buildContext } from './context-builder.js';
 import { normalizeMappingPaths } from '../utils/paths.js';
 
@@ -36,25 +35,18 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
     issues.push(...checkAspectTags(graph));
     issues.push(...checkAspectTagUniqueness(graph));
     issues.push(...checkRequiredArtifacts(graph));
-    issues.push(...(await checkUnknownKnowledgeCategories(graph)));
     issues.push(...checkInvalidArtifactConditions(graph));
-    issues.push(...checkScopeTagsDefined(graph));
-    issues.push(...(await checkMissingPatternExamples(graph)));
     issues.push(...(await checkContextBudget(graph)));
     issues.push(...checkHighFanOut(graph));
-    issues.push(...(await checkStaleKnowledge(graph)));
   }
 
   issues.push(...checkSchemas(graph));
   issues.push(...checkRelationTargets(graph));
   issues.push(...checkNoCycles(graph));
   issues.push(...checkMappingOverlap(graph));
-  issues.push(...checkBrokenKnowledgeRefs(graph));
   issues.push(...checkBrokenFlowRefs(graph));
-  issues.push(...checkBrokenScopeRefs(graph));
   issues.push(...(await checkDirectoriesHaveNodeYaml(graph)));
   issues.push(...(await checkShallowArtifacts(graph)));
-  issues.push(...(await checkUnreachableKnowledge(graph)));
   issues.push(...checkUnpairedEvents(graph));
 
   let filtered = issues;
@@ -400,34 +392,11 @@ function checkRequiredArtifacts(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- E005: Broken knowledge refs (node.meta.knowledge) ---
-
-function checkBrokenKnowledgeRefs(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const knowledgePaths = new Set(graph.knowledge.map((k) => k.path));
-  for (const [nodePath, node] of graph.nodes) {
-    for (const kPath of node.meta.knowledge ?? []) {
-      const norm = kPath.replace(/\/$/, '');
-      if (!knowledgePaths.has(norm) && !knowledgePaths.has(kPath)) {
-        issues.push({
-          severity: 'error',
-          code: 'E005',
-          rule: 'broken-knowledge-ref',
-          message: `Knowledge ref '${kPath}' does not resolve to existing knowledge item`,
-          nodePath,
-        });
-      }
-    }
-  }
-  return issues;
-}
-
-// --- E006: Broken flow refs (flow.nodes, flow.knowledge) ---
+// --- E006: Broken flow refs (flow.nodes) ---
 
 function checkBrokenFlowRefs(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const nodePaths = new Set(graph.nodes.keys());
-  const knowledgePaths = new Set(graph.knowledge.map((k) => k.path));
   for (const flow of graph.flows) {
     for (const n of flow.nodes) {
       if (!nodePaths.has(n)) {
@@ -439,100 +408,7 @@ function checkBrokenFlowRefs(graph: Graph): ValidationIssue[] {
         });
       }
     }
-    for (const kPath of flow.knowledge ?? []) {
-      const norm = kPath.replace(/\/$/, '');
-      if (!knowledgePaths.has(norm) && !knowledgePaths.has(kPath)) {
-        issues.push({
-          severity: 'error',
-          code: 'E005',
-          rule: 'broken-knowledge-ref',
-          message: `Flow '${flow.name}' references non-existent knowledge '${kPath}'`,
-          nodePath: `flows/${flow.name}`,
-        });
-      }
-    }
   }
-  return issues;
-}
-
-// --- E008: Broken scope refs (knowledge scope.nodes) ---
-
-function checkBrokenScopeRefs(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const nodePaths = new Set(graph.nodes.keys());
-  for (const k of graph.knowledge) {
-    if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-      for (const n of k.scope.nodes) {
-        if (!nodePaths.has(n)) {
-          issues.push({
-            severity: 'error',
-            code: 'E008',
-            rule: 'broken-scope-ref',
-            message: `Knowledge '${k.path}' scope references non-existent node '${n}'`,
-          });
-        }
-      }
-    }
-  }
-  return issues;
-}
-
-function checkScopeTagsDefined(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const definedTags = new Set(graph.config.tags ?? []);
-  for (const k of graph.knowledge) {
-    if (typeof k.scope !== 'object' || !('tags' in k.scope)) continue;
-    for (const tag of k.scope.tags) {
-      if (definedTags.has(tag)) continue;
-      issues.push({
-        severity: 'error',
-        code: 'E008',
-        rule: 'broken-scope-ref',
-        message: `Knowledge '${k.path}' scope references undefined tag '${tag}'`,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- E011: Unknown knowledge categories (dirs under knowledge/ not in config) ---
-// --- E017: Missing knowledge category dir (category in config but no knowledge/<cat>/) ---
-
-async function checkUnknownKnowledgeCategories(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const categorySet = new Set((graph.config.knowledge_categories ?? []).map((c) => c.name));
-  const knowledgeDir = path.join(graph.rootPath, 'knowledge');
-  const existingDirs = new Set<string>();
-  try {
-    const entries = await readdir(knowledgeDir, { withFileTypes: true });
-    for (const e of entries) {
-      if (!e.isDirectory()) continue;
-      if (e.name.startsWith('.')) continue;
-      existingDirs.add(e.name);
-      if (!categorySet.has(e.name)) {
-        issues.push({
-          severity: 'error',
-          code: 'E011',
-          rule: 'unknown-knowledge-category',
-          message: `Directory knowledge/${e.name}/ does not match any config.knowledge_categories`,
-        });
-      }
-    }
-  } catch {
-    // knowledge/ may not exist
-  }
-
-  for (const cat of graph.config.knowledge_categories ?? []) {
-    if (!existingDirs.has(cat.name)) {
-      issues.push({
-        severity: 'error',
-        code: 'E017',
-        rule: 'missing-knowledge-category-dir',
-        message: `Category '${cat.name}' in config has no knowledge/${cat.name}/ directory`,
-      });
-    }
-  }
-
   return issues;
 }
 
@@ -583,110 +459,6 @@ async function checkShallowArtifacts(graph: Graph): Promise<ValidationIssue[]> {
   return issues;
 }
 
-// --- W003: Unreachable knowledge (does not reach any context package) ---
-
-async function checkUnreachableKnowledge(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const nodePaths = new Set(graph.nodes.keys());
-  const nodeTags = new Map<string, Set<string>>();
-  for (const [p, n] of graph.nodes) {
-    nodeTags.set(p, new Set(n.meta.tags ?? []));
-  }
-  const knowledgeReachable = new Set<string>();
-  for (const k of graph.knowledge) {
-    if (k.scope === 'global') {
-      knowledgeReachable.add(k.path);
-      continue;
-    }
-    if (typeof k.scope === 'object' && 'tags' in k.scope) {
-      for (const [, tags] of nodeTags) {
-        if (k.scope.tags.some((t) => tags.has(t))) {
-          knowledgeReachable.add(k.path);
-          break;
-        }
-      }
-    }
-    if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-      if (k.scope.nodes.some((n) => nodePaths.has(n))) {
-        knowledgeReachable.add(k.path);
-      }
-    }
-  }
-  for (const [, node] of graph.nodes) {
-    for (const kPath of node.meta.knowledge ?? []) {
-      const k = graph.knowledge.find(
-        (i) => i.path === kPath || i.path === kPath.replace(/\/$/, ''),
-      );
-      if (k) knowledgeReachable.add(k.path);
-    }
-  }
-  for (const flow of graph.flows) {
-    for (const kPath of flow.knowledge ?? []) {
-      const k = graph.knowledge.find(
-        (i) => i.path === kPath || i.path === kPath.replace(/\/$/, ''),
-      );
-      if (k) knowledgeReachable.add(k.path);
-    }
-  }
-  for (const k of graph.knowledge) {
-    if (!knowledgeReachable.has(k.path)) {
-      issues.push({
-        severity: 'warning',
-        code: 'W003',
-        rule: 'unreachable-knowledge',
-        message: `Knowledge '${k.path}' does not reach any context package`,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- W004: Pattern without example file ---
-
-async function checkMissingPatternExamples(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const hasPatterns = (graph.config.knowledge_categories ?? []).some((c) => c.name === 'patterns');
-  if (!hasPatterns) return issues;
-  const patternsDir = path.join(graph.rootPath, 'knowledge', 'patterns');
-  try {
-    const entries = await readdir(patternsDir, { withFileTypes: true });
-    const exampleExtensions = new Set([
-      '.ts',
-      '.js',
-      '.tsx',
-      '.jsx',
-      '.py',
-      '.go',
-      '.rs',
-      '.java',
-      '.kt',
-    ]);
-    for (const e of entries) {
-      if (!e.isDirectory()) continue;
-      const itemDir = path.join(patternsDir, e.name);
-      const itemEntries = await readdir(itemDir, { withFileTypes: true });
-      const hasExample = itemEntries.some(
-        (f) =>
-          f.isFile() &&
-          f.name !== 'knowledge.yaml' &&
-          (f.name.startsWith('example') ||
-            exampleExtensions.has(path.extname(f.name).toLowerCase())),
-      );
-      if (!hasExample) {
-        issues.push({
-          severity: 'warning',
-          code: 'W004',
-          rule: 'missing-example',
-          message: `Pattern 'patterns/${e.name}' has no example file`,
-        });
-      }
-    }
-  } catch {
-    // patterns/ may not exist
-  }
-  return issues;
-}
-
 // --- W007: High fan-out (exceeds max_direct_relations) ---
 
 function checkHighFanOut(graph: Graph): ValidationIssue[] {
@@ -701,68 +473,6 @@ function checkHighFanOut(graph: Graph): ValidationIssue[] {
         rule: 'high-fan-out',
         message: `Node has ${count} direct relations (max: ${maxRel})`,
         nodePath,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- W008: Stale knowledge (Proxy: Git commit timestamps, not file mtime) ---
-
-function getNodesInScope(
-  k: { scope: 'global' | { tags?: string[]; nodes?: string[] } },
-  graph: Graph,
-): string[] {
-  if (k.scope === 'global') {
-    return [...graph.nodes.keys()];
-  }
-  if (typeof k.scope === 'object' && 'nodes' in k.scope && k.scope.nodes) {
-    return k.scope.nodes.filter((p) => graph.nodes.has(p));
-  }
-  if (typeof k.scope === 'object' && 'tags' in k.scope && k.scope.tags) {
-    const tagSet = new Set(k.scope.tags);
-    return [...graph.nodes.keys()].filter((p) => {
-      const node = graph.nodes.get(p)!;
-      return (node.meta.tags ?? []).some((t) => tagSet.has(t));
-    });
-  }
-  return [];
-}
-
-async function checkStaleKnowledge(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const stalenessDays = graph.config.quality?.knowledge_staleness_days ?? 90;
-  const projectRoot = path.dirname(graph.rootPath);
-  const yggRel = path.relative(projectRoot, graph.rootPath).replace(/\\/g, '/') || '.yggdrasil';
-
-  for (const k of graph.knowledge) {
-    const scopeNodes = getNodesInScope(k, graph);
-    if (scopeNodes.length === 0) continue;
-
-    const kPath = `${yggRel}/knowledge/${k.path}`;
-    const tK = getLastCommitTimestamp(projectRoot, kPath);
-    if (tK === null) continue;
-
-    let maxTp = 0;
-    let latestNode = '';
-    for (const nodePath of scopeNodes) {
-      const nodePathRel = `${yggRel}/model/${nodePath}`;
-      const tP = getLastCommitTimestamp(projectRoot, nodePathRel);
-      if (tP !== null && tP > maxTp) {
-        maxTp = tP;
-        latestNode = nodePath;
-      }
-    }
-    if (maxTp === 0) continue;
-
-    const diffDays = (maxTp - tK) / (60 * 60 * 24);
-    if (diffDays > stalenessDays) {
-      issues.push({
-        severity: 'warning',
-        code: 'W008',
-        rule: 'stale-knowledge',
-        message: `Knowledge '${k.path}' may be stale: node '${latestNode}' modified ${Math.floor(diffDays)} days later (Git commits)`,
-        nodePath: latestNode,
       });
     }
   }
@@ -822,7 +532,7 @@ function checkUnpairedEvents(graph: Graph): ValidationIssue[] {
 
 // --- Schema validation (required graph-layer schemas present in templates/) ---
 
-const REQUIRED_SCHEMAS = ['node', 'aspect', 'flow', 'knowledge'] as const;
+const REQUIRED_SCHEMAS = ['node', 'aspect', 'flow'] as const;
 
 function checkSchemas(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];

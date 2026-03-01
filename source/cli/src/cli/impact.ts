@@ -127,25 +127,6 @@ export function registerImpactCommand(program: Command): void {
           }
         }
 
-        const knowledgeInScope: string[] = [];
-        for (const k of graph.knowledge) {
-          if (k.scope === 'global') {
-            knowledgeInScope.push(k.path);
-            continue;
-          }
-          if (typeof k.scope === 'object' && 'tags' in k.scope) {
-            if (k.scope.tags.some((t) => targetTags.has(t))) {
-              knowledgeInScope.push(k.path);
-            }
-            continue;
-          }
-          if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-            if (k.scope.nodes.includes(nodePath)) {
-              knowledgeInScope.push(k.path);
-            }
-          }
-        }
-
         const budget = graph.config.quality?.context_budget ?? { warning: 10000, error: 20000 };
         process.stdout.write(`Impact of changes in ${nodePath}:\n\n`);
         process.stdout.write('Directly dependent:\n');
@@ -175,10 +156,7 @@ export function registerImpactCommand(program: Command): void {
           `Aspects (scope covers node): ${aspectsInScope.length > 0 ? aspectsInScope.join(', ') : '(none)'}\n`,
         );
         process.stdout.write(
-          `Knowledge (scope covers node): ${knowledgeInScope.length > 0 ? knowledgeInScope.join(', ') : '(none)'}\n`,
-        );
-        process.stdout.write(
-          `\nTotal scope: ${transitive.length} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects, ${knowledgeInScope.length} knowledge\n`,
+          `\nTotal scope: ${transitive.length} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects\n`,
         );
 
         if (options.simulate && transitive.length > 0) {

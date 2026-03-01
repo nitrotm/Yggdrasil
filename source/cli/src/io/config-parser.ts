@@ -1,17 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { parse as parseYaml } from 'yaml';
-import type {
-  YggConfig,
-  ArtifactConfig,
-  KnowledgeCategory,
-  QualityConfig,
-} from '../model/types.js';
+import type { YggConfig, ArtifactConfig, QualityConfig } from '../model/types.js';
 
 const DEFAULT_QUALITY: QualityConfig = {
   min_artifact_length: 50,
   max_direct_relations: 10,
   context_budget: { warning: 10000, error: 20000 },
-  knowledge_staleness_days: 90,
 };
 
 export async function parseConfig(filePath: string): Promise<YggConfig> {
@@ -70,25 +64,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     };
   }
 
-  if (!('knowledge_categories' in raw)) {
-    throw new Error(
-      `config.yaml: missing 'knowledge_categories' field (required, may be empty list)`,
-    );
-  }
-  const knowledgeCategoriesRaw = raw.knowledge_categories;
-  if (!Array.isArray(knowledgeCategoriesRaw)) {
-    throw new Error(`config.yaml: 'knowledge_categories' must be an array`);
-  }
-  const knowledgeCategories = knowledgeCategoriesRaw as KnowledgeCategory[];
-  const categoryNames = new Set<string>();
-  for (const kc of knowledgeCategories) {
-    if (!kc?.name || typeof kc.name !== 'string') continue;
-    if (categoryNames.has(kc.name)) {
-      throw new Error(`config.yaml: duplicate knowledge category '${kc.name}'`);
-    }
-    categoryNames.add(kc.name);
-  }
-
   const qualityRaw = raw.quality as Record<string, unknown> | undefined;
   const quality: QualityConfig = qualityRaw
     ? {
@@ -104,9 +79,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
             (qualityRaw.context_budget as Record<string, number>)?.error ??
             DEFAULT_QUALITY.context_budget.error,
         },
-        knowledge_staleness_days:
-          (qualityRaw.knowledge_staleness_days as number) ??
-          DEFAULT_QUALITY.knowledge_staleness_days,
       }
     : DEFAULT_QUALITY;
 
@@ -132,7 +104,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     tags: tagsList,
     node_types: nodeTypes as string[],
     artifacts: artifactsMap,
-    knowledge_categories: knowledgeCategories.filter((kc) => kc?.name),
     quality,
   };
 }

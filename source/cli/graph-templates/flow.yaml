@@ -3,6 +3,3 @@ nodes:
   - orders/order-service
   - payments/payment-service
   - inventory/inventory-service
-knowledge:
-  - patterns/saga-pattern
-  - decisions/001-event-sourcing

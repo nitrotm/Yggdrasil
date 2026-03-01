@@ -2,9 +2,9 @@
 
 This document defines the structure of the semantic memory graph.
 
-Every piece of knowledge that reaches an agent's context must arrive there through an explicit,
-declared, tool-verifiable connection. The agent never "goes hunting" for knowledge on its own —
-tools mechanically assemble it from declarations. If a piece of knowledge has no declared path
+Every piece of context that reaches an agent must arrive there through an explicit,
+declared, tool-verifiable connection. The agent never "goes hunting" for context on its own —
+tools mechanically assemble it from declarations. If content has no declared path
 to a node, it does not exist for that node's context. This is the fundamental contract of the
 graph: **deterministic discoverability**.
 
@@ -20,10 +20,6 @@ Semantic memory lives under `.yggdrasil/`.
   model/
   aspects/
   flows/
-  knowledge/
-    decisions/
-    patterns/
-    invariants/
   templates/
 ```
 
@@ -31,8 +27,7 @@ Semantic memory lives under `.yggdrasil/`.
 - `model/` — semantic model of the system: components and their relationships.
 - `aspects/` — cross-cutting requirements bound to tags.
 - `flows/` — end-to-end flows spanning multiple nodes.
-- `knowledge/` — semantic knowledge that lives outside individual components.
-- `templates/` — schemas for each graph layer (node, aspect, flow, knowledge).
+- `templates/` — schemas for each graph layer (node, aspect, flow).
 
 The graph is semantic memory, not implementation. It describes what the repository **means**.
 Context assembly, validation, drift detection, and journal mechanics are defined in the
@@ -46,7 +41,6 @@ Context assembly, validation, drift detection, and journal mechanics are defined
   model/             # reserved
   aspects/           # reserved
   flows/             # reserved
-  knowledge/         # reserved
   templates/         # reserved
 ```
 
@@ -58,8 +52,7 @@ reserved top-level directories.
 | `model/`     | Graph components: the semantic structure | No — user names live here |
 | `aspects/`   | Cross-cutting requirements bound by tags | Reserved                  |
 | `flows/`     | End-to-end flows across nodes            | Reserved                  |
-| `knowledge/` | Decisions, patterns, invariants, etc.    | Reserved                  |
-| `templates/` | Schemas for graph layers (node, aspect, flow, knowledge) | Reserved                  |
+| `templates/` | Schemas for graph layers (node, aspect, flow) | Reserved                  |
 
 ---
 
@@ -104,9 +97,8 @@ tags:
 ```
 
 Tags are the project's classification vocabulary. Any tag used anywhere in the graph — on nodes,
-within aspect bindings, within knowledge scopes — must be defined here. Tools reject undefined
-tags. This prevents vocabulary drift and guarantees that tag-based mechanisms (aspects, scoped
-knowledge) are always valid.
+within aspect bindings — must be defined here. Tools reject undefined
+tags. This prevents vocabulary drift and guarantees that tag-based mechanisms (aspects) are always valid.
 
 ### Node types
 
@@ -200,45 +192,6 @@ artifacts:
 Tools validate artifact presence based on these rules and attach artifact content to context
 packages.
 
-### Knowledge categories
-
-```yaml
-knowledge_categories:
-  - name: decisions
-    description: Decisions and their rationale
-
-  - name: patterns
-    description: Implementation conventions with examples
-
-  - name: invariants
-    description: System truths that must never be violated
-```
-
-Knowledge categories classify elements under `knowledge/`. Each category corresponds to a
-subdirectory in `knowledge/`. Tools validate consistency between configuration and directory
-structure:
-
-- `knowledge/decisions` is valid if `decisions` is configured as a category.
-- A subdirectory under `knowledge/` that doesn't match any configured category is an error.
-
-Category is inferred from directory name — no `category` field in YAML is needed. Categories
-are configurable; projects can add their own:
-
-```yaml
-knowledge_categories:
-  - name: regulations
-    description: External regulatory requirements
-
-  - name: conventions
-    description: Team agreements on style and process
-```
-
-Adding a category requires simultaneously creating the corresponding subdirectory. Category is an
-organizational label — it tells the agent and the human _what kind_ of semantic memory this is.
-It does not change mechanics: each knowledge element has a scope, scope resolves, content goes
-into context packages. Category appears as a label in the package ("Decision", "Pattern"), helping
-interpret the content.
-
 ### Quality thresholds
 
 ```yaml
@@ -248,7 +201,6 @@ quality:
   context_budget:
     warning: 10000
     error: 20000
-  knowledge_staleness_days: 90
 ```
 
 Quality thresholds are measurable limits enforced by tools:
@@ -260,23 +212,16 @@ Quality thresholds are measurable limits enforced by tools:
 - **Context budget** — token limits for context packages:
   - `warning` signals growing complexity.
   - `error` blocks materialization: the node must be split.
-- **Knowledge staleness** — number of days of divergence between a knowledge element's
-  last Git commit timestamp and the last Git commit timestamps of nodes in its scope,
-  after which tools signal potential staleness. Detection uses Git commit timestamps
-  (not file modification dates), which remain meaningful after clone.
 
 Configuration controls **what** material the engine works with. The engine itself — the context
-assembly algorithm, scope resolution, referential integrity — is fixed. The system is predictable:
+assembly algorithm, referential integrity — is fixed. The system is predictable:
 the same algorithm over different material produces different packages, but the algorithm is
 always the same.
 
 #### What is not configurable
 
-- The context assembly algorithm — ordered steps that collect knowledge layers into a package.
+- The context assembly algorithm — ordered steps that collect content into a package.
   Only the material those steps operate on is configurable.
-- The scope system — global, tag, node, and explicit references always behave the same.
-  The project controls which knowledge elements exist and how they are scoped, not how
-  scope resolution works.
 - Referential integrity — every reference in the graph must resolve. Broken references are
   always errors.
 
@@ -332,9 +277,6 @@ relations:
     type: calls
     consumes: [reserve, release]
 
-knowledge:
-  - decisions/002-event-sourcing
-
 mapping:
   type: file
   path: src/modules/orders/order.service.ts
@@ -344,9 +286,8 @@ mapping:
 | ----------- | -------- | ------------------------------------------------------------ |
 | `name`      | Yes      | Display name                                                 |
 | `type`      | Yes      | Node type from `config.node_types`                          |
-| `tags`      | No       | Tags that link node to aspects and scoped knowledge          |
+| `tags`      | No       | Tags that link node to aspects                               |
 | `relations` | No       | Outgoing dependencies to other nodes                         |
-| `knowledge` | No       | Explicit references to knowledge elements                    |
 | `mapping`   | No       | Link to source files (see Mapping section)                   |
 | `blackbox`  | No       | If `true`, node describes something existing, not controlled |
 
@@ -460,7 +401,7 @@ The `consumes` field annotates the context package. Its meaning depends on relat
   (e.g. `orderId`, `amount`, `status`). Tools attach event information with annotations
   describing consumed data.
 
-The `failure` field captures knowledge about what the node does when the dependency is
+The `failure` field captures what the node does when the dependency is
 unavailable — critical information that cannot be inferred from code or interface alone.
 
 ---
@@ -506,13 +447,8 @@ caching, rate limiting, logging conventions. Without aspects, these requirements
 to be repeated in every affected node's artifacts. With aspects, they are declared once and
 distributed automatically.
 
-Each aspect is bound to a single tag. This deliberate asymmetry (compared to knowledge elements,
-which may have broader scopes) reflects their nature:
-
-- Aspects impose **obligations** and are tied to **need tags** like `requires-audit`,
-  `requires-auth`.
-- Knowledge elements provide **understanding** and may be scoped by role tags like `service`,
-  `controller`, where broader reach is natural.
+Each aspect is bound to a single tag. Aspects impose **obligations** and are tied to **need tags**
+like `requires-audit`, `requires-auth`.
 
 If a requirement concerns multiple roles, the solution is a separate need tag
 (e.g. `requires-rate-limiting`) applied to appropriate nodes, not expanding a single aspect
@@ -542,242 +478,19 @@ nodes:
   - payments/payment-service
   - inventory/inventory-service
   - notifications/email-service
-
-knowledge:
-  - patterns/saga-pattern
 ```
 
 Content artifacts in the flow directory (`description.md`, `sequence.md`, etc.) describe
 flow behavior, sequence, error handling, and edge cases.
 
 - `nodes` lists flow participants — paths are relative to `model/`.
-- `knowledge` lists knowledge elements relevant to the flow.
 
 When assembling a context package for a node, tools attach the flow's content artifacts as
-context if the node or any of its ancestors is listed as a participant. They also attach
-knowledge elements referenced by the flow.
+context if the node or any of its ancestors is listed as a participant.
 
-Flows capture semantic knowledge that belongs to **no single node**: orchestration logic,
-end-to-end sequences, what happens when one participant fails. This knowledge is essential for
+Flows capture semantic content that belongs to **no single node**: orchestration logic,
+end-to-end sequences, what happens when one participant fails. This content is essential for
 implementation but lives above the component level.
-
----
-
-## Knowledge: Semantic Wisdom Beyond Components
-
-Knowledge elements live under `knowledge/`, grouped into subdirectories that correspond to
-configured categories. Each knowledge element is a directory containing `knowledge.yaml` and
-content files.
-
-```text
-knowledge/
-  decisions/
-    001-postgresql/
-      knowledge.yaml
-      content.md
-
-  patterns/
-    error-handling/
-      knowledge.yaml
-      description.md
-      example.ts
-
-  invariants/
-    no-cross-service-db/
-      knowledge.yaml
-      content.md
-```
-
-### Structure of a knowledge element
-
-```text
-knowledge/<category>/<name>/
-  knowledge.yaml
-  content.md
-  ... (optional extra files: examples, diagrams, references)
-```
-
-`knowledge.yaml` defines identity and scope:
-
-```yaml
-name: PostgreSQL for persistence
-scope:
-  nodes:
-    - orders/order-service
-    - users/user-repository
-    - inventory/inventory-repository
-```
-
-Category is determined by the parent directory (`decisions`, `patterns`, `invariants`). The
-`category` field is implicit and does not exist in YAML.
-
-All files in the knowledge directory **except** `knowledge.yaml` are treated as content and
-attached to context packages.
-
-### Decision records
-
-Architectural decision records capture **why** choices were made.
-
-**Critical rule: never invent decisions.** Files that imply human judgment (e.g. `decisions.md`,
-`decisions.md`) or knowledge categories like `invariants` and `decisions` must reflect _actual_
-human choices. The agent may extract decisions explicitly stated in code comments or previous
-context. The agent must never invent, infer, or hallucinate a rationale, an architectural
-decision, or a business rule. If the "why" or the specific invariant is unclear, the agent
-must stop and ask the user.
-
-```text
-knowledge/decisions/001-postgresql/
-  knowledge.yaml
-  content.md
-```
-
-```yaml
-# knowledge/decisions/001-postgresql/knowledge.yaml
-name: PostgreSQL for persistence
-scope:
-  nodes:
-    - orders/order-service
-    - users/user-repository
-    - inventory/inventory-repository
-```
-
-```markdown
-<!-- knowledge/decisions/001-postgresql/content.md -->
-
-We chose PostgreSQL instead of MongoDB because:
-
-- order data is inherently relational (order, line items, payments)
-- JSONB covers semi-structured needs without losing transactions
-- the team has deep PostgreSQL expertise
-```
-
-Decision records stop teams from re-deciding resolved questions and ensure that future changes
-understand original constraints.
-
-### Patterns
-
-Patterns encode "how we do things here" with reference code.
-
-```text
-knowledge/patterns/error-handling/
-  knowledge.yaml
-  description.md
-  example.ts
-```
-
-```yaml
-# knowledge/patterns/error-handling/knowledge.yaml
-name: Error handling in services
-scope:
-  tags: [service]
-```
-
-The description explains the pattern. The example file in the project's language provides
-reference code the agent can follow during materialization.
-
-All files in a pattern's directory except `knowledge.yaml` are attached to context packages.
-Patterns are the strongest mechanism for repo-wide consistency — an agent implementing a new
-service reads the error-handling pattern and follows the established convention instead of
-inventing its own.
-
-### Invariants
-
-Invariants are system truths that must never be violated.
-
-```text
-knowledge/invariants/no-cross-service-db/
-  knowledge.yaml
-  content.md
-```
-
-```yaml
-# knowledge/invariants/no-cross-service-db/knowledge.yaml
-name: No direct access to other services' databases
-scope: global
-```
-
-```markdown
-<!-- knowledge/invariants/no-cross-service-db/content.md -->
-
-Services must never directly access database tables owned by another service.
-All cross-service data access goes through declared interfaces.
-Violating this invariant creates hidden coupling that the graph cannot track.
-```
-
-A global invariant appears in every context package, ensuring no implementation can break it
-unknowingly.
-
-### Custom categories
-
-Projects define categories in `config.yaml` and create matching subdirectories. Mechanics
-are identical for all categories: a knowledge element has a scope and content. Directory
-location determines category; scope determines distribution. All knowledge exists to end up in
-context packages.
-
----
-
-## Scope System
-
-The scope system makes knowledge deterministically discoverable. Each knowledge element declares
-its scope — the set of nodes it applies to. Tools validate scopes and the context assembly
-algorithm uses them.
-
-### Global scope
-
-```yaml
-scope: global
-```
-
-Applied to every context package. Use sparingly — global elements consume budget in every
-package.
-
-### Tag scope
-
-```yaml
-scope:
-  tags: [service, controller]
-```
-
-Applied to nodes carrying at least one of the listed tags. This is the same mechanism aspects
-use. Tags must be defined in `config.yaml`.
-
-### Node scope
-
-```yaml
-scope:
-  nodes:
-    - orders/order-service
-    - users/user-repository
-```
-
-Applied only to listed nodes. Paths are relative to `model/`. Each path must resolve to an
-existing node.
-
-### Node-declared references
-
-In addition to scopes declared on knowledge elements, nodes can explicitly reference knowledge
-in `node.yaml`:
-
-```yaml
-knowledge:
-  - decisions/002-event-sourcing
-  - patterns/repository-pattern
-```
-
-Paths are relative to `knowledge/`. This creates a bidirectional discovery mechanism:
-
-- Knowledge finds nodes through scopes.
-- Nodes find knowledge through explicit references.
-
-Both directions are validated by tools.
-
-### Scope interaction
-
-A knowledge element may reach a node through multiple paths: global scope, tag scope, node scope,
-node-declared reference, or flow reference. The assembly algorithm deduplicates knowledge:
-
-- Each knowledge element appears at most once in a context package, regardless of how many
-  paths lead to it.
 
 ---
 
@@ -789,12 +502,8 @@ reference type.
 | Location                       | Relative to        | Example value              |
 | ------------------------------ | ------------------ | -------------------------- |
 | `node.yaml` `relations.target` | `model/`           | `payments/payment-service` |
-| `node.yaml` `knowledge`        | `knowledge/`       | `decisions/001-postgresql` |
 | `flow.yaml` `nodes`            | `model/`           | `orders/order-service`     |
-| `flow.yaml` `knowledge`        | `knowledge/`       | `patterns/saga-pattern`    |
 | `aspect.yaml` `tag`            | `config.yaml:tags` | `requires-audit`           |
-| `knowledge.yaml` `scope.tags`  | `config.yaml:tags` | `service`                  |
-| `knowledge.yaml` `scope.nodes` | `model/`           | `orders/order-service`     |
 
 No ambiguity. No absolute paths. No guessing which directory a reference points to.
 
@@ -875,12 +584,11 @@ The `templates/` directory contains schema files — one per graph layer. Each f
 expected structure of its element type. The agent reads the appropriate schema before creating
 or editing that element.
 
-| File            | Element type | Purpose                                                |
-| --------------- | ------------ | ------------------------------------------------------ |
-| `node.yaml`     | Nodes        | Structure of `node.yaml` in model directories           |
-| `aspect.yaml`   | Aspects      | Structure of `aspect.yaml` in aspects directories       |
-| `flow.yaml`     | Flows        | Structure of `flow.yaml` in flows directories           |
-| `knowledge.yaml`| Knowledge    | Structure of `knowledge.yaml` in knowledge elements      |
+| File          | Element type | Purpose                                                |
+| ------------- | ------------ | ------------------------------------------------------ |
+| `node.yaml`   | Nodes        | Structure of `node.yaml` in model directories           |
+| `aspect.yaml` | Aspects      | Structure of `aspect.yaml` in aspects directories       |
+| `flow.yaml`   | Flows        | Structure of `flow.yaml` in flows directories           |
 
 These are generalized schemas, not type-specific examples. The agent consults the schema for the
 element type it is creating or editing. Artifact requirements and structure come from
@@ -904,7 +612,7 @@ do not offer blackbox. **If existing code:** user chooses reverse-engineer (full
 
 Consequence for data structures:
 
-- All higher-level mechanisms — knowledge scopes, aspects, mappings, flows — operate only on
+- All higher-level mechanisms — aspects, mappings, flows — operate only on
   declared nodes.
 - **Blackbox is a first-class mechanism** for "we do not explore yet, but we need an owner."
   Use it for existing code when the user chooses not to reverse-engineer. Not for greenfield.

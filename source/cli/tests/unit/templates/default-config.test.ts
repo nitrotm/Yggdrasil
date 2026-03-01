@@ -14,7 +14,6 @@ describe('default-config', () => {
     expect(parsed.name).toBeDefined();
     expect(parsed.node_types).toBeDefined();
     expect(parsed.artifacts).toBeDefined();
-    expect(parsed.knowledge_categories).toBeDefined();
     expect(parsed.quality).toBeDefined();
   });
 

@@ -10,9 +10,6 @@ relations:
     type: uses
     consumes: [findYggRoot]
 
-knowledge:
-  - patterns/command-error-handling
-
 mapping:
   paths:
     - source/cli/src/cli/journal-add.ts

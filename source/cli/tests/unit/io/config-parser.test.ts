@@ -65,7 +65,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
 tags: []
 `,
       'utf-8',
@@ -93,7 +92,6 @@ artifacts:
     required: never
     description: "API"
     structural_context: true
-knowledge_categories: []
 tags: []
 `,
       'utf-8',
@@ -176,7 +174,6 @@ artifacts:
     required:
       when: has_foo
     description: "x"
-knowledge_categories: []
 tags: []
 `,
       'utf-8',
@@ -184,57 +181,6 @@ tags: []
 
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
       "invalid 'required.when'",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('throws when knowledge_categories is missing', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-no-kc');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "NoKC"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-tags: []
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "missing 'knowledge_categories' field",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('throws when duplicate knowledge category', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-dup-cat');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "Dup"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories:
-  - name: decisions
-  - name: decisions
-tags: []
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      'duplicate knowledge category',
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -256,7 +202,6 @@ quality:
   context_budget:
     warning: 10000
     error: 5000
-knowledge_categories: []
 tags: []
 `,
       'utf-8',
@@ -281,7 +226,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
 `,
       'utf-8',
     );
@@ -374,7 +318,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
 tags: "not-an-array"
 `,
       'utf-8',
@@ -383,34 +326,6 @@ tags: "not-an-array"
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
       "'tags' must be an array",
     );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('skips knowledge categories with invalid name', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-kc-skip');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "KC"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories:
-  - name: decisions
-  - {}
-  - name: patterns
-tags: []
-`,
-      'utf-8',
-    );
-
-    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
-    expect(config.knowledge_categories).toHaveLength(2);
-    expect(config.knowledge_categories.map((c) => c.name)).toEqual(['decisions', 'patterns']);
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -426,7 +341,6 @@ node_types: [service]
 artifacts:
   responsibility:
     required: always
-knowledge_categories: []
 tags: []
 `,
       'utf-8',
@@ -451,7 +365,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
 tags: []
 `,
       'utf-8',

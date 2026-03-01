@@ -66,9 +66,6 @@ export function registerInitCommand(program: Command): void {
       await mkdir(path.join(yggRoot, 'model'), { recursive: true });
       await mkdir(path.join(yggRoot, 'aspects'), { recursive: true });
       await mkdir(path.join(yggRoot, 'flows'), { recursive: true });
-      await mkdir(path.join(yggRoot, 'knowledge', 'decisions'), { recursive: true });
-      await mkdir(path.join(yggRoot, 'knowledge', 'patterns'), { recursive: true });
-      await mkdir(path.join(yggRoot, 'knowledge', 'invariants'), { recursive: true });
       const templatesDir = path.join(yggRoot, 'templates');
       await mkdir(templatesDir, { recursive: true });
 
@@ -99,10 +96,7 @@ export function registerInitCommand(program: Command): void {
       process.stdout.write('  .yggdrasil/model/\n');
       process.stdout.write('  .yggdrasil/aspects/\n');
       process.stdout.write('  .yggdrasil/flows/\n');
-      process.stdout.write('  .yggdrasil/knowledge/ (decisions, patterns, invariants)\n');
-      process.stdout.write(
-        '  .yggdrasil/templates/ (node, aspect, flow, knowledge)\n',
-      );
+      process.stdout.write('  .yggdrasil/templates/ (node, aspect, flow)\n');
       process.stdout.write(`  ${path.relative(projectRoot, rulesPath)} (rules)\n\n`);
       process.stdout.write('Next steps:\n');
       process.stdout.write('  1. Edit .yggdrasil/config.yaml — set name, stack, standards\n');

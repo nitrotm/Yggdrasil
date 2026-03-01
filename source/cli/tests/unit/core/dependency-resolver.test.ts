@@ -44,7 +44,6 @@ function createGraph(nodes: GraphNode[], rootPath = '/tmp/.yggdrasil'): Graph {
     nodes: nodeMap,
     aspects: [],
     flows: [],
-    knowledge: [],
     templates: [],
     rootPath,
   };

@@ -61,7 +61,7 @@ Always execute these commands before doing anything else. *(Exception: If the us
 1. `yg journal-read` -> If entries exist, consolidate them into the graph, then `yg journal-archive`.
 2. `yg drift` -> If **drift** (code changed, graph baseline stale): run `yg drift-sync` for each affected node. Do NOT ask the user — they do not need to know this step. If **missing** or **unmaterialized**: report and ask the user how to proceed.
 3. `yg status` -> Report graph health.
-4. `yg validate` -> If W008 stale-knowledge appears, update the knowledge artifacts to reflect current node state.
+4. `yg validate` -> Fix any structural errors.
 
 ### B. Answering Questions (When a specific file or area is known)
 When the user asks a question and you know (or can infer) which file or area of the codebase it concerns:
@@ -103,9 +103,11 @@ STOP. Do not modify the code. First determine: **Is this greenfield or existing 
 * **If GREENFIELD (empty directory, new project):** Do NOT offer blackbox. Create proper nodes (reverse engineering or upfront design) before implementing.
 * **If PARTIALLY MAPPED (file is unmapped, but lives inside a mapped module):** Stop and ask the user if this file should be added to the existing node or if a new node is required.
 * **If EXISTING CODE (legacy, third-party):** Present the user with 3 options and wait:
-  * **Option 1: Reverse Engineering:** Create/extend standard nodes to map the area fully before modifying. **Order:** Create aspects, flows, and knowledge first; then the model (nodes). Shared context precedes component mapping.
+  * **Option 1: Reverse Engineering:** Create/extend standard nodes to map the area fully before modifying.
   * **Option 2: Blackbox Coverage:** Create a `blackbox: true` node to establish ownership without deep semantic exploration.
   * **Option 3: Abort/Change Plan:** Do not touch the file.
+
+**Reverse engineering order:** When reverse-engineering an area, create graph elements in this order: (1) aspects, (2) flows, (3) model nodes. Never create model nodes before cross-cutting rules exist — they depend on them.
 
 ---
 
@@ -116,16 +118,15 @@ When adding features, changing architecture, or doing graph-first design:
 1. **Check Blast Radius:** Before modifying a node that others depend on, run `yg impact --node <node_path> --simulate`. Report the impact to the user.
 2. **Read Config & Templates:**
    * Check `.yggdrasil/config.yaml` for allowed `node_types` and `tags`.
-   * **CRITICAL:** ALWAYS read the schema in `.yggdrasil/templates/` for the element type (node.yaml, aspect.yaml, flow.yaml, knowledge.yaml) before creating or editing it.
+   * **CRITICAL:** ALWAYS read the schema in `.yggdrasil/templates/` for the element type (node.yaml, aspect.yaml, flow.yaml) before creating or editing it.
 3. **Validate & Fix:** Run `yg validate`. You must fix all E-codes (Errors).
 4. **Token Economy & W-codes:**
    * W005/W006: Context package too large. Consider splitting the node.
-   * W008: Stale semantic memory. Update knowledge artifacts.
 
 **Graph Modification Checklist**
 Whenever you change the graph structure or semantics, you MUST output and execute this exact checklist:
 
-- [ ] 1. Read schema from `.yggdrasil/templates/` (node.yaml, aspect.yaml, flow.yaml, or knowledge.yaml for the element type)
+- [ ] 1. Read schema from `.yggdrasil/templates/` (node.yaml, aspect.yaml, or flow.yaml for the element type)
 - [ ] 2. Edit graph files (`node.yaml`, artifacts)
 - [ ] 3. Verify corresponding source files exist and their behavior matches updated artifacts
 - [ ] 4. Validate (ran `yg validate` — fix all Errors)
@@ -142,34 +143,31 @@ Whenever you change the graph structure or semantics, you MUST output and execut
 To avoid broken references (`E004`, `E005`), use correct relative paths:
 * **Node paths** (used in CLI, relations, flow nodes): Relative to `.yggdrasil/model/` (e.g., `orders/order-service`).
 * **File paths** (used in mapping, `yg owner`): Relative to the repository root (e.g., `src/modules/orders/order.service.ts`).
-* **Knowledge paths** (used in node explicit refs): Relative to `.yggdrasil/knowledge/` (e.g., `decisions/001-event-sourcing`).
-
 ---
 
 ## 6. GRAPH STRUCTURE, CONFIG & TEMPLATES CHEAT SHEET
 
 The graph lives entirely under `.yggdrasil/`. You NEVER guess structure. You MUST ALWAYS read the corresponding schema reference in `.yggdrasil/templates/` before creating or editing any graph file.
 
-* **`.yggdrasil/config.yaml`**: Defines `node_types`, `tags`, `artifacts`, `knowledge_categories`.
-* **`.yggdrasil/templates/`**: Schemas for each graph layer — `node.yaml`, `aspect.yaml`, `flow.yaml`, `knowledge.yaml`.
+* **`.yggdrasil/config.yaml`**: Defines `node_types`, `tags`, `artifacts`.
+* **`.yggdrasil/templates/`**: Schemas for each graph layer — `node.yaml`, `aspect.yaml`, `flow.yaml`.
 * **`.yggdrasil/model/`**: Node tree. Each node is a directory with `node.yaml` and artifact files.
 * **`.yggdrasil/aspects/`**: Cross-cutting rules. Directory contains `aspect.yaml` and `.md` content.
 * **`.yggdrasil/flows/`**: End-to-end processes. Directory contains `flow.yaml` and `.md` content.
-* **`.yggdrasil/knowledge/`**: Repo-wide wisdom. Directory contains `knowledge.yaml` and `.md` content.
 
 ---
 
-## 7. CONTEXT ASSEMBLY & KNOWLEDGE DECONSTRUCTION (HOW TO MAP FILES)
+## 7. CONTEXT ASSEMBLY (HOW TO MAP FILES)
 
 Your ultimate goal when describing a file or node is **Context Reproducibility**. A future agent reading ONLY the output of `yg build-context` for this node must be able to perfectly reconstruct the source code's behavior, constraints, environment, and purpose.
 
-However, you must NOT dump all knowledge into a single file. Yggdrasil's context package is **multi-layered** and hierarchically assembled. When you map existing code or design new code, you must deconstruct the knowledge and place it at the correct abstraction layer so the engine can mechanically reassemble it.
+However, you must NOT dump all context into a single file. Yggdrasil's context package is **multi-layered** and hierarchically assembled. When you map existing code or design new code, you must deconstruct content and place it at the correct abstraction layer so the engine can mechanically reassemble it.
 
 ### CRITICAL RULE: CAPTURE INTENT, BUT NEVER INVENT IT
 The graph is not just a structural map; it is the semantic meaning of the system. Code explains "what" and "how". The graph MUST explain "WHY".
 
 1. **ALWAYS Capture the User's "Why":** If the user explains the business reason, intent, or rationale behind a request (e.g., "We need to do X because Y"), you MUST permanently record this reasoning in the relevant graph artifacts (from `config.artifacts` that fit the content). Do not let the conversation context evaporate.
-2. **NEVER Invent the "Why":** Artifacts that imply human judgment (e.g. local decisions, `knowledge/invariants`) must reflect ACTUAL human choices.
+2. **NEVER Invent the "Why":** Artifacts that imply human judgment (e.g. local decisions) must reflect ACTUAL human choices.
 3. **NO Hallucinations:** You MUST NEVER infer or hallucinate a rationale, an architectural decision, or a business rule.
 4. **Ask if Missing:** If the user requests a significant architectural or business logic change but does not provide the rationale, you MUST ask them "Why are we making this change?" before documenting the decision in the graph.
 
@@ -177,7 +175,7 @@ When mapping a file, execute this mental routing:
 
 ### Layer 1: Unit Identity (Local Node Artifacts)
 * **What goes here:** Things exclusively true for this specific node.
-* **Routing:** **DO NOT ASSUME FILE NAMES.** You MUST read `.yggdrasil/config.yaml` (the `artifacts` section) to see the exact allowed filenames for the current project and their requirement conditions (e.g., `required: always` vs `when: has_incoming_relations`). Write local node knowledge ONLY into these configured files next to `node.yaml`.
+* **Routing:** **DO NOT ASSUME FILE NAMES.** You MUST read `.yggdrasil/config.yaml` (the `artifacts` section) to see the exact allowed filenames for the current project and their requirement conditions (e.g., `required: always` vs `when: has_incoming_relations`). Write node-specific content ONLY into these configured files next to `node.yaml`.
 * For each artifact in `config.artifacts`, use its `description` to decide what content belongs there. Create optional artifacts (those with `required: never`) when the node has matching content. Extract from source; do not invent.
 
 **Subagents:** When mapping a node, for each optional artifact in config, ask: "Does the source contain content matching this artifact's description?" If yes, create it. Do not invent — extract only what is implemented.
@@ -196,7 +194,7 @@ When creating or editing a graph node, or mapping source files to a node, after 
 * **What goes here:** How this node interacts with others. You must not duplicate external interfaces locally.
 * **Routing:**
   * If it calls another module: Add an outgoing structural `relation` in `node.yaml`. (The engine will automatically fetch the target's structural-context artifacts: responsibility, interface, constraints, errors).
-  * If it participates in an end-to-end process: Do not explain the whole process locally. Ensure the node is listed in `.yggdrasil/flows/<flow_name>/flow.yaml`. The engine will attach the flow knowledge automatically.
+  * If it participates in an end-to-end process: Do not explain the whole process locally. Ensure the node is listed in `.yggdrasil/flows/<flow_name>/flow.yaml`. The engine will attach the flow artifacts automatically.
 * **Flows — writing flow content:** When creating or editing flow artifacts (e.g. `description.md` in `flows/<name>/`), write business-first: describe the process from user/business perspective. Technical details only as inserts when they clarify the flow. Not technical-first with business inserts.
 
 ### Layer 3: Domain Context (Hierarchy)
@@ -205,18 +203,12 @@ When creating or editing a graph node, or mapping source files to a node, after 
 
 ### Layer 4: Cross-Cutting Rules (Aspects)
 * **What goes here:** Horizontal requirements like logging, auth, rate-limiting, or specific frameworks.
-* **Routing:** Do NOT write generic rules like "This node must log all errors" in local artifacts. Instead, read `config.yaml` for available `tags`. Add the relevant tag (e.g., `requires-audit`) to `node.yaml`. The engine will automatically attach the aspect knowledge.
-
-### Layer 5: Long-Term Memory (Knowledge Elements)
-* **What goes here:** Global architectural decisions, design patterns, and systemic invariants.
-* **Routing:** Read `config.yaml` (the `knowledge_categories` section) to know what categories exist.
-  * If the file implements a standard pattern: Do not describe the pattern locally. Add a `knowledge` reference in `node.yaml` to the existing pattern.
-  * If the file reveals an undocumented global invariant or decision: Ask the user to confirm it. If confirmed, create it under `.yggdrasil/knowledge/<category>/` so all future nodes inherit it.
+* **Routing:** Do NOT write generic rules like "This node must log all errors" in local artifacts. Instead, read `config.yaml` for available `tags`. Add the relevant tag (e.g., `requires-audit`) to `node.yaml`. The engine will automatically attach the aspect content.
 
 **THE COMPLETENESS CHECK:**
 Before finishing a mapping, ask yourself: *"If I delete the source file and give another agent ONLY the output of `yg build-context`, can they recreate it perfectly based on the configured artifacts, AND will they understand EXACTLY WHY this code exists and why it was designed this way?"*
 - If no -> You missed a local constraint, a relation, or you failed to capture the user's provided rationale.
-- If yes, but the local files are bloated -> You failed to deconstruct knowledge into Tags, Aspects, Flows, and Hierarchy. Fix the routing.
+- If yes, but the local files are bloated -> You failed to deconstruct into Tags, Aspects, Flows, and Hierarchy. Fix the routing.
 
 ---
 

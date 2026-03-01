@@ -64,7 +64,7 @@ describe('drift-detector', () => {
       await mkdir(nodeDir, { recursive: true });
       await writeFile(
         path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
       );
       await writeFile(path.join(modelDir, 'svc', 'node.yaml'), 'name: Svc\ntype: module\n');
       await writeFile(
@@ -97,7 +97,7 @@ describe('drift-detector', () => {
 
       await writeFile(
         path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
       );
       await writeFile(
         path.join(yggRoot, 'model', 'multi', 'node.yaml'),
@@ -224,7 +224,7 @@ mapping:
     await mkdir(srcDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
       await writeFile(
@@ -265,7 +265,7 @@ mapping:
     await writeFile(path.join(srcDir, 'a.ts'), 'a');
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
     await writeFile(
@@ -303,7 +303,7 @@ mapping:
     await writeFile(path.join(srcDir, 'exist.ts'), 'content');
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
     await writeFile(
@@ -331,7 +331,7 @@ mapping:
     await mkdir(srcDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
     await writeFile(
@@ -366,7 +366,7 @@ mapping:
     await writeFile(path.join(srcDir, 'file.ts'), 'v1');
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
     await writeFile(

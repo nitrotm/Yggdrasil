@@ -35,7 +35,6 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
     tags: parseStringArray(raw.tags),
     blackbox: (raw.blackbox as boolean) ?? false,
     relations: relations.length > 0 ? relations : undefined,
-    knowledge: parseStringArray(raw.knowledge),
     mapping,
   };
 }

@@ -5,7 +5,6 @@ import type {
   GraphNode,
   AspectDef,
   FlowDef,
-  KnowledgeItem,
   SchemaDef,
   YggConfig,
 } from '../model/types.js';
@@ -13,7 +12,6 @@ import { parseConfig } from '../io/config-parser.js';
 import { parseNodeYaml } from '../io/node-parser.js';
 import { parseAspect } from '../io/aspect-parser.js';
 import { parseFlow } from '../io/flow-parser.js';
-import { parseKnowledge } from '../io/knowledge-parser.js';
 import { parseSchema } from '../io/template-parser.js';
 import { readArtifacts } from '../io/artifact-reader.js';
 import { findYggRoot } from '../utils/paths.js';
@@ -29,7 +27,6 @@ const FALLBACK_CONFIG: YggConfig = {
   tags: [],
   node_types: [],
   artifacts: {},
-  knowledge_categories: [],
 };
 
 export async function loadGraph(
@@ -65,10 +62,6 @@ export async function loadGraph(
 
   const aspects = await loadAspects(path.join(yggRoot, 'aspects'));
   const flows = await loadFlows(path.join(yggRoot, 'flows'));
-  const knowledge = await loadKnowledge(
-    path.join(yggRoot, 'knowledge'),
-    config.knowledge_categories,
-  );
   const schemas = await loadSchemas(path.join(yggRoot, 'templates'));
 
   return {
@@ -78,7 +71,6 @@ export async function loadGraph(
     nodes,
     aspects,
     flows,
-    knowledge,
     schemas,
     rootPath: yggRoot,
   };
@@ -186,38 +178,6 @@ async function loadFlows(flowsDir: string): Promise<FlowDef[]> {
   } catch {
     return [];
   }
-}
-
-async function loadKnowledge(
-  knowledgeDir: string,
-  categories: Array<{ name: string }>,
-): Promise<KnowledgeItem[]> {
-  const items: KnowledgeItem[] = [];
-  const categorySet = new Set(categories.map((c) => c.name));
-
-  try {
-    const catEntries = await readdir(knowledgeDir, { withFileTypes: true });
-    for (const catEntry of catEntries) {
-      if (!catEntry.isDirectory()) continue;
-      if (!categorySet.has(catEntry.name)) continue;
-
-      const catPath = path.join(knowledgeDir, catEntry.name);
-      const itemEntries = await readdir(catPath, { withFileTypes: true });
-
-      for (const itemEntry of itemEntries) {
-        if (!itemEntry.isDirectory()) continue;
-        const itemDir = path.join(catPath, itemEntry.name);
-        const knowledgeYamlPath = path.join(itemDir, 'knowledge.yaml');
-        const relativePath = `${catEntry.name}/${itemEntry.name}`;
-        const item = await parseKnowledge(itemDir, knowledgeYamlPath, catEntry.name, relativePath);
-        items.push(item);
-      }
-    }
-  } catch {
-    // knowledge/ may not exist
-  }
-
-  return items;
 }
 
 async function loadSchemas(templatesDir: string): Promise<SchemaDef[]> {

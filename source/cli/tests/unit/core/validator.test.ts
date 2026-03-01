@@ -46,12 +46,10 @@ function createGraph(overrides: Partial<Graph> = {}): Graph {
       tags: ['valid-tag'],
       node_types: ['service'],
       artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-      knowledge_categories: [],
     },
     nodes: new Map(),
     aspects: [],
     flows: [],
-    knowledge: [],
     schemas: [],
     rootPath: path.join(FIXTURE_PROJECT, '.yggdrasil'),
     ...overrides,
@@ -132,7 +130,6 @@ describe('validator', () => {
         tags: ['audit'],
         node_types: ['service'],
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-        knowledge_categories: [],
       },
       aspects: [
         { name: 'Aspect One', tag: 'audit', artifacts: [] },
@@ -160,7 +157,7 @@ describe('validator', () => {
     await mkdir(badNodeDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(badNodeDir, 'node.yaml'), 'type: service\n# missing name');
 
@@ -199,7 +196,7 @@ describe('validator', () => {
     await mkdir(serviceDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\ntags: []',
     );
     await writeFile(path.join(serviceDir, 'node.yaml'), 'name: Svc\ntype: service\n');
     await writeFile(path.join(orphanDir, 'readme.md'), '# orphan content');
@@ -242,7 +239,6 @@ describe('validator', () => {
           responsibility: { required: 'always', description: 'x' },
           optional: { required: 'never', description: '' },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('a', {
@@ -312,7 +308,6 @@ describe('validator', () => {
         tags: [],
         node_types: ['service'],
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('a', createNode('a'));
@@ -475,67 +470,17 @@ describe('validator', () => {
     expect(issues[0].message).toContain('orders/order-service');
   });
 
-  it('scope-tags-defined returns error when knowledge scope references undefined tag', async () => {
-    const graph = createGraph();
-    graph.nodes.set('a', createNode('a'));
-    graph.knowledge.push({
-      path: 'decisions/001',
-      name: 'D1',
-      category: 'decisions',
-      scope: { tags: ['undefined-tag'] },
-      artifacts: [{ filename: 'content.md', content: 'x' }],
-    });
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'broken-scope-ref');
-    expect(issues.some((i) => i.message.includes('undefined tag'))).toBe(true);
-  });
-
   it('broken-flow-ref returns error for non-existent node in flow', async () => {
     const graph = createGraph();
     graph.nodes.set('a', createNode('a'));
     graph.flows.push({
       name: 'F1',
       nodes: ['a', 'nonexistent/node'],
-      knowledge: [],
       artifacts: [{ filename: 'desc.md', content: 'x' }],
     });
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'broken-flow-ref');
-    expect(issues.some((i) => i.message.includes('non-existent node'))).toBe(true);
-  });
-
-  it('broken-flow-ref returns error for non-existent knowledge in flow', async () => {
-    const graph = createGraph();
-    graph.nodes.set('a', createNode('a'));
-    graph.flows.push({
-      name: 'F1',
-      nodes: ['a'],
-      knowledge: ['decisions/missing'],
-      artifacts: [{ filename: 'desc.md', content: 'x' }],
-    });
-
-    const result = await validate(graph);
-    const flowKnowledgeIssues = result.issues.filter(
-      (i) => i.code === 'E005' && i.message.includes('non-existent knowledge'),
-    );
-    expect(flowKnowledgeIssues.length).toBeGreaterThan(0);
-  });
-
-  it('broken-scope-ref returns error when knowledge scope references non-existent node', async () => {
-    const graph = createGraph();
-    graph.nodes.set('a', createNode('a'));
-    graph.knowledge.push({
-      path: 'decisions/001',
-      name: 'D1',
-      category: 'decisions',
-      scope: { nodes: ['missing/node'] },
-      artifacts: [{ filename: 'content.md', content: 'x' }],
-    });
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'broken-scope-ref');
     expect(issues.some((i) => i.message.includes('non-existent node'))).toBe(true);
   });
 
@@ -554,7 +499,6 @@ describe('validator', () => {
             description: '',
           },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('a', createNode('a'));
@@ -579,7 +523,6 @@ describe('validator', () => {
             description: 'x',
           },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('svc', createNode('svc'));
@@ -595,7 +538,6 @@ describe('validator', () => {
       min_artifact_length: 100,
       max_direct_relations: 10,
       context_budget: { warning: 5000, error: 10000 },
-      knowledge_staleness_days: 90,
     };
     graph.nodes.set('a', {
       ...createNode('a'),
@@ -614,7 +556,6 @@ describe('validator', () => {
       min_artifact_length: 50,
       max_direct_relations: 2,
       context_budget: { warning: 5000, error: 10000 },
-      knowledge_staleness_days: 90,
     };
     const relations = Array.from({ length: 5 }, (_, i) => ({
       target: `target/${i}`,
@@ -681,15 +622,6 @@ describe('validator', () => {
     expect(issues).toHaveLength(0);
   });
 
-  it('broken-knowledge-ref returns error for non-existent knowledge', async () => {
-    const graph = createGraph();
-    graph.nodes.set('a', createNode('a', { knowledge: ['decisions/missing'] }));
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'broken-knowledge-ref');
-    expect(issues).toHaveLength(1);
-  });
-
   it('missing-artifact when required has_incoming_relations and node has incoming', async () => {
     const graph = createGraph({
       config: {
@@ -705,7 +637,6 @@ describe('validator', () => {
             description: '',
           },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('dep', createNode('dep', { relations: [{ target: 'svc', type: 'uses' }] }));
@@ -736,7 +667,6 @@ describe('validator', () => {
             description: '',
           },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('svc', {
@@ -767,7 +697,6 @@ describe('validator', () => {
             description: '',
           },
         },
-        knowledge_categories: [],
       },
     });
     graph.nodes.set('svc', {
@@ -835,201 +764,27 @@ describe('validator', () => {
 
   it('checkSchemas: W010 when required schema is missing', async () => {
     const graph = createGraph();
-    graph.schemas = [
-      { schemaType: 'node' },
-      { schemaType: 'aspect' },
-      { schemaType: 'flow' },
-      // knowledge missing
-    ];
+    graph.schemas = [{ schemaType: 'node' }, { schemaType: 'aspect' }];
+    // flow missing
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-schema');
     expect(issues).toHaveLength(1);
     expect(issues[0].code).toBe('W010');
-    expect(issues[0].message).toContain('knowledge.yaml');
+    expect(issues[0].message).toContain('flow');
   });
 
-  it('checkSchemas: no W010 when all 4 schemas present', async () => {
+  it('checkSchemas: no W010 when all 3 schemas present', async () => {
     const graph = createGraph();
     graph.schemas = [
       { schemaType: 'node' },
       { schemaType: 'aspect' },
       { schemaType: 'flow' },
-      { schemaType: 'knowledge' },
     ];
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-schema');
     expect(issues).toHaveLength(0);
-  });
-
-  it('missing-knowledge-category-dir returns E017 when category has no directory', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-e017');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const modelSvcDir = path.join(yggRoot, 'model', 'svc');
-    const knowledgeDecisionsDir = path.join(yggRoot, 'knowledge', 'decisions');
-    await mkdir(modelSvcDir, { recursive: true });
-    await mkdir(knowledgeDecisionsDir, { recursive: true });
-    await writeFile(path.join(modelSvcDir, 'node.yaml'), 'name: Svc\ntype: service\n');
-    await writeFile(path.join(modelSvcDir, 'responsibility.md'), 'x'.repeat(60));
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories:\n  - name: decisions\n    description: x\n  - name: regulations\n    description: x\n',
-    );
-
-    const graph = await loadGraph(tmpDir);
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'missing-knowledge-category-dir');
-    expect(issues).toHaveLength(1);
-    expect(issues[0].code).toBe('E017');
-    expect(issues[0].message).toContain('regulations');
-    expect(issues[0].message).toContain('knowledge/regulations/');
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('missing-knowledge-category-dir returns E017 for all categories when knowledge/ does not exist', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-e017-no-knowledge');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const modelSvcDir = path.join(yggRoot, 'model', 'svc');
-    await mkdir(modelSvcDir, { recursive: true });
-    await writeFile(path.join(modelSvcDir, 'node.yaml'), 'name: Svc\ntype: service\n');
-    await writeFile(path.join(modelSvcDir, 'responsibility.md'), 'x'.repeat(60));
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories:\n  - name: decisions\n    description: x\n  - name: patterns\n    description: x\n',
-    );
-
-    const graph = await loadGraph(tmpDir);
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'missing-knowledge-category-dir');
-    expect(issues).toHaveLength(2);
-    expect(issues.map((i) => i.message)).toContain(
-      "Category 'decisions' in config has no knowledge/decisions/ directory",
-    );
-    expect(issues.map((i) => i.message)).toContain(
-      "Category 'patterns' in config has no knowledge/patterns/ directory",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('missing-pattern-example warns when pattern has no example file', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-pattern');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const patternDir = path.join(yggRoot, 'knowledge', 'patterns', 'my-pattern');
-    const modelSvcDir = path.join(yggRoot, 'model', 'svc');
-    await mkdir(patternDir, { recursive: true });
-    await mkdir(modelSvcDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: [{ name: patterns }, { name: decisions }]',
-    );
-    await writeFile(path.join(modelSvcDir, 'node.yaml'), 'name: S\ntype: service\n');
-    await writeFile(path.join(patternDir, 'knowledge.yaml'), 'name: MyPattern\n');
-
-    try {
-      const graph = await loadGraph(tmpDir);
-      const result = await validate(graph);
-      const issues = result.issues.filter((i) => i.rule === 'missing-example');
-      expect(issues.some((i) => i.message.includes('patterns/my-pattern'))).toBe(true);
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it('unknown-knowledge-category when knowledge dir has unknown subdir', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-unknown-cat');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const knowledgeDir = path.join(yggRoot, 'knowledge', 'unknown-category');
-    const modelSvcDir = path.join(yggRoot, 'model', 'svc');
-    await mkdir(knowledgeDir, { recursive: true });
-    await mkdir(modelSvcDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: [{ name: decisions }]',
-    );
-    await writeFile(path.join(modelSvcDir, 'node.yaml'), 'name: S\ntype: service\n');
-
-    try {
-      const graph = await loadGraph(tmpDir);
-      graph.rootPath = yggRoot;
-      const result = await validate(graph);
-      const issues = result.issues.filter((i) => i.rule === 'unknown-knowledge-category');
-      expect(issues.length).toBeGreaterThanOrEqual(1);
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it('stale-knowledge warns when node modified later than knowledge (Git commits)', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-stale');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const knowledgeDir = path.join(yggRoot, 'knowledge', 'decisions', '001');
-    const modelDir = path.join(yggRoot, 'model', 'svc');
-    await mkdir(knowledgeDir, { recursive: true });
-    await mkdir(modelDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: [{ name: decisions }]',
-    );
-    await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
-    await writeFile(
-      path.join(knowledgeDir, 'knowledge.yaml'),
-      'name: D1\nscope:\n  nodes: [svc]\n',
-    );
-    await writeFile(path.join(knowledgeDir, 'content.md'), 'decision content');
-
-    const { execSync } = await import('node:child_process');
-    execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
-    execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: 'pipe' });
-    execSync('git config user.name "Test"', { cwd: tmpDir, stdio: 'pipe' });
-    execSync('git add .yggdrasil/knowledge/decisions/001', { cwd: tmpDir, stdio: 'pipe' });
-    execSync('git commit -m "add knowledge"', {
-      cwd: tmpDir,
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        GIT_AUTHOR_DATE: '2020-01-01 00:00:00',
-        GIT_COMMITTER_DATE: '2020-01-01 00:00:00',
-      },
-    });
-    execSync('git add .yggdrasil/model/svc', { cwd: tmpDir, stdio: 'pipe' });
-    execSync('git commit -m "add node"', { cwd: tmpDir, stdio: 'pipe' });
-
-    try {
-      const graph = await loadGraph(tmpDir);
-      graph.config.quality = {
-        min_artifact_length: 50,
-        max_direct_relations: 10,
-        context_budget: { warning: 5000, error: 10000 },
-        knowledge_staleness_days: 1,
-      };
-
-      const result = await validate(graph);
-      const issues = result.issues.filter((i) => i.rule === 'stale-knowledge');
-      expect(issues.length).toBeGreaterThanOrEqual(1);
-      expect(issues[0].message).toContain('Git commits');
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it('unreachable-knowledge warns when knowledge scope tags match no node', async () => {
-    const graph = createGraph();
-    graph.nodes.set('a', createNode('a'));
-    graph.knowledge.push({
-      path: 'decisions/orphan',
-      name: 'Orphan',
-      category: 'decisions',
-      scope: { tags: ['never-used-tag'] },
-      artifacts: [{ filename: 'content.md', content: 'x' }],
-    });
-    graph.config.tags = ['valid-tag', 'never-used-tag'];
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'unreachable-knowledge');
-    expect(issues.some((i) => i.message.includes('decisions/orphan'))).toBe(true);
   });
 
   describe('CLI exit codes', () => {

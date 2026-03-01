@@ -8,7 +8,6 @@ import type {
   ContextSection,
   YggConfig,
   AspectDef,
-  KnowledgeItem,
   FlowDef,
   Relation,
 } from '../model/types.js';
@@ -25,27 +24,21 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
   }
 
   const nodeTags = new Set(node.meta.tags ?? []);
-  const seenKnowledge = new Set<string>();
   const layers: ContextLayer[] = [];
 
   // 1. Global
   layers.push(buildGlobalLayer(graph.config));
 
-  // 2–5. Knowledge (with deduplication)
-  for (const k of collectKnowledgeItems(graph, nodePath, nodeTags, seenKnowledge)) {
-    layers.push(buildKnowledgeLayer(k));
-  }
-
-  // 6. Hierarchy (only configured artifacts that exist in ancestor's directory)
+  // 2. Hierarchy (only configured artifacts that exist in ancestor's directory)
   const ancestors = collectAncestors(node);
   for (const ancestor of ancestors) {
     layers.push(buildHierarchyLayer(ancestor, graph.config));
   }
 
-  // 7. Own (node.yaml + configured artifacts)
+  // 3. Own (node.yaml + configured artifacts)
   layers.push(await buildOwnLayer(node, graph.config, graph.rootPath));
 
-  // 8. Relational (structural + event, with consumes/failure)
+  // 4. Relational (structural + event, with consumes/failure)
   for (const relation of node.meta.relations ?? []) {
     const target = graph.nodes.get(relation.target);
     if (!target) {
@@ -58,7 +51,7 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
     }
   }
 
-  // 9. Aspects
+  // 5. Aspects
   for (const tag of nodeTags) {
     for (const aspect of graph.aspects) {
       if (aspect.tag === tag) {
@@ -67,17 +60,9 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
     }
   }
 
-  // 10. Flows (node + all ancestors)
+  // 6. Flows (node + all ancestors)
   for (const flow of collectParticipatingFlows(graph, node)) {
     layers.push(buildFlowLayer(flow));
-    for (const kPath of flow.knowledge ?? []) {
-      const norm = kPath.replace(/\/$/, '');
-      const k = graph.knowledge.find((item) => item.path === norm || item.path === kPath);
-      if (k && !seenKnowledge.has(k.path)) {
-        seenKnowledge.add(k.path);
-        layers.push(buildKnowledgeLayer(k, true));
-      }
-    }
   }
 
   const fullText = layers.map((l) => l.content).join('\n\n');
@@ -95,59 +80,6 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
   };
 }
 
-function collectKnowledgeItems(
-  graph: Graph,
-  nodePath: string,
-  nodeTags: Set<string>,
-  seenKnowledge: Set<string>,
-): KnowledgeItem[] {
-  const result: KnowledgeItem[] = [];
-
-  // 2. scope global
-  for (const k of graph.knowledge) {
-    if (k.scope === 'global' && !seenKnowledge.has(k.path)) {
-      seenKnowledge.add(k.path);
-      result.push(k);
-    }
-  }
-
-  // 3. scope tags
-  for (const k of graph.knowledge) {
-    if (typeof k.scope === 'object' && 'tags' in k.scope) {
-      const overlap = k.scope.tags.some((t) => nodeTags.has(t));
-      if (overlap && !seenKnowledge.has(k.path)) {
-        seenKnowledge.add(k.path);
-        result.push(k);
-      }
-    }
-  }
-
-  // 4. scope nodes
-  for (const k of graph.knowledge) {
-    if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-      if (k.scope.nodes.includes(nodePath) && !seenKnowledge.has(k.path)) {
-        seenKnowledge.add(k.path);
-        result.push(k);
-      }
-    }
-  }
-
-  // 5. declared by node
-  const node = graph.nodes.get(nodePath);
-  if (node?.meta.knowledge) {
-    for (const kPath of node.meta.knowledge) {
-      const norm = kPath.replace(/\/$/, '');
-      const k = graph.knowledge.find((item) => item.path === norm || item.path === kPath);
-      if (k && !seenKnowledge.has(k.path)) {
-        seenKnowledge.add(k.path);
-        result.push(k);
-      }
-    }
-  }
-
-  return result;
-}
-
 function collectParticipatingFlows(graph: Graph, node: GraphNode): FlowDef[] {
   const paths = new Set<string>([node.path, ...collectAncestors(node).map((a) => a.path)]);
   return graph.flows.filter((f) => f.nodes.some((n) => paths.has(n)));
@@ -163,19 +95,6 @@ export function buildGlobalLayer(config: YggConfig): ContextLayer {
   }
   content += `\n**Standards:**\n${config.standards || '(none)'}\n`;
   return { type: 'global', label: 'Global Context', content };
-}
-
-export function buildKnowledgeLayer(k: KnowledgeItem, fromFlow?: boolean): ContextLayer {
-  const categoryLabel = k.category.charAt(0).toUpperCase() + k.category.slice(1);
-  const content = k.artifacts.map((a) => `### ${a.filename}\n${a.content}`).join('\n\n');
-  const label = fromFlow
-    ? `Long-term Memory (from flow): ${k.name}`
-    : `${categoryLabel}: ${k.name}`;
-  return {
-    type: 'knowledge',
-    label,
-    content,
-  };
 }
 
 function filterArtifactsByConfig(
@@ -308,7 +227,6 @@ function buildSections(layers: ContextLayer[], mapping: string[] | null): Contex
 
   return [
     { key: 'Global', layers: layers.filter((l) => l.type === 'global') },
-    { key: 'Knowledge', layers: layers.filter((l) => l.type === 'knowledge') },
     { key: 'Hierarchy', layers: layers.filter((l) => l.type === 'hierarchy') },
     { key: 'OwnArtifacts', layers: ownLayers },
     { key: 'Dependencies', layers: layers.filter((l) => l.type === 'relational') },

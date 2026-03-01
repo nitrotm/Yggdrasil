@@ -18,8 +18,6 @@ name: Checkout Flow
 nodes:
   - orders/order-service
   - auth/auth-api
-knowledge:
-  - decisions/001-example
 `,
       'utf-8',
     );
@@ -28,7 +26,6 @@ knowledge:
 
     expect(flow.name).toBe('Checkout Flow');
     expect(flow.nodes).toEqual(['orders/order-service', 'auth/auth-api']);
-    expect(flow.knowledge).toEqual(['decisions/001-example']);
     expect(flow.artifacts).toBeDefined();
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -122,26 +119,6 @@ nodes: [123, {}]
     await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow(
       "'nodes' must contain string node paths",
     );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('filters knowledge to strings only', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-knowledge');
-    await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
-    await writeFile(
-      flowYaml,
-      `
-name: Test Flow
-nodes: [a/b]
-knowledge: [dec/001, 123, "ok"]
-`,
-      'utf-8',
-    );
-
-    const flow = await parseFlow(tmpDir, flowYaml);
-    expect(flow.knowledge).toEqual(['dec/001', 'ok']);
 
     await rm(tmpDir, { recursive: true, force: true });
   });

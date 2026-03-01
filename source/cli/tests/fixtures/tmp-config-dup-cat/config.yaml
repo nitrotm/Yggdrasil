@@ -1,7 +1,7 @@
-name: Test
+name: "Dup"
 node_types: [service]
 artifacts:
   responsibility:
     required: always
-    description: x
+    description: "x"
 tags: []

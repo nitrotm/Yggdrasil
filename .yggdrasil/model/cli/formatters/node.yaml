@@ -7,8 +7,6 @@ relations:
     type: uses
     consumes: [ContextPackage]
 
-knowledge: []
-
 mapping:
   paths:
     - source/cli/src/formatters/

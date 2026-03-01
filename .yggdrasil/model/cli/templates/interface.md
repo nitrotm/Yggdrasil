@@ -4,7 +4,7 @@ Public API consumed by cli/commands/init.
 
 ## default-config.ts
 
-- `DEFAULT_CONFIG: string` — YAML string for default config.yaml (name, stack, standards, tags, node_types, artifacts, knowledge_categories, quality)
+- `DEFAULT_CONFIG: string` — YAML string for default config.yaml (name, stack, standards, tags, node_types, artifacts, quality)
 
 ## platform.ts
 
@@ -21,4 +21,4 @@ Platform paths: Cursor (.cursor/rules/yggdrasil.mdc), Claude Code (CLAUDE.md + i
 
 ## graph-templates/
 
-Directory (source/cli/graph-templates/) — node.yaml, aspect.yaml, flow.yaml, knowledge.yaml. Schemas for each graph layer. Copied to .yggdrasil/templates/ during init. Not imported directly; init reads via readdir/readFile.
+Directory (source/cli/graph-templates/) — node.yaml, aspect.yaml, flow.yaml. Schemas for each graph layer. Copied to .yggdrasil/templates/ during init. Not imported directly; init reads via readdir/readFile.

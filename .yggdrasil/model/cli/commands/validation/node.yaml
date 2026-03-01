@@ -16,9 +16,6 @@ relations:
     type: uses
     consumes: [formatContextMarkdown]
 
-knowledge:
-  - patterns/command-error-handling
-
 mapping:
   paths:
     - source/cli/src/cli/validate.ts

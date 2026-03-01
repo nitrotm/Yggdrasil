@@ -25,9 +25,6 @@ relations:
     type: uses
     consumes: [Graph, GraphNode, OwnerResult]
 
-knowledge:
-  - patterns/command-error-handling
-
 mapping:
   paths:
     - source/cli/src/cli/tree.ts

@@ -4,8 +4,6 @@ tags: [deterministic]
 
 relations: []
 
-knowledge: []
-
 mapping:
   paths:
     - source/cli/src/templates/

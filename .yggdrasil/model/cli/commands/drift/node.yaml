@@ -10,9 +10,6 @@ relations:
     type: uses
     consumes: [detectDrift, syncDriftState]
 
-knowledge:
-  - patterns/command-error-handling
-
 mapping:
   paths:
     - source/cli/src/cli/drift.ts

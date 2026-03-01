@@ -13,9 +13,6 @@ relations:
     type: uses
     consumes: [normalizeMappingPaths, hashForMapping, perFileHashes]
 
-knowledge:
-  - invariants/002-graph-intended-truth
-
 mapping:
   paths:
     - source/cli/src/core/drift-detector.ts

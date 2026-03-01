@@ -8,7 +8,6 @@ relations:
     consumes:
       - YggConfig
       - ArtifactConfig
-      - KnowledgeCategory
       - QualityConfig
       - NodeMeta
       - NodeMapping
@@ -16,14 +15,11 @@ relations:
       - RelationType
       - Artifact
       - FlowDef
-      - KnowledgeItem
       - AspectDef
       - SchemaDef
       - DriftState
       - DriftNodeState
       - JournalEntry
-
-knowledge: []
 
 mapping:
   paths:

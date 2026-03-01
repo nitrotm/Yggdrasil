@@ -2,13 +2,13 @@
 
 Type library — exports TypeScript interfaces and types only. No runtime functions. Used by cli/core, cli/io, cli/commands, cli/formatters.
 
-**Config:** YggConfig, ArtifactConfig, QualityConfig, KnowledgeCategory
+**Config:** YggConfig, ArtifactConfig, QualityConfig
 
 **Node:** Graph, GraphNode, NodeMeta, Relation, RelationType, NodeMapping, Artifact
 
-**Graph elements:** AspectDef, FlowDef, KnowledgeItem, SchemaDef
+**Graph elements:** AspectDef, FlowDef, SchemaDef
 
-**SchemaDef:** `{ schemaType: string }` — inferred from filename stem (node, aspect, flow, knowledge). Populated by loadSchemas from .yggdrasil/templates/.
+**SchemaDef:** `{ schemaType: string }` — inferred from filename stem (node, aspect, flow). Populated by loadSchemas from .yggdrasil/templates/.
 
 **Context:** ContextPackage, ContextLayer, ContextSection, ContextSectionKey
 
@@ -28,4 +28,4 @@ Type library — exports TypeScript interfaces and types only. No runtime functi
 
 **Relation:** target, type, optional consumes, failure, event_name
 
-**Graph:** config, nodes (Map), aspects, flows, knowledge, schemas, rootPath, optional configError, nodeParseErrors
+**Graph:** config, nodes (Map), aspects, flows, schemas, rootPath, optional configError, nodeParseErrors

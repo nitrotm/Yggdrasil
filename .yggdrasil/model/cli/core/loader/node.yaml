@@ -13,9 +13,6 @@ relations:
     type: uses
     consumes: [findYggRoot]
 
-knowledge:
-  - invariants/002-graph-intended-truth
-
 mapping:
   paths:
     - source/cli/src/core/graph-loader.ts

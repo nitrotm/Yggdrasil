@@ -9,9 +9,6 @@ relations:
     consumes: [methodA, methodB]
     failure: 'retry 3x, then circuit-break'
 
-knowledge:
-  - decisions/001-choice-name
-
 mapping:
   paths:
     - src/modules/component/

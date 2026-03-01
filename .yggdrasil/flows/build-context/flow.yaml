@@ -5,5 +5,3 @@ nodes:
   - cli/core/validator
   - cli/core/context
   - cli/formatters
-knowledge:
-  - invariants/001-context-package-sufficient
