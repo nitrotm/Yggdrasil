@@ -502,7 +502,9 @@ nodes:
 ```
 
 Content artifacts in the flow directory (`description.md`, `sequence.md`, etc.) describe
-flow behavior, sequence, error handling, and edge cases.
+flow behavior, sequence, error handling, and edge cases. One flow directory represents
+one business process with all its paths — happy path, exceptions, cancellations. The
+`description.md` describes the full scope of that process, not just the success path.
 
 - `nodes` lists flow participants — paths are relative to `model/`.
 
@@ -512,6 +514,19 @@ context if the node or any of its ancestors is listed as a participant.
 Flows capture semantic content that belongs to **no single node**: orchestration logic,
 end-to-end sequences, what happens when one participant fails. This content is essential for
 implementation but lives above the component level.
+
+### Flow description.md format
+
+Every flow's `description.md` must include these sections:
+
+- `## Business context` — why this process exists
+- `## Trigger` — what initiates the process
+- `## Goal` — what success looks like
+- `## Participants` — nodes involved (align with `flow.yaml` nodes)
+- `## Paths` — **required**; must contain at least `### Happy path`; each other business path (cancellation, payment failure, timeout, partial fulfillment) gets its own `### [name]` subsection
+- `## Invariants across all paths` — business rules and technical conditions that hold regardless of path
+
+Example variant names: `### Payment failed`, `### User cancellation`, `### Timeout`, `### Partial fulfillment`
 
 ---
 
