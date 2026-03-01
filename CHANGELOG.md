@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-01
+
+### Changed
+
+- **BREAKING:** Context package section order changed from
+  Global → Hierarchy → OwnArtifacts → Dependencies → Aspects → Flows
+  to Global → Hierarchy → OwnArtifacts → Aspects → Relational.
+- Merged `Dependencies` and `Flows` sections into single `Relational` section.
+- Aspects now appear before relational context in context packages.
+- Assembly algorithm described as 5-step (was 6-step) in docs and rules.
+
 ## [0.4.0] - 2026-03-01
 
 ### Changed

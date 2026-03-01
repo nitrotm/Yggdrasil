@@ -16,6 +16,7 @@ You work on the Yggdrasil repository: an open-source product (CLI + infrastructu
 
 - Never edit generated rules (platform-specific rules files, or the Yggdrasil section in `AGENTS.md`). To change the rules content: edit `source/cli/src/templates/rules.ts` (content) or `source/cli/src/templates/platform.ts` (frontmatter), then build and run `yg init --platform <name> --upgrade`.
 - When modifying `docs/` or any `*.md`, run `npx markdownlint-cli2 "**/*.md" ".markdownlint-cli2.jsonc"` and fix issues.
+- **Always reflect changes in corresponding documentation.** When modifying code behavior, algorithms, or data structures, identify and update all documentation that describes the changed behavior — `docs/idea/` (spec), `docs/` (user docs), and `.yggdrasil/` (graph metadata). Changes to the spec or engine behavior are not complete until every document describing that behavior is consistent.
 
 ## Adding Support for a New Agent
 

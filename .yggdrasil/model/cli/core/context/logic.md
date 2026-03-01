@@ -20,7 +20,7 @@
 ## Output
 
 - `layers`: array of ContextLayer
-- `sections`: grouped by key (Global, Knowledge, Hierarchy, OwnArtifacts, Dependencies, Aspects, Flows)
+- `sections`: grouped by key (Global, Hierarchy, OwnArtifacts, Aspects, Relational). Relational merges structural dependencies, events, and flows.
 - `tokenCount`: estimateTokens(fullText) — ~4 chars per token
 - `mapping`: if node has mapping, add "Materialization Target" to own layers
 

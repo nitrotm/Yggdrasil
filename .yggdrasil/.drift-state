@@ -9,10 +9,10 @@ cli/core:
     source/cli/src/core/graph-loader.ts: 9232999167e64572f0f9d9dd8e5a103bf3fd99110281e8d50ed74643d141aa41
     source/cli/src/core/validator.ts: 817fd77e88aac1e3787d4e520156fa0ce4adee2ce841fe98e28f5f1cf77f0457
 cli/entry:
-  hash: 347b6fa7cf513d5f25b9898dfe18f58296e52d251b8420b200394a117eed9e3c
+  hash: 68a9e29d2530e27db548659fc1096c4914a107947c4078cac5d67494f364420d
   files:
     source/cli/src/bin.ts: c129f85232fda48cb2fec3acfa73e104c5222208e15324bb7b93811d2d67b511
-    source/cli/package.json: 678c85191b4f8743163709f5b3dd150af7d057f885736e5260cde8a9b6255b8a
+    source/cli/package.json: a0703a29c88e9c0e7c2c64993113452540e214975967d34dac8052be51363ac8
 cli/formatters:
   hash: 8a739db766be713426e5cef40fec8b0ebe0f151c712dce92f7997329bd7a2daf
   files:
@@ -32,10 +32,10 @@ cli/io:
     source/cli/src/io/node-parser.ts: 12d2484f47e1e012f92cf213265be108b47cbbbf137666f2ac65b39f9afb82f5
     source/cli/src/io/schema-parser.ts: 368e5897845e6ada6fbe58b4289c9363b3c77970d2be234117431d66cade2d6f
 cli/model:
-  hash: 6f63d3a5fb8151636283d2c51646301831ab5b5c01841a9c513a76c869cb86ac
+  hash: 313be3eceaec78d0ca856f3b7083b1a964ed0b423abc825aefe845868d864701
   files:
     source/cli/src/model/.gitkeep: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-    source/cli/src/model/types.ts: 5b61ac0bd865be762e2a34a44be4ea83a79ceaa90f9b5b82caefd97a2992a24d
+    source/cli/src/model/types.ts: 2f8ca916505f3e5c0ff405bf643fc2ca63d163185d4d757ad25d7af1c77512ef
 cli/templates:
   hash: dc3bde075c44a49cf3d068ec9c0318a9ea0d6b293e7b1b2505ea8941825f02a4
   files:
@@ -87,9 +87,9 @@ cli/core/loader:
     source/cli/src/core/graph-loader.ts: 648e9d192ff5c5f192a71705d9bbaf24f7040f7412803da9feb6a265ec7e6d45
     source/cli/src/core/graph-from-git.ts: d3a9faad4509eba0417651ba01095e2440e0771a34be67522c77c19e03f97809
 cli/core/context:
-  hash: 8786ba932eb1cace65d2e5ab191a35da3e5f5aef65cd10b37de95336cb8016ff
+  hash: 4541d07e264afaa69c971c16234a83ae39629f3558d526a380c9a7ef43ca647a
   files:
-    source/cli/src/core/context-builder.ts: ad4475b06c6dd82e0fb903bb1c34111c5e3aaacf3ca2470562daadd4300c4de7
+    source/cli/src/core/context-builder.ts: 2e9a9df360ef283b45e641e881cd9e609ab7cfa629443a1e96981bef602d1fcd
 cli/core/validator:
   hash: c5eebdf3769bd2cfca7f36370cc9785ee59acbad490170be505a8868bea3b677
   files:
@@ -102,3 +102,22 @@ cli/core/dependency-resolver:
   hash: 5607e151a32952801d29ef05da0edc5d4c8c5d448854e6a0e50ca7880bf6dd18
   files:
     source/cli/src/core/dependency-resolver.ts: 604a78da0634acc6134d90f77929b827027f1c122f347b196ab0ab6080785d1a
+docs:
+  hash: eac4fb17cbe43acb2f9fdcf8d702c70db3608738852788706fd8ed88a01ec043
+  files:
+    docs/cli-reference.md: 161d5802a2984d673767e5a792c26163d00248276c6af615cf3ccad3aaefde13
+    docs/configuration.md: d0d2a0ff15cf809815c051e150ca279edb6fe466e4f4cc1c0505912c23cd4f51
+    docs/getting-started.md: 0c6f6979260f1ec01112058effcdfef88de2bbc0eaeb5aa6f2acc6371473875c
+    docs/index.md: b80d645c5bee975943604a39ce0e4f0fb800816e5bebc25345d7bce86b42915e
+    docs/platforms.md: c89f550fbaabb022bf5bc0eaac8e08e1bd57cff095ce458a5ef8adf22c5f65f1
+    docs/package.json: e3c48dc4ed7f4a2fc56f5d8dec2cbf2a07ffcad6f566d41a206a88a68225d756
+    docs/package-lock.json: d8a051f9e23279dd8084002e1df4792283465743150d58df67a2c62adbc63112
+docs/idea:
+  hash: 7826a78f1d90f65113d667ffd0a018964e53340ef081e3d3fe0c1b5f64630f32
+  files:
+    docs/idea/engine.md: d904f29fae14630596de0d0952176fdc58aedb776022fe90409d92f936a814d3
+    docs/idea/foundation.md: 6b0c6a85564a9f21baa80674e3d33febe49daf840cbd9e1061a9425422145569
+    docs/idea/graph.md: 29cc1d29c3787fe878cc42ea8e546d979a02fc44b0d13a9ea50c6146c3f9b4d4
+    docs/idea/integration.md: 8dde7c23e2d967e637d14861285af0e672923b80dd79c63b4341fb37c1d9aa97
+    docs/idea/materialization.md: 16e764d0b35c0d71e471b4ea1406fcca26cbb5ce71a45f5689b0a2c9c670cffb
+    docs/idea/tools.md: fc68ebc74fdf1162f46378d3ddea052e76df3e0bd10fa1c8d4f585d8bd2e5ad2
