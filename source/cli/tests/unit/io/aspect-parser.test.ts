@@ -53,6 +53,25 @@ name: Test Aspect
     await rm(tmpDir, { recursive: true, force: true });
   });
 
+  it('parses implies when present', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-implies');
+    await mkdir(tmpDir, { recursive: true });
+    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    await writeFile(
+      aspectPath,
+      `name: HIPAA
+tag: requires-hipaa
+implies:
+  - requires-audit
+  - requires-encryption
+`,
+      'utf-8',
+    );
+    const aspect = await parseAspect(tmpDir, aspectPath);
+    expect(aspect.implies).toEqual(['requires-audit', 'requires-encryption']);
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
   it('defaults optional fields when missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect');
     await mkdir(tmpDir, { recursive: true });

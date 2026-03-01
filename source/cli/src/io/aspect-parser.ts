@@ -16,9 +16,18 @@ export async function parseAspect(aspectDir: string, aspectYamlPath: string): Pr
 
   const artifacts = await readArtifacts(aspectDir, ['aspect.yaml']);
 
+  let implies: string[] | undefined;
+  if (raw.implies !== undefined) {
+    if (!Array.isArray(raw.implies)) {
+      throw new Error(`Aspect file ${aspectYamlPath}: 'implies' must be an array of strings`);
+    }
+    implies = (raw.implies as unknown[]).filter((t): t is string => typeof t === 'string');
+  }
+
   return {
     name: (raw.name as string).trim(),
     tag: (raw.tag as string).trim(),
+    implies,
     artifacts,
   };
 }

@@ -81,6 +81,8 @@ export interface Artifact {
 export interface AspectDef {
   name: string;
   tag: string;
+  /** Tags of aspects to include automatically (composition) */
+  implies?: string[];
   artifacts: Artifact[];
 }
 
