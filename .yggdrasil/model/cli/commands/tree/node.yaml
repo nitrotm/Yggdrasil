@@ -1,0 +1,15 @@
+name: TreeCommand
+type: library
+aspects: [deterministic, cli-command-contract]
+
+relations:
+  - target: cli/core/loader
+    type: uses
+    consumes: [loadGraph]
+  - target: cli/model
+    type: uses
+    consumes: [GraphNode]
+
+mapping:
+  paths:
+    - source/cli/src/cli/tree.ts

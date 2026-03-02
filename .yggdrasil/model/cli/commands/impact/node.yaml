@@ -1,0 +1,27 @@
+name: ImpactCommand
+type: library
+aspects: [deterministic, cli-command-contract]
+
+relations:
+  - target: cli/core/loader
+    type: uses
+    consumes: [loadGraph, loadGraphFromRef]
+  - target: cli/core/context
+    type: uses
+    consumes: [buildContext, collectAncestors, collectEffectiveAspectIds]
+  - target: cli/core/validator
+    type: uses
+    consumes: [validate]
+  - target: cli/core/drift-detector
+    type: uses
+    consumes: [detectDrift]
+  - target: cli/core/dependency-resolver
+    type: uses
+    consumes: [formatDependencyTree]
+  - target: cli/model
+    type: uses
+    consumes: [Graph]
+
+mapping:
+  paths:
+    - source/cli/src/cli/impact.ts
