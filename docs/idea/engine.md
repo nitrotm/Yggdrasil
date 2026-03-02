@@ -69,6 +69,8 @@ Each step is deterministic.
                   Own block: node.yaml has `aspects: [id1, id2]`.
                   Flow block: flow.yaml has `aspects: [id1, id2]` for flows where N or an
                   ancestor participates. Effective aspects = union of all identifiers from these blocks.
+                  The `aspects` attribute on each block shows the resolved set (including implied
+                  aspects), not just the raw declared identifiers.
                   For each aspect identifier: content of the matching aspect (aspects/<id>/) plus any
                   aspects implied by that aspect (recursive). Implies are resolved with cycle detection;
                   a cycle (A implies B implies A) is an error. No source attribute on aspect
@@ -339,17 +341,11 @@ source-category files. Each file is tracked exactly once (deduplicated by path).
 
 #### Hash computation
 
-Hash computation depends on mapping strategy (for source files):
-
-| Strategy    | Hash algorithm                                                                                  |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `file`      | SHA-256 of file content                                                                         |
-| `directory` | SHA-256 of sorted list of (path, SHA-256-of-content) pairs; path is relative to the directory.  |
-|             | Files matching `.gitignore` (project root) are excluded from the hash.                          |
-| `files`     | SHA-256 of sorted list of (filepath, SHA-256-of-content) pairs                                 |
-
-`directory` and `files` strategies produce one canonical hash — adding, removing, or changing
-any file changes the group hash.
+Each path in `mapping.paths` is checked at runtime — if it is a file, its content is hashed
+directly (SHA-256). If it is a directory, it is scanned recursively (respecting `.gitignore`),
+each file is hashed individually, and a canonical hash is computed from sorted
+(relative-path, SHA-256-of-content) pairs. Adding, removing, or changing any file in a
+directory changes the canonical hash.
 
 The overall drift state for a node combines both source and graph file hashes into a single
 canonical hash. Per-file hashes are also stored for diagnostics — enabling tools to report

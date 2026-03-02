@@ -127,11 +127,12 @@ Every participant receives these aspects in its context package even if the node
                       Each hierarchy block may have aspects="id1,id2" (omit if empty).
 3. OWN                this node's node.yaml and all its artifact files.
                       Node may have aspects in node.yaml.
-4. ASPECTS            union of aspect ids from hierarchy + own + relational blocks.
+4. ASPECTS            union of aspect ids from hierarchy + own + flow blocks.
                       Expand implies recursively. Render all aspect content files.
-5. RELATIONAL         structural-context artifacts of each node this node depends on
-                      (responsibility, interface, constraints, errors) + consumes and
-                      failure annotations. Flow descriptions for flows listing this node
+5. RELATIONAL         artifacts flagged structural_context in config (default:
+                      responsibility, interface, constraints, errors) + consumes and
+                      failure annotations. Event relations (emits/listens): event name,
+                      type, and consumes annotations. Flow descriptions for flows listing this node
                       as participant. Flow-level aspects are included in the aspects union.
 ```
 
@@ -456,6 +457,7 @@ Before finishing any mapping or modification, ask:
 | Error conditions this node produces | `errors.md` (local) |
 | Data shapes this node owns | `model.md` (local) |
 | State machine for this node | `state.md` (local) |
+| This node's algorithmic/control flow | `logic.md` (local) |
 | Local design decision + why | `decisions.md` (local) |
 | Rule that applies to many nodes | Aspect (content `.md` files in `aspects/<id>/`) |
 | Architectural invariant for a node type | Required aspect in `config.yaml node_types` |

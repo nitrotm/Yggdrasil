@@ -29,8 +29,10 @@ Config file: `.yggdrasil/config.yaml`
 
 - **Node types** — The vocabulary of parts your repo uses (e.g. `module`, `service`, `library`). Optionally, each type can declare `required_aspects` — aspects that nodes of that type must have coverage for (directly or via aspect composition).
 - **Artifacts** — The kinds of meaning you want to capture per node. Each artifact has:
-  - `required`: `always` | `never` | `{ when: "has_incoming_relations" }`
+  - `required`: `always` | `never` | `{ when: "<condition>" }`
+    - Supported `when` conditions: `has_incoming_relations`, `has_outgoing_relations`, `has_tag:<name>` (soon `has_aspect:<name>`)
   - `description`: string
+  - `structural_context`: boolean — When `true`, this artifact is included in the context package of dependent nodes (via structural relations like uses, calls, extends, implements). Default artifacts with this flag: `responsibility.md`, `interface.md`, `constraints.md`, `errors.md`.
 - **Quality thresholds** — When to warn about shallow memory or large context
 
 ---
@@ -64,24 +66,34 @@ node_types:
   - library
 
 artifacts:
-  responsibility:
+  responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-  interface:
+    structural_context: true
+  interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts"
-  constraints:
+    structural_context: true
+  logic.md:
+    required: never
+    description: "Algorithmic flow, control flow, branching logic, decision trees"
+  constraints.md:
     required: never
     description: "Validation rules, business rules, invariants"
-  errors:
+    structural_context: true
+  errors.md:
     required:
       when: has_incoming_relations
-    description: "Error conditions, codes, recovery behavior"
-  state:
+    description: "Failure modes, edge cases, error conditions, recovery behavior"
+    structural_context: true
+  model.md:
+    required: never
+    description: "Data structures, schemas, entities, type definitions"
+  state.md:
     required: never
     description: "State machines, lifecycle, transitions"
-  decisions:
+  decisions.md:
     required: never
     description: "Local design decisions and rationale"
 

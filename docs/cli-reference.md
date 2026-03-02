@@ -76,15 +76,29 @@ Exit code 1 on errors — useful as a CI merge gate.
 
 ---
 
+## Aspects
+
+```bash
+yg aspects
+```
+
+Lists all defined aspects with metadata.
+
+Output: YAML format with fields: `id`, `name`, `description`, `implies`.
+
+---
+
 ## Drift detection
 
 ```bash
-yg drift [--scope <scope>]
+yg drift [--scope <scope>] [--drifted-only]
 ```
 
-Detects files that changed outside the semantic memory.
+Detects source and graph drift — files that changed outside the semantic memory (source drift)
+and graph artifacts that changed without a corresponding `drift-sync` (graph drift).
 
 - `--scope <scope>` — `all` or node-path (default: `all`)
+- `--drifted-only` — Show only nodes with drift (hide ok entries)
 
 ```bash
 yg drift-sync --node <path>

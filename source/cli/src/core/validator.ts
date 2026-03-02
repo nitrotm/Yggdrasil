@@ -728,8 +728,8 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
 
 async function checkContextBudget(graph: Graph): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = [];
-  const warningThreshold = graph.config.quality?.context_budget.warning ?? 5000;
-  const errorThreshold = graph.config.quality?.context_budget.error ?? 10000;
+  const warningThreshold = graph.config.quality?.context_budget.warning ?? 10000;
+  const errorThreshold = graph.config.quality?.context_budget.error ?? 20000;
 
   for (const [nodePath, node] of graph.nodes) {
     if (node.meta.blackbox) continue;

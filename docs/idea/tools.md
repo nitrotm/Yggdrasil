@@ -36,11 +36,11 @@ standards: | # string, optional, multiline
   Strict TypeScript. All public functions have JSDoc.
   Errors in RFC 7807 format. Dates in ISO 8601 UTC.
 
-node_types: # list of strings or {name, required_aspects?}, required, non-empty
-  - module
-  - service
-  - library
-  # Or with required_aspects per type:
+node_types: # list of {name, required_aspects?}, required, non-empty
+  - name: module
+  - name: service
+  - name: library
+  # With required_aspects per type:
   # - name: service
   #   required_aspects: [requires-audit]
 
@@ -104,7 +104,7 @@ quality: # map, optional (has default values) — all keys snake_case
 **Validation rules for config.yaml:**
 
 - `name` must be non-empty.
-- `node_types` must contain at least one element. Legacy format: list of strings. New format: list of `{ name, required_aspects? }`. Node `type` must match a `name` (or the string itself in legacy format).
+- `node_types` must contain at least one element. Format: list of `{ name, required_aspects? }`. Legacy format (list of plain strings) is also accepted. Node `type` must match a `name` (or the string itself in legacy format).
 - `artifacts` must contain at least one element.
 - Artifact filenames cannot be `node.yaml` (reserved in every node directory).
 - `has_tag:<name>` conditions must refer to aspect directory names (exist under `aspects/<name>/`).
@@ -143,13 +143,9 @@ mapping: # map, optional
 | `emits`      | event      | no         | Produces an event                         |
 | `listens`    | event      | no         | Reacts to an event                        |
 
-**Mapping variants:**
-
-| `type`      | Required fields           | Description                  |
-| ----------- | ------------------------- | ---------------------------- |
-| `file`      | `path` (string)           | Single file                  |
-| `directory` | `path` (string)           | Directory — all files inside |
-| `files`     | `paths` (list of strings) | Explicit list of files       |
+`mapping.paths` is a list of file and/or directory paths relative to project root. Files and
+directories are auto-detected at runtime. Each path in the list is hashed individually — files
+are hashed directly, directories are scanned recursively (respecting `.gitignore`).
 
 **Validation rules for node.yaml:**
 
@@ -158,9 +154,8 @@ mapping: # map, optional
 - Each aspect identifier must correspond to a directory under `aspects/`.
 - Each `relations[].target` must resolve to an existing node.
 - Each `relations[].type` must be from the table above.
-- Paths in `mapping` must be relative to the repository root.
-- When `type` = `file` or `directory`, the `path` field must be present.
-- When `type` = `files`, the `paths` field must be present and non-empty.
+- Paths in `mapping.paths` must be relative to the repository root.
+- `mapping.paths` must be non-empty when `mapping` is present.
 - Mappings cannot overlap with mappings of other nodes.
 
 ### aspect.yaml
@@ -226,6 +221,8 @@ Primary flow content artifact — describes the business process. Required for e
 - `## Paths` — must contain at least `### Happy path`; each additional business path (exception, cancellation, timeout) gets `### [name]`
 - `## Invariants across all paths` — business rules and technical conditions holding across all paths
 
+Note: section validation is not yet enforced by `yg validate`.
+
 One flow directory = one business process with all its paths (happy path, exceptions, cancellations).
 
 ### schemas/
@@ -280,16 +277,11 @@ node's mapping. Graph files come from the `collectTrackedFiles` algorithm, which
 the six layers of context assembly (own, hierarchical, aspects, relational dependencies,
 relational flows, source). See the [Engine](engine) document for details.
 
-| Strategy    | Hash algorithm                                                                                  |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `file`      | SHA-256 of the file content. `.gitignore` is not applied — the mapped file is always hashed.   |
-| `directory` | SHA-256 of the sorted list of pairs (path, content SHA-256); path is relative to the directory. |
-|             | Files matching `.gitignore` (project root) are excluded from the hash.                          |
-| `files`     | SHA-256 of the sorted list of pairs (filepath, content SHA-256)                                 |
-
-Strategies `directory` and `files` produce a single canonical hash — changing, adding, or
-removing any file changes the hash. The overall canonical `hash` combines all tracked file
-hashes (source + graph) into a single value.
+Each path in `mapping.paths` is checked at runtime — if it is a file, it is hashed directly
+(SHA-256 of file content); if it is a directory, it is scanned recursively (respecting
+`.gitignore`), each file is hashed, and a canonical hash is computed from sorted path:hash
+pairs. The overall canonical `hash` combines all tracked file hashes (source + graph) into a
+single value.
 
 ### .journal.yaml
 
@@ -415,9 +407,9 @@ stack:
 standards: ""
 
 node_types:
-  - module
-  - service
-  - library
+  - name: module
+  - name: service
+  - name: library
 
 artifacts:
   responsibility.md:
@@ -488,9 +480,12 @@ The 5-step algorithm defined in the [Engine](engine) document. Summary:
 4. **Aspects** — union of aspect identifiers from hierarchy blocks, own block, and flow blocks (each block
    declares its own; no inheritance). Expand implies recursively. Render content of each
    matching aspect. No source attribute on aspect output.
-5. **Relational** — for structural relations: interface + errors of the target with consumes
-   and failure annotations. For event relations: event name and type with consumes annotation.
-   Flow artifacts for flows listing this node or any ancestor as a participant.
+5. **Relational** — for structural relations: artifacts with `structural_context: true`
+   (default: responsibility, interface, constraints, errors) of the target with consumes
+   and failure annotations. If the target has no artifacts with `structural_context: true`,
+   all configured artifacts are included as fallback. For event relations: event name and
+   type with consumes annotation. Flow artifacts for flows listing this node or any ancestor
+   as a participant.
 
 Token estimation: ~4 characters per token (heuristic from the [Engine](engine) document).
 
@@ -502,8 +497,8 @@ section). Includes token count and budget status (`ok`, `warning`, `error`).
 **Errors:**
 
 - Node does not exist at the provided path.
-- The graph has structural integrity errors (broken references). Assembly requires a consistent
-  graph — the tool reports errors and refuses to assemble.
+- The graph has any validation errors. Assembly requires a consistent graph — the tool
+  reports errors and refuses to assemble.
 
 ---
 
@@ -574,7 +569,7 @@ Lists aspects with metadata in YAML format. Use to discover valid aspect identif
 **Errors:**
 
 - No `.yggdrasil/` directory — exit 1.
-- No `aspects/` directory — exit 1.
+- If no `aspects/` directory exists, outputs an empty list.
 
 ---
 
@@ -598,7 +593,7 @@ Summary of the graph state: numbers, metrics, problems.
 Graph: my-project
 Nodes: 12 (3 modules, 7 services, 2 libraries) + 2 blackbox
 Relations: 15 structural, 4 event
-Aspects: 3    Flows: 2    Knowledge: 8
+Aspects: 3    Flows: 2
 Drift: 1 source-drift, 1 graph-drift, 0 full-drift, 1 missing, 2 unmaterialized, 7 ok
 Validation: 0 errors, 3 warnings
 ```
@@ -623,10 +618,8 @@ Finds the owner node for a given file path.
 **Behavior:**
 
 1. Traverse all nodes with a mapping.
-2. For each mapping, check if the file matches:
-   - `file` — path equals `mapping.path`.
-   - `directory` — file lies inside `mapping.path`.
-   - `files` — file is on the `mapping.paths` list.
+2. For each mapping, check if the file matches any entry in `mapping.paths` — either the
+   path equals a file entry, or the file lies inside a directory entry.
 3. Return the first matching node (uniqueness is guaranteed by validation — mapping overlaps
    are errors).
 
@@ -733,8 +726,9 @@ Transitively dependent:
   <- orders/order-service <- checkout/checkout-controller
 
 Flows: checkout
+Aspects: requires-saga, requires-idempotency
 
-Total scope: 3 nodes, 1 flows
+Total scope: 3 nodes, 1 flows, 2 aspects
 ```
 
 **Simulation mode result** (additionally):
@@ -872,6 +866,9 @@ and the graph side (`.yggdrasil/` artifacts that contribute to the node's contex
 | `full-drift`     | Both source and graph files changed                                                         |
 | `missing`        | Mapped source files do not exist on disk, but a hash exists in `.drift-state`               |
 | `unmaterialized` | Node has a mapping, but files have never been created (no entry in `.drift-state`)           |
+
+If a node has no drift-state entry but its files exist on disk, it reports `source-drift`
+with a note to run `drift-sync`.
 
 **Result:**
 

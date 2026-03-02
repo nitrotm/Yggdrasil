@@ -377,7 +377,7 @@ describe('validator', () => {
       nodeName: 'A',
       layers: [],
       mapping: null,
-      tokenCount: 7500,
+      tokenCount: 12000,
     } as Awaited<ReturnType<typeof buildContext>>);
 
     const graph = createGraph();
@@ -396,7 +396,7 @@ describe('validator', () => {
       nodeName: 'A',
       layers: [],
       mapping: null,
-      tokenCount: 15000,
+      tokenCount: 25000,
     } as Awaited<ReturnType<typeof buildContext>>);
 
     const graph = createGraph();
