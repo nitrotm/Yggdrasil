@@ -101,10 +101,11 @@ You are not allowed to edit or create source code without establishing graph cov
 **Step 2a** — Owner found: execute checklist:
 
 - [ ] 1. Read specification: `yg build-context --node <node_path>`
-- [ ] 2. Modify source code
-- [ ] 3. Sync graph artifacts — edit artifact files to reflect the changes
-- [ ] 4. Run `yg validate` — fix all errors (if unfixable after 3 attempts → stop, report to user)
-- [ ] 5. Run `yg drift-sync --node <node_path>` — only after graph and code are both current
+- [ ] 2. Assess blast radius: `yg impact --node <node_path>` — review dependents, descendants, and co-aspect nodes before changing interfaces or shared behavior
+- [ ] 3. Modify source code
+- [ ] 4. Sync graph artifacts — edit artifact files to reflect the changes
+- [ ] 5. Run `yg validate` — fix all errors (if unfixable after 3 attempts → stop, report to user)
+- [ ] 6. Run `yg drift-sync --node <node_path>` — only after graph and code are both current
 
 **Step 2b** — Owner not found: establish coverage first. Present options to the user:
 
@@ -123,10 +124,11 @@ After the user chooses, return to Step 1 and follow Step 2a.
 ### Modify Graph
 
 - [ ] 1. Read the relevant schema from `schemas/` before touching any YAML
-- [ ] 2. Make changes
-- [ ] 3. Run `yg validate` immediately — fix all errors
-- [ ] 4. Verify affected source files are consistent — update if needed
-- [ ] 5. Run `yg drift-sync` for affected nodes
+- [ ] 2. Before changing an aspect or flow, check scope: `yg impact --aspect <id>` or `yg impact --flow <name>` — understand which nodes are affected before modifying shared rules or processes
+- [ ] 3. Make changes
+- [ ] 4. Run `yg validate` immediately — fix all errors
+- [ ] 5. Verify affected source files are consistent — update if needed
+- [ ] 6. Run `yg drift-sync` for affected nodes
 
 ### Reverse Engineering
 
