@@ -92,6 +92,10 @@ Each step is deterministic.
 The result is a single document — the context package. Its size is bounded regardless of
 project size because each step attaches only what is directly relevant to node `N`.
 
+> **Implementation note:** The implementation may build layers in a different internal order
+> (e.g. relational and flows before aspects, so that flow-propagated aspect ids can be
+> collected). The rendered output is always reordered to match the sequence above.
+
 ### Mapping Conceptual Layers to Algorithm Steps
 
 The output uses **section names from the algorithm** (Global, Hierarchy, OwnArtifacts,
@@ -274,8 +278,9 @@ Warnings flag quality issues that don't break the graph but reduce context packa
 **Shallow content**: artifacts that exist but are shorter than the configured minimum length.
 
 **Context budget**: a complex context package exceeding the configured warning threshold.
-Exceeding the error threshold (W006 budget-error) is a **behavioral** block: the agent may
-consciously proceed, but should warn the user about the risk and recommend splitting the node.
+Exceeding the error threshold (W006 budget-error) causes the CLI to emit a warning on stderr.
+The context package is still output — the agent should warn the user about the risk and
+recommend splitting the node.
 
 **High fan-out**: a node whose direct relation count exceeds the configured maximum — a signal
 of excessive coupling.

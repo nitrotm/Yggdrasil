@@ -2,12 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_ROOT = path.join(__dirname, '../..');
 const BIN_PATH = path.join(CLI_ROOT, 'dist', 'bin.js');
+const PKG_VERSION = JSON.parse(readFileSync(path.join(CLI_ROOT, 'package.json'), 'utf-8')).version;
 const FIXTURE = path.join(CLI_ROOT, 'tests', 'fixtures', 'sample-project');
 
 const distExists = existsSync(BIN_PATH);
@@ -42,7 +44,7 @@ describe.skipIf(!distExists)('CLI E2E', () => {
 
   it('yg --version', () => {
     const { stdout, status } = run(['--version']);
-    expect(stdout.trim()).toBe('0.1.0');
+    expect(stdout.trim()).toBe(PKG_VERSION);
     expect(status).toBe(0);
   });
 

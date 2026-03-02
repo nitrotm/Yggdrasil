@@ -109,5 +109,5 @@ quality:
 
 ## Notes
 
-- Artifact name `node` is reserved.
+- Artifact name `node.yaml` is reserved.
 - `config.yaml: quality.context_budget.error` must be >= `context_budget.warning`.

@@ -25,8 +25,8 @@ export function registerBuildCommand(program: Command): void {
 
         const nodePath = options.node.trim().replace(/\/$/, '');
         const pkg = await buildContext(graph, nodePath);
-        const warningThreshold = graph.config.quality?.context_budget.warning ?? 5000;
-        const errorThreshold = graph.config.quality?.context_budget.error ?? 10000;
+        const warningThreshold = graph.config.quality?.context_budget.warning ?? 10000;
+        const errorThreshold = graph.config.quality?.context_budget.error ?? 20000;
         const budgetStatus =
           pkg.tokenCount >= errorThreshold
             ? 'error'
@@ -40,9 +40,8 @@ export function registerBuildCommand(program: Command): void {
 
         if (budgetStatus === 'error') {
           process.stderr.write(
-            `Error: context package exceeds error budget (${pkg.tokenCount} >= ${errorThreshold}).\n`,
+            `Warning: context package exceeds error budget (${pkg.tokenCount} >= ${errorThreshold}). Consider splitting the node.\n`,
           );
-          process.exit(1);
         }
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);

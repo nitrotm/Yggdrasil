@@ -99,7 +99,7 @@ flows/
 
 Flows describe real business processes in which the software participates. A flow exists because there is a human or organizational process behind it. The software is a tool in that process — not the process itself. A flow description that describes only code sequences is wrong.
 
-**Required sections in every \`description.md\`:**
+**Every \`description.md\` should contain these sections (not enforced by tooling — it is the agent's responsibility):**
 
 - \`## Business context\` — what organizational or user need this process serves
 - \`## Trigger\` — what initiates this process (user action, external event, schedule)
@@ -135,9 +135,10 @@ Every participant receives these aspects in its context package even if the node
                       Node may have aspects in node.yaml.
 4. ASPECTS            union of aspect ids from hierarchy + own + flow blocks.
                       Expand implies recursively. Render all aspect content files.
-5. RELATIONAL         artifacts flagged structural_context in config (default:
-                      responsibility, interface, constraints, errors) + consumes and
-                      failure annotations. Event relations (emits/listens): event name,
+5. RELATIONAL         artifacts flagged \`structural_context\` in config of each node this
+                      node depends on + consumes and failure annotations. If the target has
+                      no artifacts with \`structural_context\`, all configured artifacts are
+                      included as fallback. Event relations (emits/listens): event name,
                       type, and consumes annotations. Flow descriptions for flows listing this node
                       as participant. Flow-level aspects are included in the aspects union.
 \`\`\`
@@ -267,7 +268,7 @@ If the rule applies to ALL nodes of a type — add it to \`node_types[*].require
 
 ### Is it a business process this node participates in?
 
-→ **Flow.** Check if a flow for this process exists. If yes — add the node to \`flow.yaml participants\`. If no — create the flow directory, write \`description.md\` with all six required sections. Ask the user to describe the business process if you cannot determine it from code alone.
+→ **Flow.** Check if a flow for this process exists. If yes — add the node to \`flow.yaml participants\`. If no — create the flow directory, write \`description.md\` with the standard sections (see Section 9). Ask the user to describe the business process if you cannot determine it from code alone.
 
 ### Is it shared context for all nodes in a domain?
 
@@ -281,8 +282,8 @@ If the rule applies to ALL nodes of a type — add it to \`node_types[*].require
 
 When the user explains WHY something was decided:
 
-- Applies to one node → record in that node's \`decisions.md\`.
-- Applies to a category of nodes → record in the relevant aspect's \`rationale.md\`. The rationale field is the decision record for that aspect.
+- Applies to one node → record in the appropriate local node artifact (check \`config.yaml artifacts\` for the decisions artifact type).
+- Applies to a category of nodes → record in the relevant aspect's content files. The aspect is the decision record for that category.
 - Technology choice → record in \`config.yaml\` with a \`rationale\` field next to the technology declaration.
 
 ---
@@ -318,7 +319,7 @@ When the user explains WHY something was decided:
 1. Read \`schemas/flow.yaml\`.
 2. Create \`flows/<name>/\` directory.
 3. Write \`flow.yaml\` — declare participants and any flow-level aspects.
-4. Write \`description.md\` with all six required sections:
+4. Write \`description.md\` with these sections:
 
 \`\`\`markdown
 ## Business context
@@ -457,14 +458,7 @@ Before finishing any mapping or modification, ask:
 
 | What you have | Where it goes |
 |---|---|
-| This node's responsibility | \`responsibility.md\` (local) |
-| This node's public API | \`interface.md\` (local) |
-| Validation rules specific to this node | \`constraints.md\` (local) |
-| Error conditions this node produces | \`errors.md\` (local) |
-| Data shapes this node owns | \`model.md\` (local) |
-| State machine for this node | \`state.md\` (local) |
-| This node's algorithmic/control flow | \`logic.md\` (local) |
-| Local design decision + why | \`decisions.md\` (local) |
+| Information specific to this node | Local node artifact (read \`config.yaml artifacts\` for available types and descriptions) |
 | Rule that applies to many nodes | Aspect (content \`.md\` files in \`aspects/<id>/\`) |
 | Architectural invariant for a node type | Required aspect in \`config.yaml node_types\` |
 | Business process participation | Flow (\`flow.yaml participants\`) |

@@ -32,7 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `hashPath` no longer skips mapped single files when they match `.gitignore` patterns — gitignore filtering applies only to directory scans.
 - Reserved artifact name check uses `'node.yaml'` (the actual reserved filename) instead of `'node'`.
 - Validator fallback budget thresholds aligned to spec defaults (10000/20000 instead of 5000/10000).
-- **Crosscheck (31 items):** Comprehensive docs-vs-code-vs-rules audit fixing discrepancies across spec (`docs/idea/`), user docs (`docs/`), rules template, and code.
+- `build-context` CLI fallback budget thresholds aligned to spec (10000/20000 instead of 5000/10000).
+- `build-context` no longer exits with error on budget-error — always outputs context package, warns on stderr.
+- `yg --version` now reads version from `package.json` dynamically instead of hardcoded value.
+- Shallow artifact warning message now reports trimmed length (consistent with the check).
+- **Crosscheck round 1 (31 items):** Comprehensive docs-vs-code-vs-rules audit.
+- **Crosscheck round 2 (17 items):** Follow-up audit fixing remaining discrepancies across
+  spec, user docs, rules template, and code.
 
 ### Changed
 
@@ -47,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `template-parser.ts` to `schema-parser.ts`.
 - Validation rule renames: `unknown-tag` → `unknown-aspect`, `broken-aspect-tag` → `broken-aspect-ref`, `missing-required-tag-coverage` → `missing-required-aspect-coverage`.
 - **Documentation:** Updated all spec docs (`docs/idea/`), user docs (`docs/configuration.md`), graph metadata (`.yggdrasil/`), and agent rules to reflect aspects rename and hierarchy.
+- Rules template: Quick Routing Reference now config-driven (no hardcoded artifact filenames).
+- Rules template: flow description.md sections described as agent responsibility, not validated.
+- Rules template: structural_context fallback documented in step 5.
+- Spec: platform table in `tools.md` now shows delivery method (embed vs reference) per platform.
 
 ### Removed
 

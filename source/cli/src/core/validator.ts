@@ -574,7 +574,7 @@ async function checkShallowArtifacts(graph: Graph): Promise<ValidationIssue[]> {
           severity: 'warning',
           code: 'W002',
           rule: 'shallow-artifact',
-          message: `Artifact '${art.filename}' is below minimum length (${art.content.length} < ${minLen})`,
+          message: `Artifact '${art.filename}' is below minimum length (${art.content.trim().length} < ${minLen})`,
           nodePath,
         });
       }

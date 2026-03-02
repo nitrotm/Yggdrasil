@@ -199,7 +199,7 @@ aspects: # list of strings, optional — aspect ids propagated to all participan
 
 All files in the flow directory except `flow.yaml` are content attached to the context
 packages of the listed nodes and their descendants (flows propagate down the hierarchy).
-Aspects declared in `aspects` propagate to all participants (with `source="flow:Name"`).
+Aspects declared in `aspects` propagate to all participants.
 
 **Validation rules:**
 
@@ -523,12 +523,12 @@ Displays the graph structure as a tree with node metadata.
 
 ```text
 model/
-├── auth/ [module]
+├── auth/ [module] -> 0 relations
 │   ├── login-service/ [service] aspects:requires-auth -> 1 relations
 │   └── token-service/ [service] -> 0 relations
-├── orders/ [module]
+├── orders/ [module] -> 0 relations
 │   └── order-service/ [service] aspects:requires-audit,requires-auth -> 2 relations
-└── payments/ [module] ■ blackbox
+└── payments/ [module] ■ blackbox -> 0 relations
     └── payment-service/ [service] ■ blackbox -> 0 relations
 ```
 
@@ -726,7 +726,7 @@ Transitively dependent:
   <- orders/order-service <- checkout/checkout-controller
 
 Flows: checkout
-Aspects: requires-saga, requires-idempotency
+Aspects (scope covers node): requires-saga, requires-idempotency
 
 Total scope: 3 nodes, 1 flows, 2 aspects
 ```
@@ -822,6 +822,8 @@ why, and what to do (see the [Integration](integration) document).
 A list of messages grouped: errors first, then warnings.
 Summary at the end: X errors, Y warnings.
 
+**Exit code:** 0 if no errors, 1 if any errors found.
+
 **Operation errors:**
 
 - The specified node in `scope` does not exist.
@@ -896,6 +898,8 @@ entries.
 
 Changed files are listed per-section — the Source drift section shows only changed source
 files, the Graph drift section shows only changed graph files.
+
+**Exit code:** 0 if all nodes are `ok`, 1 if any drift/missing/unmaterialized entries exist.
 
 **Errors:**
 
@@ -1018,7 +1022,7 @@ Move the current journal to the archive.
 
 **Behavior:**
 
-1. If `.yggdrasil/.journal.yaml` does not exist — nothing to archive.
+1. If `.yggdrasil/.journal.yaml` does not exist or has no entries — nothing to archive.
 2. Create directory `.yggdrasil/journals-archive/` if it does not exist.
 3. Move `.yggdrasil/.journal.yaml` to
    `.yggdrasil/journals-archive/.journal.<datetime>.yaml`
@@ -1048,19 +1052,19 @@ No active journal - nothing to archive.
 Initialization generates a rules file delivered via the agent platform's integration
 mechanism. The location depends on the platform:
 
-| Platform      | File                                                  |
-| ------------- | ----------------------------------------------------- |
-| `cursor`      | `.cursor/rules/yggdrasil.mdc`                         |
-| `claude-code` | `CLAUDE.md` (imports `.yggdrasil/agent-rules.md`)     |
-| `copilot`     | `.github/copilot-instructions.md` (Yggdrasil section) |
-| `cline`       | Platform-specific (uses `agent-rules.md`)             |
-| `roocode`     | Platform-specific (uses `agent-rules.md`)             |
-| `codex`       | Platform-specific (uses `agent-rules.md`)             |
-| `windsurf`    | Platform-specific (uses `agent-rules.md`)             |
-| `aider`       | Platform-specific (uses `agent-rules.md`)             |
-| `gemini`      | Platform-specific (uses `agent-rules.md`)             |
-| `amp`         | Platform-specific (uses `agent-rules.md`)             |
-| `generic`     | `.yggdrasil/agent-rules.md`                           |
+| Platform      | File                                                  | Delivery                       |
+| ------------- | ----------------------------------------------------- | ------------------------------ |
+| `cursor`      | `.cursor/rules/yggdrasil.mdc`                         | Embeds full rules content      |
+| `claude-code` | `CLAUDE.md` (imports `.yggdrasil/agent-rules.md`)     | References `agent-rules.md`    |
+| `copilot`     | `.github/copilot-instructions.md` (Yggdrasil section) | Embeds full rules content      |
+| `cline`       | `.clinerules/yggdrasil.md`                            | Embeds full rules content      |
+| `roocode`     | `.roo/rules/yggdrasil.md`                             | Embeds full rules content      |
+| `codex`       | `AGENTS.md` (Yggdrasil section)                       | Embeds full rules content      |
+| `windsurf`    | `.windsurf/rules/yggdrasil.md`                        | Embeds full rules content      |
+| `aider`       | `.aider.conf.yml` (adds `read:` entry)                | References `agent-rules.md`    |
+| `gemini`      | `GEMINI.md` (imports `.yggdrasil/agent-rules.md`)     | References `agent-rules.md`    |
+| `amp`         | `AGENTS.md` (imports `.yggdrasil/agent-rules.md`)     | References `agent-rules.md`    |
+| `generic`     | `.yggdrasil/agent-rules.md`                           | Direct file                    |
 
 The content is identical regardless of the platform — only the location and any wrapper
 (frontmatter, section in an existing file, etc.) differ.
