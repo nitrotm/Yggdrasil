@@ -7,12 +7,12 @@ import type { Graph } from '../model/types.js';
 
 const STRUCTURAL_TYPES = new Set(['uses', 'calls', 'extends', 'implements']);
 
-function collectReverseDependents(
+export function collectReverseDependents(
   graph: Graph,
   targetNode: string,
 ): {
   direct: string[];
-  transitive: string[];
+  allDependents: string[];
   reverse: Map<string, Set<string>>;
   relationFrom: Map<string, { type: string; consumes?: string[] }>;
 } {
@@ -45,20 +45,20 @@ function collectReverseDependents(
 
   return {
     direct,
-    transitive: [...seen].sort(),
+    allDependents: [...seen].sort(),
     reverse,
     relationFrom,
   };
 }
 
-function buildTransitiveChains(
+export function buildTransitiveChains(
   targetNode: string,
   direct: string[],
-  transitive: string[],
+  allDependents: string[],
   reverse: Map<string, Set<string>>,
 ): string[] {
   const directSet = new Set(direct);
-  const transitiveOnly = transitive.filter((t) => !directSet.has(t));
+  const transitiveOnly = allDependents.filter((t) => !directSet.has(t));
   if (transitiveOnly.length === 0) return [];
 
   const parent = new Map<string, string>();
@@ -82,8 +82,8 @@ function buildTransitiveChains(
       path.unshift(current);
       current = parent.get(current);
     }
-    if (path.length >= 2) {
-      chains.push(path.map((p) => `<- ${p}`).join(' '));
+    if (path.length >= 3) {
+      chains.push(path.slice(1).map((p) => `<- ${p}`).join(' '));
     }
   }
   return chains.sort();
@@ -105,11 +105,11 @@ export function registerImpactCommand(program: Command): void {
           process.exit(1);
         }
 
-        const { direct, transitive, reverse, relationFrom } = collectReverseDependents(
+        const { direct, allDependents, reverse, relationFrom } = collectReverseDependents(
           graph,
           nodePath,
         );
-        const chains = buildTransitiveChains(nodePath, direct, transitive, reverse);
+        const chains = buildTransitiveChains(nodePath, direct, allDependents, reverse);
 
         const flows: string[] = [];
         for (const flow of graph.flows) {
@@ -156,16 +156,16 @@ export function registerImpactCommand(program: Command): void {
           `Aspects (scope covers node): ${aspectsInScope.length > 0 ? aspectsInScope.join(', ') : '(none)'}\n`,
         );
         process.stdout.write(
-          `\nTotal scope: ${transitive.length} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects\n`,
+          `\nTotal scope: ${allDependents.length} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects\n`,
         );
 
-        if (options.simulate && transitive.length > 0) {
+        if (options.simulate && allDependents.length > 0) {
           process.stdout.write('\nChanges in context packages:\n\n');
           const baselineGraph = await loadGraphFromRef(process.cwd(), 'HEAD');
           const driftReport = await detectDrift(graph);
           const driftByNode = new Map(driftReport.entries.map((e) => [e.nodePath, e]));
 
-          for (const dep of transitive) {
+          for (const dep of allDependents) {
             try {
               const pkg = await buildContext(graph, dep);
               const status =
