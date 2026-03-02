@@ -1,0 +1,10 @@
+name: Layout
+type: module
+aspects: []
+
+relations: []
+
+mapping:
+  paths:
+    - apps/web/src/components/Layout
+    - apps/web/src/components/ProtectedRoute.tsx

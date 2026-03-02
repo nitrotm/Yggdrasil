@@ -1,0 +1,9 @@
+name: Reports
+type: module
+aspects: []
+
+relations: []
+
+mapping:
+  paths:
+    - apps/web/src/pages/Reports.tsx

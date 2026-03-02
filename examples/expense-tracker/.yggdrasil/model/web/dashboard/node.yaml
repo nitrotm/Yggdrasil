@@ -1,0 +1,9 @@
+name: Dashboard
+type: module
+aspects: []
+
+relations: []
+
+mapping:
+  paths:
+    - apps/web/src/pages/Dashboard.tsx
