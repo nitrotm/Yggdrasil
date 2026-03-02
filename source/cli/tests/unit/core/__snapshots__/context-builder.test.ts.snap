@@ -49,7 +49,7 @@ Order management module.
 ### node.yaml
 name: OrderService
 type: service
-tags:
+aspects:
   - requires-audit
 relations:
   - target: auth/auth-api
@@ -74,7 +74,31 @@ src/orders/order.service.ts
 
 ---
 
-## Dependencies
+## Aspects
+
+### Audit Logging (aspect: requires-audit)
+
+### content.md
+Every data-modifying operation must be logged to the audit_log table.
+Log entry format: { userId, action, entityType, entityId, oldState, newState, timestamp }.
+
+Use AuditService.log() for all create, update, and delete operations.
+Never log sensitive fields (passwords, tokens) in oldState/newState.
+Audit log entries are append-only, never modified or deleted.
+
+
+### Structured Logging (aspect: requires-logging)
+
+### content.md
+All services must use the structured logger (LoggerService).
+Log format: JSON with fields { level, message, context, timestamp, traceId }.
+Never log sensitive data (passwords, tokens, PII).
+Use appropriate log levels: error for failures, warn for degraded state, info for business events, debug for troubleshooting.
+
+
+---
+
+## Relational
 
 ### Dependency: AuthApi (uses) — auth/auth-api
 
@@ -90,25 +114,6 @@ User repository.
 ### responsibility.md
 User repository.
 
----
-
-## Aspects
-
-### Audit Logging (tag: requires-audit)
-
-### content.md
-Every data-modifying operation must be logged to the audit_log table.
-Log entry format: { userId, action, entityType, entityId, oldState, newState, timestamp }.
-
-Use AuditService.log() for all create, update, and delete operations.
-Never log sensitive fields (passwords, tokens) in oldState/newState.
-Audit log entries are append-only, never modified or deleted.
-
-
----
-
-## Flows
-
 ### Flow: Checkout Flow
 
 ### description.md
@@ -121,7 +126,7 @@ Sequence: create order -> validate -> payment -> ship.
 
 ---
 
-Context size: 331 tokens
-Layers: global, hierarchy, own, relational, relational, aspects, flows
+Context size: 415 tokens
+Layers: global, hierarchy, own, relational, relational, flows, aspects, aspects
 "
 `;

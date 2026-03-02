@@ -1,7 +1,5 @@
 name: Commands
 type: module
-tags: [deterministic]
+aspects: [deterministic, cli-command-contract]
 
 relations: []
-
-knowledge: []

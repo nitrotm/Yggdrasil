@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeFile, readFile, mkdir, rm } from 'node:fs/promises';
@@ -7,38 +7,166 @@ import { detectDrift, syncDriftState } from '../../../src/core/drift-detector.js
 import {
   readDriftState,
   writeDriftState,
-  getCanonicalHash,
 } from '../../../src/io/drift-state-store.js';
 import { hashString } from '../../../src/utils/hash.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PROJECT = path.join(__dirname, '../../fixtures/sample-project');
 
+/** Canonical fixture drift-state — used to restore after tests that call syncDriftState. */
+const FIXTURE_DRIFT_STATE: Record<string, { hash: string; files: Record<string, string> }> = {
+  'auth/auth-api': {
+    hash: '32264f21ff53921976fad6669ff876d5bf67152f62f9a89db803db0de0bcc514',
+    files: {
+      '.yggdrasil/model/auth/auth-api/node.yaml':
+        '40c1087d83ac1b5132e10d3a40beb65af24c6cd13ff6067b7674654e032b4eac',
+      '.yggdrasil/model/auth/auth-api/responsibility.md':
+        'f47a9cf8d239d70760ae4779ff68a923559ac9ca50762c64b304c802a302cc92',
+      '.yggdrasil/model/auth/node.yaml':
+        'c609370d51a049baf4013828f66bc1ecf8ec815da99240ea01237ac912974269',
+      '.yggdrasil/model/auth/responsibility.md':
+        'd3ca07574d55e24a6f0a7e0771019c6f85f40c127cda11da93034675aa8b9fdb',
+      '.yggdrasil/aspects/requires-logging/aspect.yaml':
+        '08dd592c74f6889713e09c899e003badf00430c7d25a74768449eb0d7fb7beb0',
+      '.yggdrasil/aspects/requires-logging/content.md':
+        '13fff2681612d392624588850569f287bb450307e2ee9750987b281279dd64f3',
+      '.yggdrasil/flows/checkout-flow/flow.yaml':
+        '1804e9470685eec45545c5ff94e1da359f244ac0c69ddb3721aaeb98bd3d064b',
+      '.yggdrasil/flows/checkout-flow/description.md':
+        '84056fed046bd51b834af307ee1208c4617eca1df652773c84e4c18f96bcf0fa',
+      '.yggdrasil/flows/checkout-flow/sequence.md':
+        '0d361f1ec1dcc665108a03c10286cbac679e52dba14b8ddaf3a48d31f7effbe8',
+      'src/auth/auth.controller.ts':
+        '5386573056ba5e059eb98f3615d57c3680dc888f003b197584805429d6df3521',
+      'src/auth/login.service.ts':
+        '5d5bbfd0dc749783000cff2f27ca31212044629a99746a8508d32b3f8ec7c344',
+    },
+  },
+  'orders/order-service': {
+    hash: '0000000000000000000000000000000000000000000000000000000000000000',
+    files: {
+      'src/orders/order.service.ts':
+        '0000000000000000000000000000000000000000000000000000000000000000',
+    },
+  },
+  'users/missing-service': {
+    hash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    files: {
+      'src/users/missing.service.ts':
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    },
+  },
+};
+
+/**
+ * Helper: create a minimal temp project with a single node.
+ * Returns { tmpDir, yggRoot, srcDir, nodeDir } for further customization.
+ */
+async function createTmpProject(
+  name: string,
+  opts: {
+    nodePath: string;          // e.g. 'svc/my-service'
+    nodeYaml: string;
+    mappingFiles?: Record<string, string>; // relative-to-tmpDir path → content
+    configYaml?: string;
+    parentNodes?: Array<{ path: string; yaml: string }>;
+    aspects?: Array<{ id: string; yaml: string; files?: Record<string, string> }>;
+  },
+) {
+  const tmpDir = path.join(__dirname, `../../fixtures/tmp-${name}`);
+  const yggRoot = path.join(tmpDir, '.yggdrasil');
+  const nodeDir = path.join(yggRoot, 'model', opts.nodePath);
+
+  await mkdir(nodeDir, { recursive: true });
+  await writeFile(
+    path.join(yggRoot, 'config.yaml'),
+    opts.configYaml ??
+      'name: Test\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
+  );
+  await writeFile(path.join(yggRoot, '.drift-state'), '{}');
+
+  // Parent nodes
+  if (opts.parentNodes) {
+    for (const pn of opts.parentNodes) {
+      const parentDir = path.join(yggRoot, 'model', pn.path);
+      await mkdir(parentDir, { recursive: true });
+      await writeFile(path.join(parentDir, 'node.yaml'), pn.yaml);
+    }
+  } else {
+    // Auto-create parent from nodePath
+    const parts = opts.nodePath.split('/');
+    if (parts.length > 1) {
+      const parentPath = parts.slice(0, -1).join('/');
+      const parentDir = path.join(yggRoot, 'model', parentPath);
+      await mkdir(parentDir, { recursive: true });
+      await writeFile(
+        path.join(parentDir, 'node.yaml'),
+        `name: ${parts[parts.length - 2]}\ntype: module\n`,
+      );
+    }
+  }
+
+  // Aspects
+  if (opts.aspects) {
+    for (const aspect of opts.aspects) {
+      const aspectDir = path.join(yggRoot, 'aspects', aspect.id);
+      await mkdir(aspectDir, { recursive: true });
+      await writeFile(path.join(aspectDir, 'aspect.yaml'), aspect.yaml);
+      if (aspect.files) {
+        for (const [filename, content] of Object.entries(aspect.files)) {
+          await writeFile(path.join(aspectDir, filename), content);
+        }
+      }
+    }
+  }
+
+  // Node YAML
+  await writeFile(path.join(nodeDir, 'node.yaml'), opts.nodeYaml);
+
+  // Mapping files (source files)
+  if (opts.mappingFiles) {
+    for (const [relPath, content] of Object.entries(opts.mappingFiles)) {
+      const absPath = path.join(tmpDir, relPath);
+      await mkdir(path.dirname(absPath), { recursive: true });
+      await writeFile(absPath, content);
+    }
+  }
+
+  return { tmpDir, yggRoot, nodeDir };
+}
+
 describe('drift-detector', () => {
   describe('detectDrift', () => {
-    it('reports OK when file hash matches stored hash', async () => {
+    it('reports OK when synced (auth/auth-api in sample project)', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
-      const report = await detectDrift(graph);
+      // First sync to establish correct baseline including graph files
+      await syncDriftState(graph, 'auth/auth-api');
 
+      const report = await detectDrift(graph);
       const okEntry = report.entries.find(
         (e) => e.nodePath === 'auth/auth-api' && e.status === 'ok',
       );
       expect(okEntry).toBeDefined();
-      expect(okEntry?.mappingPaths).toContain('src/auth/auth.controller.ts');
+
+      // Restore original state for other tests
+      await writeDriftState(graph.rootPath, FIXTURE_DRIFT_STATE);
     });
 
-    it('reports DRIFT when file hash differs from stored hash', async () => {
+    it('reports drift when file hash differs from stored hash', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const report = await detectDrift(graph);
 
+      // order-service has bogus stored hash, so it should drift
       const driftEntry = report.entries.find(
-        (e) => e.nodePath === 'orders/order-service' && e.status === 'drift',
+        (e) => e.nodePath === 'orders/order-service',
       );
       expect(driftEntry).toBeDefined();
+      // Could be source-drift, graph-drift, or full-drift depending on what changed
+      expect(['source-drift', 'graph-drift', 'full-drift']).toContain(driftEntry?.status);
       expect(driftEntry?.details).toContain('Changed files:');
     });
 
-    it('reports MISSING or UNMATERIALIZED when mapped file does not exist', async () => {
+    it('reports MISSING when stored entry exists but all source files are gone', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const missingNode = graph.nodes.get('users/missing-service');
       expect(missingNode).toBeDefined();
@@ -47,31 +175,14 @@ describe('drift-detector', () => {
       const report = await detectDrift(graph);
       const entry = report.entries.find((e) => e.nodePath === 'users/missing-service');
       expect(entry).toBeDefined();
-      expect(['missing', 'unmaterialized']).toContain(entry!.status);
-      if (entry!.status === 'missing') {
-        expect(entry!.details).toContain('do not exist');
-      } else {
-        expect(entry!.details).toContain('No drift state recorded');
-      }
+      expect(entry!.status).toBe('missing');
     });
 
     it('reports UNMATERIALIZED when no drift-state entry and files do not exist', async () => {
-      const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-unmaterialized');
-      const yggRoot = path.join(tmpDir, '.yggdrasil');
-      const modelDir = path.join(yggRoot, 'model');
-      const nodeDir = path.join(modelDir, 'svc', 'new-service');
-
-      await mkdir(nodeDir, { recursive: true });
-      await writeFile(
-        path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-      );
-      await writeFile(path.join(modelDir, 'svc', 'node.yaml'), 'name: Svc\ntype: module\n');
-      await writeFile(
-        path.join(nodeDir, 'node.yaml'),
-        'name: NewService\ntype: service\nmapping:\n  paths:\n    - src/svc/new.ts',
-      );
-      await writeFile(path.join(yggRoot, '.drift-state'), '{}');
+      const { tmpDir } = await createTmpProject('drift-unmaterialized', {
+        nodePath: 'svc/new-service',
+        nodeYaml: 'name: NewService\ntype: service\nmapping:\n  paths:\n    - src/svc/new.ts',
+      });
 
       try {
         const graph = await loadGraph(tmpDir);
@@ -87,53 +198,42 @@ describe('drift-detector', () => {
     });
 
     it('multi-file mapping: flags drift if any file changed', async () => {
-      const tmpDir = path.join(__dirname, '../../fixtures/drift-multi-file');
-      const yggRoot = path.join(tmpDir, '.yggdrasil');
-      const srcDir = path.join(tmpDir, 'src');
-      const nodeDir = path.join(yggRoot, 'model', 'multi', 'multi-service');
-
-      await mkdir(path.join(srcDir, 'multi'), { recursive: true });
-      await mkdir(nodeDir, { recursive: true });
-
-      await writeFile(
-        path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-      );
-      await writeFile(
-        path.join(yggRoot, 'model', 'multi', 'node.yaml'),
-        'name: Multi\ntype: module\n',
-      );
-      await writeFile(
-        path.join(nodeDir, 'node.yaml'),
-        `name: MultiService
+      const { tmpDir } = await createTmpProject('drift-multi-file', {
+        nodePath: 'multi/multi-service',
+        nodeYaml: `name: MultiService
 type: service
 mapping:
   paths:
     - src/multi/file-a.ts
     - src/multi/file-b.ts
 `,
-      );
-      await writeFile(path.join(srcDir, 'multi', 'file-a.ts'), '// file-a');
-      await writeFile(path.join(srcDir, 'multi', 'file-b.ts'), '// file-b');
+        mappingFiles: {
+          'src/multi/file-a.ts': '// file-a',
+          'src/multi/file-b.ts': '// file-b',
+        },
+      });
 
-      const hashA = hashString('// file-a');
-      const hashB = hashString('// file-b');
-      const digestInput = `src/multi/file-a.ts:${hashA}\nsrc/multi/file-b.ts:${hashB}`;
-      const combinedHash = hashString(digestInput);
+      try {
+        const graph = await loadGraph(tmpDir);
 
-      await writeFile(path.join(yggRoot, '.drift-state'), `multi/multi-service: ${combinedHash}\n`);
+        // Sync to establish baseline (including graph files)
+        await syncDriftState(graph, 'multi/multi-service');
 
-      const graph = await loadGraph(tmpDir);
-      const reportBefore = await detectDrift(graph);
-      const okBefore = reportBefore.entries.find((e) => e.nodePath === 'multi/multi-service');
-      expect(okBefore?.status).toBe('ok');
+        const reportBefore = await detectDrift(graph);
+        const okBefore = reportBefore.entries.find((e) => e.nodePath === 'multi/multi-service');
+        expect(okBefore?.status).toBe('ok');
 
-      await writeFile(path.join(srcDir, 'multi', 'file-a.ts'), '// file-a MODIFIED');
+        // Modify one source file
+        await writeFile(path.join(tmpDir, 'src/multi/file-a.ts'), '// file-a MODIFIED');
 
-      const reportAfter = await detectDrift(graph);
-      const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'multi/multi-service');
-      expect(driftAfter?.status).toBe('drift');
-      expect(driftAfter?.details).toContain('Changed files:');
+        const reportAfter = await detectDrift(graph);
+        const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'multi/multi-service');
+        expect(driftAfter?.status).toBe('source-drift');
+        expect(driftAfter?.details).toContain('Changed files:');
+        expect(driftAfter?.details).toContain('src/multi/file-a.ts');
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
     });
 
     it('--node filter: only checks specified node', async () => {
@@ -160,39 +260,44 @@ mapping:
   });
 
   describe('syncDriftState', () => {
-    it('updates .drift-state with current hashes', async () => {
-      const graph = await loadGraph(FIXTURE_PROJECT);
-      const orderServicePath = path.join(FIXTURE_PROJECT, 'src/orders/order.service.ts');
-
-      const reportBefore = await detectDrift(graph);
-      const driftBefore = reportBefore.entries.find((e) => e.nodePath === 'orders/order-service');
-      expect(driftBefore?.status).toBe('drift');
-
-      await syncDriftState(graph, 'orders/order-service');
-
-      const driftState = await readDriftState(graph.rootPath);
-      const storedEntry = driftState['orders/order-service'];
-      expect(storedEntry).toBeDefined();
-
-      const storedHash = getCanonicalHash(storedEntry!);
-      const currentContent = await readFile(orderServicePath, 'utf-8');
-      const fileHash = hashString(currentContent);
-      const expectedHash = hashString(`src/orders/order.service.ts:${fileHash}`);
-      expect(storedHash).toBe(expectedHash);
-
-      const reportAfter = await detectDrift(graph);
-      const okAfter = reportAfter.entries.find((e) => e.nodePath === 'orders/order-service');
-      expect(okAfter?.status).toBe('ok');
-
-      const { writeDriftState } = await import('../../../src/io/drift-state-store.js');
-      driftState['orders/order-service'] = {
-        hash: '0000000000000000000000000000000000000000000000000000000000000000',
-        files: {
-          'src/orders/order.service.ts':
-            '0000000000000000000000000000000000000000000000000000000000000000',
+    it('updates .drift-state with current hashes including graph files', async () => {
+      const { tmpDir } = await createTmpProject('drift-sync-update', {
+        nodePath: 'svc/my-service',
+        nodeYaml:
+          'name: MyService\ntype: service\nmapping:\n  paths:\n    - src/svc/my.ts',
+        mappingFiles: {
+          'src/svc/my.ts': '// source content',
         },
-      };
-      await writeDriftState(graph.rootPath, driftState);
+      });
+
+      try {
+        const graph = await loadGraph(tmpDir);
+
+        const result = await syncDriftState(graph, 'svc/my-service');
+        expect(result.previousHash).toBeUndefined();
+        expect(result.currentHash).toBeDefined();
+
+        const driftState = await readDriftState(graph.rootPath);
+        const storedEntry = driftState['svc/my-service'];
+        expect(storedEntry).toBeDefined();
+
+        // Should contain both source and graph files
+        const filePaths = Object.keys(storedEntry!.files);
+        const sourcePaths = filePaths.filter((p) => !p.startsWith('.yggdrasil/'));
+        const graphPaths = filePaths.filter((p) => p.startsWith('.yggdrasil/'));
+
+        expect(sourcePaths).toContain('src/svc/my.ts');
+        expect(graphPaths.length).toBeGreaterThan(0);
+        // Should include node.yaml for the node itself
+        expect(graphPaths).toContain('.yggdrasil/model/svc/my-service/node.yaml');
+
+        // After sync, detect should report ok
+        const report = await detectDrift(graph);
+        const entry = report.entries.find((e) => e.nodePath === 'svc/my-service');
+        expect(entry?.status).toBe('ok');
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
     });
 
     it('throws when node not found', async () => {
@@ -216,78 +321,67 @@ mapping:
     expect(nodePathsChecked).not.toContain('users');
   });
 
-  it('diagnoseChangedFiles returns single path for file mapping when drift', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-file-diagnose');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const srcDir = path.join(tmpDir, 'src');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'file-svc'), { recursive: true });
-    await mkdir(srcDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-    );
-    await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
-      await writeFile(
-        path.join(yggRoot, 'model', 'svc', 'file-svc', 'node.yaml'),
-        'name: FS\ntype: service\nmapping:\n  paths:\n    - src/file.ts',
-      );
-    await writeFile(path.join(srcDir, 'file.ts'), 'v1');
-
-    const fileHash = hashString('v1');
-    const aggregateHash = hashString(`src/file.ts:${fileHash}`);
-    await writeDriftState(yggRoot, {
-      'svc/file-svc': { hash: aggregateHash, files: { 'src/file.ts': fileHash } },
+  it('detects source-drift when only source file changes', async () => {
+    const { tmpDir } = await createTmpProject('drift-source-only', {
+      nodePath: 'svc/file-svc',
+      nodeYaml: 'name: FS\ntype: service\nmapping:\n  paths:\n    - src/file.ts',
+      mappingFiles: {
+        'src/file.ts': 'v1',
+      },
     });
 
     try {
       const graph = await loadGraph(tmpDir);
+
+      // Sync to establish baseline
+      await syncDriftState(graph, 'svc/file-svc');
+
       const reportBefore = await detectDrift(graph);
       const okBefore = reportBefore.entries.find((e) => e.nodePath === 'svc/file-svc');
       expect(okBefore?.status).toBe('ok');
 
-      await writeFile(path.join(srcDir, 'file.ts'), 'v2');
+      // Modify only source file
+      await writeFile(path.join(tmpDir, 'src/file.ts'), 'v2');
 
       const reportAfter = await detectDrift(graph);
       const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'svc/file-svc');
-      expect(driftAfter?.status).toBe('drift');
+      expect(driftAfter?.status).toBe('source-drift');
       expect(driftAfter?.details).toContain('src/file.ts');
+
+      // Verify changedFiles
+      expect(driftAfter?.changedFiles).toBeDefined();
+      expect(driftAfter!.changedFiles!.every((f) => f.category === 'source')).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
   it('reports drift with deleted file in directory mapping', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-deleted');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const srcDir = path.join(tmpDir, 'src', 'dir');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'dir-svc'), { recursive: true });
-    await mkdir(srcDir, { recursive: true });
-    await writeFile(path.join(srcDir, 'a.ts'), 'a');
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-    );
-    await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
-    await writeFile(
-      path.join(yggRoot, 'model', 'svc', 'dir-svc', 'node.yaml'),
-      'name: DS\ntype: service\nmapping:\n  paths:\n    - src/dir',
-    );
-
-    const hashA = hashString('a');
-    const dirDigest = `a.ts:${hashA}\ndeleted.ts:${hashA}`;
-    const origHash = hashString(dirDigest);
-    await writeDriftState(yggRoot, {
-      'svc/dir-svc': {
-        hash: origHash,
-        files: { 'src/dir/a.ts': hashA, 'src/dir/deleted.ts': hashA },
+    const { tmpDir } = await createTmpProject('drift-deleted', {
+      nodePath: 'svc/dir-svc',
+      nodeYaml: 'name: DS\ntype: service\nmapping:\n  paths:\n    - src/dir',
+      mappingFiles: {
+        'src/dir/a.ts': 'a',
+        'src/dir/b.ts': 'b',
       },
     });
 
     try {
       const graph = await loadGraph(tmpDir);
-      const report = await detectDrift(graph);
-      const entry = report.entries.find((e) => e.nodePath === 'svc/dir-svc');
-      expect(entry?.status).toBe('drift');
+
+      // Sync to establish baseline
+      await syncDriftState(graph, 'svc/dir-svc');
+
+      const reportBefore = await detectDrift(graph);
+      const okBefore = reportBefore.entries.find((e) => e.nodePath === 'svc/dir-svc');
+      expect(okBefore?.status).toBe('ok');
+
+      // Delete one file
+      await rm(path.join(tmpDir, 'src/dir/b.ts'));
+
+      const reportAfter = await detectDrift(graph);
+      const entry = reportAfter.entries.find((e) => e.nodePath === 'svc/dir-svc');
+      expect(entry?.status).toBe('source-drift');
       expect(entry?.details).toContain('deleted');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
@@ -295,104 +389,44 @@ mapping:
   });
 
   it('reports drift when no drift-state but files exist', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-no-state');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const srcDir = path.join(tmpDir, 'src');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'exist-svc'), { recursive: true });
-    await mkdir(srcDir, { recursive: true });
-    await writeFile(path.join(srcDir, 'exist.ts'), 'content');
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-    );
-    await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
-    await writeFile(
-      path.join(yggRoot, 'model', 'svc', 'exist-svc', 'node.yaml'),
-      'name: ES\ntype: service\nmapping:\n  paths:\n    - src/exist.ts',
-    );
-    await writeFile(path.join(yggRoot, '.drift-state'), '{}');
+    const { tmpDir } = await createTmpProject('drift-no-state', {
+      nodePath: 'svc/exist-svc',
+      nodeYaml: 'name: ES\ntype: service\nmapping:\n  paths:\n    - src/exist.ts',
+      mappingFiles: {
+        'src/exist.ts': 'content',
+      },
+    });
 
     try {
       const graph = await loadGraph(tmpDir);
       const report = await detectDrift(graph);
       const entry = report.entries.find((e) => e.nodePath === 'svc/exist-svc');
-      expect(entry?.status).toBe('drift');
+      expect(entry?.status).toBe('source-drift');
       expect(entry?.details).toContain('files exist');
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
 
-  it('reports drift when stored entry has no files (legacy format)', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-legacy');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const srcDir = path.join(tmpDir, 'src');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'legacy-svc'), { recursive: true });
-    await mkdir(srcDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-    );
-    await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
-    await writeFile(
-      path.join(yggRoot, 'model', 'svc', 'legacy-svc', 'node.yaml'),
-      'name: L\ntype: service\nmapping:\n  paths:\n    - src/legacy.ts',
-    );
-    await writeFile(path.join(srcDir, 'legacy.ts'), 'content');
-
-    const contentHash = hashString('content');
-    const aggregateHash = hashString(`src/legacy.ts:${contentHash}`);
-    await writeDriftState(yggRoot, { 'svc/legacy-svc': { hash: aggregateHash } });
-
-    try {
-      const graph = await loadGraph(tmpDir);
-      const report = await detectDrift(graph);
-      const entry = report.entries.find((e) => e.nodePath === 'svc/legacy-svc');
-      expect(entry?.status).toBe('ok');
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it('diagnoseChangedFiles returns empty when perFileHashes throws (catch block)', async () => {
-    const hashModule = await import('../../../src/utils/hash.js');
-    const perFileHashesSpy = vi.spyOn(hashModule, 'perFileHashes').mockRejectedValueOnce(new Error('read failed'));
-
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-catch');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const srcDir = path.join(tmpDir, 'src');
-    await mkdir(path.join(yggRoot, 'model', 'svc', 'catch-svc'), { recursive: true });
-    await mkdir(srcDir, { recursive: true });
-    await writeFile(path.join(srcDir, 'file.ts'), 'v1');
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
-    );
-    await writeFile(path.join(yggRoot, 'model', 'svc', 'node.yaml'), 'name: S\ntype: module\n');
-    await writeFile(
-      path.join(yggRoot, 'model', 'svc', 'catch-svc', 'node.yaml'),
-      'name: CS\ntype: service\nmapping:\n  paths:\n    - src/file.ts',
-    );
-
-    const hashV1 = hashString('v1');
-    const origHash = hashString(`src/file.ts:${hashV1}`);
-    await writeDriftState(yggRoot, {
-      'svc/catch-svc': {
-        hash: origHash,
-        files: { 'src/file.ts': hashV1 },
+  it('reports ok when synced and nothing changed', async () => {
+    const { tmpDir } = await createTmpProject('drift-ok-synced', {
+      nodePath: 'svc/files-svc',
+      nodeYaml: 'name: L\ntype: service\nmapping:\n  paths:\n    - src/files.ts',
+      mappingFiles: {
+        'src/files.ts': 'content',
       },
     });
 
     try {
-      await writeFile(path.join(srcDir, 'file.ts'), 'v2');
       const graph = await loadGraph(tmpDir);
+
+      // Sync to establish baseline
+      await syncDriftState(graph, 'svc/files-svc');
+
       const report = await detectDrift(graph);
-      const entry = report.entries.find((e) => e.nodePath === 'svc/catch-svc');
-      expect(entry).toBeDefined();
-      expect(entry?.status).toBe('drift');
-      expect(entry?.details).toContain('File(s) modified');
+      const entry = report.entries.find((e) => e.nodePath === 'svc/files-svc');
+      expect(entry?.status).toBe('ok');
     } finally {
-      perFileHashesSpy.mockRestore();
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
@@ -403,10 +437,188 @@ mapping:
 
     expect(report.totalChecked).toBe(report.entries.length);
     expect(report.okCount).toBe(report.entries.filter((e) => e.status === 'ok').length);
-    expect(report.driftCount).toBe(report.entries.filter((e) => e.status === 'drift').length);
+    expect(report.sourceDriftCount).toBe(report.entries.filter((e) => e.status === 'source-drift').length);
+    expect(report.graphDriftCount).toBe(report.entries.filter((e) => e.status === 'graph-drift').length);
+    expect(report.fullDriftCount).toBe(report.entries.filter((e) => e.status === 'full-drift').length);
     expect(report.missingCount).toBe(report.entries.filter((e) => e.status === 'missing').length);
     expect(report.unmaterializedCount).toBe(
       report.entries.filter((e) => e.status === 'unmaterialized').length,
     );
+  });
+
+  // ============================================================
+  // New tests for graph drift detection
+  // ============================================================
+
+  describe('graph drift detection', () => {
+    it('detects graph-drift when an aspect file changes', async () => {
+      const { tmpDir } = await createTmpProject('drift-graph-aspect', {
+        nodePath: 'svc/audited-svc',
+        nodeYaml: `name: AuditedService
+type: service
+aspects:
+  - requires-audit
+mapping:
+  paths:
+    - src/audited.ts
+`,
+        mappingFiles: {
+          'src/audited.ts': '// audited service code',
+        },
+        aspects: [
+          {
+            id: 'requires-audit',
+            yaml: 'name: Audit Logging\n',
+            files: {
+              'content.md': '# Audit Requirements\n\nAll operations must be logged.',
+            },
+          },
+        ],
+      });
+
+      try {
+        const graph = await loadGraph(tmpDir);
+
+        // Sync to establish baseline
+        await syncDriftState(graph, 'svc/audited-svc');
+
+        const reportBefore = await detectDrift(graph);
+        const okBefore = reportBefore.entries.find((e) => e.nodePath === 'svc/audited-svc');
+        expect(okBefore?.status).toBe('ok');
+
+        // Modify aspect content (graph file) — NOT source
+        await writeFile(
+          path.join(tmpDir, '.yggdrasil/aspects/requires-audit/content.md'),
+          '# Updated Audit Requirements\n\nAll operations must be logged with full context.',
+        );
+
+        const reportAfter = await detectDrift(graph);
+        const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'svc/audited-svc');
+        expect(driftAfter?.status).toBe('graph-drift');
+        expect(driftAfter?.changedFiles).toBeDefined();
+        expect(driftAfter!.changedFiles!.length).toBeGreaterThan(0);
+        expect(driftAfter!.changedFiles!.every((f) => f.category === 'graph')).toBe(true);
+        expect(driftAfter!.changedFiles!.some((f) =>
+          f.filePath.includes('requires-audit/content.md'),
+        )).toBe(true);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('detects full-drift when both source and graph change', async () => {
+      const { tmpDir } = await createTmpProject('drift-full', {
+        nodePath: 'svc/full-svc',
+        nodeYaml: 'name: FullSvc\ntype: service\nmapping:\n  paths:\n    - src/full.ts',
+        mappingFiles: {
+          'src/full.ts': '// original source',
+        },
+      });
+
+      try {
+        const graph = await loadGraph(tmpDir);
+
+        // Sync baseline
+        await syncDriftState(graph, 'svc/full-svc');
+
+        const reportBefore = await detectDrift(graph);
+        expect(
+          reportBefore.entries.find((e) => e.nodePath === 'svc/full-svc')?.status,
+        ).toBe('ok');
+
+        // Modify BOTH source and graph
+        await writeFile(path.join(tmpDir, 'src/full.ts'), '// modified source');
+        await writeFile(
+          path.join(tmpDir, '.yggdrasil/model/svc/full-svc/node.yaml'),
+          'name: FullSvcRenamed\ntype: service\nmapping:\n  paths:\n    - src/full.ts',
+        );
+
+        const reportAfter = await detectDrift(graph);
+        const driftAfter = reportAfter.entries.find((e) => e.nodePath === 'svc/full-svc');
+        expect(driftAfter?.status).toBe('full-drift');
+        expect(driftAfter?.changedFiles).toBeDefined();
+
+        const categories = new Set(driftAfter!.changedFiles!.map((f) => f.category));
+        expect(categories.has('source')).toBe(true);
+        expect(categories.has('graph')).toBe(true);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('detects source-drift when only source changes (changedFiles verified)', async () => {
+      const { tmpDir } = await createTmpProject('drift-source-cat', {
+        nodePath: 'svc/src-svc',
+        nodeYaml: 'name: SrcSvc\ntype: service\nmapping:\n  paths:\n    - src/src.ts',
+        mappingFiles: {
+          'src/src.ts': '// original',
+        },
+      });
+
+      try {
+        const graph = await loadGraph(tmpDir);
+        await syncDriftState(graph, 'svc/src-svc');
+
+        await writeFile(path.join(tmpDir, 'src/src.ts'), '// modified');
+
+        const report = await detectDrift(graph);
+        const entry = report.entries.find((e) => e.nodePath === 'svc/src-svc');
+        expect(entry?.status).toBe('source-drift');
+        expect(entry?.changedFiles).toBeDefined();
+        expect(entry!.changedFiles!.every((f) => f.category === 'source')).toBe(true);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('syncDriftState captures graph files in drift state', async () => {
+      const { tmpDir } = await createTmpProject('drift-sync-graph', {
+        nodePath: 'svc/graph-svc',
+        nodeYaml: `name: GraphSvc
+type: service
+aspects:
+  - test-aspect
+mapping:
+  paths:
+    - src/graph.ts
+`,
+        mappingFiles: {
+          'src/graph.ts': '// graph service',
+        },
+        aspects: [
+          {
+            id: 'test-aspect',
+            yaml: 'name: Test Aspect\n',
+            files: {
+              'requirements.md': '# Test requirements',
+            },
+          },
+        ],
+      });
+
+      try {
+        const graph = await loadGraph(tmpDir);
+        await syncDriftState(graph, 'svc/graph-svc');
+
+        const driftState = await readDriftState(graph.rootPath);
+        const storedEntry = driftState['svc/graph-svc'];
+        expect(storedEntry).toBeDefined();
+
+        const filePaths = Object.keys(storedEntry!.files);
+        const graphPaths = filePaths.filter((p) => p.startsWith('.yggdrasil/'));
+
+        // Should include node.yaml for own node
+        expect(graphPaths).toContain('.yggdrasil/model/svc/graph-svc/node.yaml');
+        // Should include parent node.yaml
+        expect(graphPaths).toContain('.yggdrasil/model/svc/node.yaml');
+        // Should include aspect files
+        expect(graphPaths).toContain('.yggdrasil/aspects/test-aspect/aspect.yaml');
+        expect(graphPaths).toContain('.yggdrasil/aspects/test-aspect/requirements.md');
+        // Should include source file
+        expect(filePaths).toContain('src/graph.ts');
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
   });
 });

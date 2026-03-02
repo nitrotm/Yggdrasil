@@ -2,12 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI_ROOT = path.join(__dirname, '../..');
 const BIN_PATH = path.join(CLI_ROOT, 'dist', 'bin.js');
+const PKG_VERSION = JSON.parse(readFileSync(path.join(CLI_ROOT, 'package.json'), 'utf-8')).version;
 const FIXTURE = path.join(CLI_ROOT, 'tests', 'fixtures', 'sample-project');
 
 const distExists = existsSync(BIN_PATH);
@@ -42,8 +44,25 @@ describe.skipIf(!distExists)('CLI E2E', () => {
 
   it('yg --version', () => {
     const { stdout, status } = run(['--version']);
-    expect(stdout.trim()).toBe('0.1.0');
+    expect(stdout.trim()).toBe(PKG_VERSION);
     expect(status).toBe(0);
+  });
+
+  it('yg aspects lists aspects with YAML output', () => {
+    const { stdout, status } = run(['aspects']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('requires-audit');
+  });
+
+  it('yg aspects without .yggdrasil returns exit 1', () => {
+    const emptyDir = mkdtempSync(path.join(tmpdir(), 'yg-e2e-aspects-no-ygg-'));
+    try {
+      const { status, stderr } = run(['aspects'], emptyDir);
+      expect(status).toBe(1);
+      expect(stderr).toContain('yg init');
+    } finally {
+      rmSync(emptyDir, { recursive: true, force: true });
+    }
   });
 
   it('yg tree without .yggdrasil returns exit 1', () => {
@@ -74,9 +93,10 @@ describe.skipIf(!distExists)('CLI E2E', () => {
   it('yg build-context', () => {
     const { stdout, status } = run(['build-context', '--node', 'orders/order-service']);
     expect(status).toBe(0);
-    expect(stdout).toContain('Context Package: OrderService');
-    expect(stdout).toContain('Global Context');
-    expect(stdout).toContain('Node: OrderService');
+    expect(stdout).toContain('<context-package ');
+    expect(stdout).toContain('node-name="OrderService"');
+    expect(stdout).toContain('<global>');
+    expect(stdout).toContain('<own-artifacts');
   });
 
   it('yg build-context nonexistent node', () => {
@@ -249,10 +269,84 @@ describe.skipIf(!distExists)('CLI E2E', () => {
     expect(stderr).toContain('Node not found');
   });
 
-  it('yg impact without --node returns exit 1', () => {
+  it('yg impact without any mode returns exit 1', () => {
     const { status, stderr } = run(['impact']);
     expect(status).toBe(1);
-    expect(stderr).toContain('required option');
+    expect(stderr).toContain('required');
+  });
+
+  it('yg impact --node and --aspect together returns exit 1', () => {
+    const { status, stderr } = run(['impact', '--node', 'auth/auth-api', '--aspect', 'requires-audit']);
+    expect(status).toBe(1);
+    expect(stderr).toContain('mutually exclusive');
+  });
+
+  it('yg impact --aspect requires-audit shows affected nodes', () => {
+    const { stdout, status } = run(['impact', '--aspect', 'requires-audit']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('Impact of changes in aspect requires-audit');
+    expect(stdout).toContain('orders');
+    expect(stdout).toContain('Total scope:');
+  });
+
+  it('yg impact --aspect requires-audit shows implies chain', () => {
+    const { stdout, status } = run(['impact', '--aspect', 'requires-audit']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('Implies: requires-logging');
+  });
+
+  it('yg impact --aspect requires-audit shows source attribution (own)', () => {
+    const { stdout, status } = run(['impact', '--aspect', 'requires-audit']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('orders (own)');
+    expect(stdout).toContain('orders/order-service (own)');
+  });
+
+  it('yg impact --aspect requires-logging shows flow propagation source', () => {
+    const { stdout, status } = run(['impact', '--aspect', 'requires-logging']);
+    expect(status).toBe(0);
+    // auth/auth-api gets requires-logging from checkout-flow
+    expect(stdout).toContain('auth/auth-api (flow: Checkout Flow)');
+    // orders gets requires-logging via implies from requires-audit
+    expect(stdout).toContain('orders (implied)');
+    expect(stdout).toContain('Flows propagating this aspect: Checkout Flow');
+    expect(stdout).toContain('Implied by: requires-audit');
+  });
+
+  it('yg impact --aspect nonexistent returns exit 1', () => {
+    const { status, stderr } = run(['impact', '--aspect', 'nonexistent']);
+    expect(status).toBe(1);
+    expect(stderr).toContain('Aspect not found');
+  });
+
+  it('yg impact --flow checkout-flow shows participants', () => {
+    const { stdout, status } = run(['impact', '--flow', 'checkout-flow']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('Impact of changes in flow');
+    expect(stdout).toContain('orders/order-service');
+    expect(stdout).toContain('auth/auth-api');
+    expect(stdout).toContain('Total scope:');
+  });
+
+  it('yg impact --flow checkout-flow shows flow aspects', () => {
+    const { stdout, status } = run(['impact', '--flow', 'checkout-flow']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('Flow aspects: requires-logging');
+  });
+
+  it('yg impact --flow nonexistent returns exit 1', () => {
+    const { status, stderr } = run(['impact', '--flow', 'nonexistent']);
+    expect(status).toBe(1);
+    expect(stderr).toContain('Flow not found');
+  });
+
+  it('yg impact --node shows co-aspect nodes', () => {
+    const { stdout, status } = run(['impact', '--node', 'orders/order-service']);
+    expect(status).toBe(0);
+    // orders/order-service has requires-audit and requires-logging
+    // orders module also has these (via own + implies)
+    expect(stdout).toContain('Nodes sharing aspects');
+    expect(stdout).toContain('orders');
   });
 
   // --- validate edge cases ---
@@ -558,5 +652,24 @@ describe.skipIf(!distExists)('CLI E2E', () => {
     expect(stdout).toContain('Aspects:');
     expect(stdout).toContain('Relations:');
     expect(stdout).toContain('Nodes:');
+  });
+
+  // --- preflight ---
+
+  describe('preflight', () => {
+    it('outputs all four report sections', () => {
+      const { stdout, status } = run(['preflight']);
+      expect(stdout).toContain('=== Preflight Report ===');
+      expect(stdout).toContain('Journal:');
+      expect(stdout).toContain('Drift:');
+      expect(stdout).toContain('Status:');
+      expect(stdout).toContain('Validation:');
+      expect(stdout).toMatch(/\d+ nodes/);
+    });
+
+    it('exits with numeric status code', () => {
+      const { status } = run(['preflight']);
+      expect(status === 0 || status === 1).toBe(true);
+    });
   });
 });

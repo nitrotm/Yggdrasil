@@ -1,6 +1,6 @@
 name: GraphLoader
 type: library
-tags: [deterministic]
+aspects: [deterministic, silent-missing-files]
 
 relations:
   - target: cli/io
@@ -12,9 +12,6 @@ relations:
   - target: cli/utils
     type: uses
     consumes: [findYggRoot]
-
-knowledge:
-  - invariants/002-graph-intended-truth
 
 mapping:
   paths:

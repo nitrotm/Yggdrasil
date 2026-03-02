@@ -1,6 +1,6 @@
 name: DriftDetector
 type: library
-tags: [deterministic]
+aspects: [deterministic, posix-paths]
 
 relations:
   - target: cli/io
@@ -12,9 +12,6 @@ relations:
   - target: cli/utils
     type: uses
     consumes: [normalizeMappingPaths, hashForMapping, perFileHashes]
-
-knowledge:
-  - invariants/002-graph-intended-truth
 
 mapping:
   paths:

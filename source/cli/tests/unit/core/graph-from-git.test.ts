@@ -102,7 +102,7 @@ describe('graph-from-git', () => {
           mkdirSync(path.join(yggRoot, 'model', 'svc'), { recursive: true });
           writeFileSync(
             path.join(yggRoot, 'config.yaml'),
-            'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+            'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
           );
           writeFileSync(
             path.join(yggRoot, 'model', 'svc', 'node.yaml'),

@@ -1,13 +1,11 @@
 name: Formatters
 type: library
-tags: [deterministic]
+aspects: [deterministic]
 
 relations:
   - target: cli/model
     type: uses
     consumes: [ContextPackage]
-
-knowledge: []
 
 mapping:
   paths:

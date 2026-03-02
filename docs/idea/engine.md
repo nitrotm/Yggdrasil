@@ -1,7 +1,7 @@
 # Engine
 
 The [Foundation](foundation) document defines the problem and invariants.
-The [Graph](graph) document defines knowledge structure.
+The [Graph](graph) document defines graph structure.
 The [Integration](integration) document defines how agents use these mechanics.
 This document defines the deterministic mechanics — algorithms and tools that operate on the
 graph: context assembly, validation, drift detection, and tool operations.
@@ -50,32 +50,34 @@ general rules are concise and stable; specific contracts are detailed and changi
 
 ### Assembly Algorithm
 
-For node `N` at path `P` with tags `T`, context assembly executes the following steps in order.
+For node `N` at path `P` with aspects `A`, context assembly executes the following steps in order.
 Each step is deterministic.
 
 ```
 1.  GLOBAL        config.yaml: stack, standards
 
-2.  KNOWLEDGE     global scope
-                  every knowledge element where scope = global
-
-3.  KNOWLEDGE     tag match
-                  every knowledge element where scope.tags ∩ T ≠ ∅
-
-4.  KNOWLEDGE     node scope
-                  every knowledge element where P ∈ scope.nodes
-
-5.  KNOWLEDGE     node-declared
-                  every element listed in N.knowledge
-
-6.  HIERARCHICAL  for each ancestor from model/ root down to N's parent:
+2.  HIERARCHICAL  for each ancestor from model/ root down to N's parent:
                   include all configured artifacts of that ancestor (every artifact type from config
                   that exists in the ancestor's directory)
 
-7.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
+3.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
                   artifact filenames)
 
-8.  RELATIONAL
+4.  ASPECTS       Each block (hierarchy, own, flow) declares its own aspects. No inheritance —
+                  each block has an `aspects` field (comma-separated aspect identifiers; omit if empty).
+                  Hierarchy block: each ancestor may have `aspects="id1,id2"` in its metadata.
+                  Own block: node.yaml has `aspects: [id1, id2]`.
+                  Flow block: flow.yaml has `aspects: [id1, id2]` for flows where N or an
+                  ancestor participates. Effective aspects = union of all identifiers from these blocks.
+                  The `aspects` attribute on each block shows the resolved set (including implied
+                  aspects), not just the raw declared identifiers.
+                  For each aspect identifier: content of the matching aspect (aspects/<id>/) plus any
+                  aspects implied by that aspect (recursive). Implies are resolved with cycle detection;
+                  a cycle (A implies B implies A) is an error. No source attribute on aspect
+                  output — aspects are rendered without provenance. Aspects section = union of
+                  aspect identifiers from hierarchy + own + flow blocks, expand implies, render content.
+
+5.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
         - artifacts of target with structural_context (e.g. responsibility, interface, constraints, errors)
         - consumes annotation from the relation field (if declared)
@@ -83,43 +85,36 @@ Each step is deterministic.
       for each event relation of N (emits, listens):
         - event name and type
         - consumes annotation from the relation field (if declared)
-
-9.  ASPECTS       for each tag in T: content of the matching aspect
-
-10. FLOWS         for each flow listing N or any of N's ancestors as a participant:
-                  - flow content artifacts
-                  - knowledge elements referenced by the flow (flow.knowledge)
+      for each flow listing N or any of N's ancestors as a participant:
+        - flow content artifacts
 ```
 
 The result is a single document — the context package. Its size is bounded regardless of
 project size because each step attaches only what is directly relevant to node `N`.
 
-**Deduplication**: knowledge elements are deduplicated globally within the package. If a
-knowledge element is reachable via multiple paths (global scope, tag scope, node scope,
-node-declared in step 5, flow reference in step 10), it appears at most once regardless of
-the number of paths leading to it.
+> **Implementation note:** The implementation may build layers in a different internal order
+> (e.g. relational and flows before aspects, so that flow-propagated aspect ids can be
+> collected). The rendered output is always reordered to match the sequence above.
 
 ### Mapping Conceptual Layers to Algorithm Steps
 
-The output uses **section names from the algorithm** (Global, Knowledge, Hierarchy, OwnArtifacts,
-Dependencies, Aspects, Flows). The table below maps these to conceptual layers for understanding:
+The output uses **section names from the algorithm** (Global, Hierarchy, OwnArtifacts,
+Aspects, Relational). The table below maps these to conceptual layers for understanding:
 
 | Conceptual Layer | Algorithm Steps                         | Section in output |
 | ---------------- | --------------------------------------- | ---------------- |
 | World Identity   | Step 1 (global config)                  | Global           |
-| Long-term Memory | Steps 2–5 (all knowledge scopes)        | Knowledge        |
-| Domain Context   | Step 6 (hierarchical ancestors)         | Hierarchy        |
-| Unit Identity    | Step 7 (node.yaml + own artifacts)     | OwnArtifacts     |
-| Surroundings     | Steps 8–10 (relational, aspects, flows) | Dependencies, Aspects, Flows |
+| Domain Context   | Step 2 (hierarchical ancestors)         | Hierarchy        |
+| Unit Identity    | Step 3 (node.yaml + own artifacts)     | OwnArtifacts     |
+| Cross-cutting    | Step 4 (aspects from all blocks)        | Aspects          |
+| Surroundings     | Step 5 (relations, events, flows)       | Relational       |
 
-Layers are the conceptual model — they describe the _kinds_ of knowledge in the package.
-Steps are the mechanics — they describe _where_ knowledge comes from. One conceptual layer
-can span multiple steps; long-term memory uses four scope types, and one step can contribute
-to multiple layers (step 10 attaches both flow artifacts and knowledge referenced by the flow).
+Layers are the conceptual model — they describe the _kinds_ of content in the package.
+Steps are the mechanics — they describe _where_ content comes from.
 
 ### Relational Annotations
 
-Step 8 does **not** parse the content of Markdown artifacts. Tools copy the full content of
+Step 5 does **not** parse the content of Markdown artifacts. Tools copy the full content of
 each structural-context artifact of the target and then append annotations from the YAML
 relation fields.
 
@@ -165,169 +160,58 @@ annotate it with metadata from YAML. The agent interprets.
 
 ### Context Package Format
 
-The context package is a Markdown document with clearly separated sections. Section headers
-match the algorithm steps (Global, Knowledge, Hierarchy, OwnArtifacts, Dependencies, Aspects, Flows):
+The context package is a plain text document with XML-like tags. Tags provide structure and
+metadata; content between tags is raw text (no CDATA, no escaping).
 
-```markdown
-# Context Package: OrderService
-# Path: orders/order-service
-# Generated: 2024-01-15T10:30:00.000Z
+```text
+<context-package node-path="orders/order-service" node-name="OrderService" token-count="3200">
 
----
-
-## Global
-
-### Global Context
-
+<global>
 **Project:** my-project
+**Stack:** language: typescript, runtime: node, framework: nestjs
+**Standards:** Strict TypeScript, JSDoc on public functions
+</global>
 
-**Stack:**
-- language: typescript
-- runtime: node
-- framework: nestjs
-
-**Standards:**
-Strict TypeScript, JSDoc on public functions
-
----
-
-## Knowledge
-
-### Invariant: No direct access to other services' databases
-
-<content>
-
-### Decision: Event Sourcing
-
-<content>
-
----
-
-## Hierarchy
-
-### Module Context (orders/)
-
+<hierarchy path="orders/">
 ### responsibility.md
-
 <content of orders/responsibility.md>
+</hierarchy>
 
----
-
-## OwnArtifacts
-
-### Node: OrderService
-
+<own-artifacts>
 ### node.yaml
-
 name: OrderService
 type: service
-tags:
-  - requires-audit
-  - requires-auth
-relations:
-  - target: payments/payment-service
-    type: calls
-    consumes: [charge, refund]
-  - target: inventory/inventory-service
-    type: calls
-    consumes: [reserve, release]
-mapping:
-  type: file
-  path: src/modules/orders/order.service.ts
-
+aspects: [requires-audit, requires-auth]
+relations: ...
 ### responsibility.md
-
 <content>
+</own-artifacts>
 
-### interface.md
-
+<aspect name="Audit logging" id="requires-audit">
+### content.md
 <content>
+</aspect>
 
-### constraints.md
-
-<content>
-
-### state.md
-
-<content>
-
----
-
-## Dependencies
-
-### Dependency: PaymentService (calls) — payments/payment-service
-
+<dependency target="payments/payment-service" type="calls" consumes="charge, refund" failure="retry 3x">
 Consumes: charge, refund
-On failure: retry 3x, then mark order as payment-failed
-
-### Responsibility
-
-<responsibility.md content>
-
-### Interface
-
-<interface.md content>
-
-### Constraints
-
-<constraints.md content>
-
-### Errors
-
-<errors.md content>
-
-### Dependency: InventoryService (calls) — inventory/inventory-service
-
-Consumes: reserve, release
-
-### Responsibility
-
-<responsibility.md content>
-
-### Interface
-
-<interface.md content>
-
-### Constraints
-
-<constraints.md content>
-
-### Errors
-
-<errors.md content>
-
----
-
-## Aspects
-
-### Audit logging (tag: requires-audit)
-
+### responsibility.md
 <content>
+</dependency>
 
----
-
-## Flows
-
-### Flow: Checkout flow
-
-<description.md>
-<sequence.md>
-
-### Long-term Memory (from flow): Saga Pattern
-
+<flow name="Checkout flow">
+### description.md
 <content>
+</flow>
 
----
-
-Context size: 3,200 tokens
-Layers: global, knowledge, hierarchy, own, relational, aspects, flows
+</context-package>
 ```
 
-Markdown is the natural format for agents — they read it fluently. The format is fixed — the
-same section layout regardless of project. Content is variable — depends on project config and
-the specific node.
+The format is fixed — the same tag structure regardless of project. Content between tags is
+variable — depends on project config and the specific node. Agents read the structured output
+fluently; the XML-like tags provide clear boundaries and provenance (e.g. `source="node"` vs
+`source="flow:Checkout"` for aspects).
 
-**The context package contains only graph knowledge, not source code.** The agent fetches
+**The context package contains only graph content, not source code.** The agent fetches
 source files separately when it needs implementation details. If a person places code
 fragments inside Markdown artifacts (e.g., in `interface.md` as an API specification),
 that is their choice — tools treat artifacts as text and attach content without parsing it.
@@ -370,9 +254,10 @@ a graph with errors cannot produce reliable context packages.
 **Referential integrity**:
 
 - Every relation target must resolve to an existing node.
-- Every knowledge reference must resolve to an existing knowledge element.
 - Every flow participant must resolve to an existing node.
-- Every tag must be defined in `config.yaml`.
+- Every aspect identifier must correspond to a directory under `aspects/`.
+- Every identifier in an aspect's `implies` must have a corresponding aspect in `aspects/`.
+- The aspect implies graph must be acyclic (no A implies B implies A).
 
 **Mapping uniqueness**: no two nodes may map to the same file or have overlapping directory
 mappings.
@@ -392,31 +277,21 @@ Warnings flag quality issues that don't break the graph but reduce context packa
 
 **Shallow content**: artifacts that exist but are shorter than the configured minimum length.
 
-**Unreachable knowledge**: a knowledge element that reaches no context package — neither through
-scope matching to existing nodes nor through explicit references from node `knowledge` fields.
-It was written but is dead.
-
-**Missing examples**: a pattern directory without an example file. A pattern describes a
-convention but provides no reference implementation.
-
 **Context budget**: a complex context package exceeding the configured warning threshold.
-Exceeding the error threshold (W006 budget-error) is a **behavioral** block: the agent may
-consciously proceed, but should warn the user about the risk and recommend splitting the node.
+Exceeding the error threshold (W006 budget-error) causes the CLI to emit a warning on stderr.
+The context package is still output — the agent should warn the user about the risk and
+recommend splitting the node.
 
 **High fan-out**: a node whose direct relation count exceeds the configured maximum — a signal
 of excessive coupling.
 
-**Stale knowledge** (W008): a knowledge element whose scoped nodes evolved more recently than
-the element itself — the semantic memory may not have kept pace with node evolution. Detection
-uses a **Proxy based on Git commit timestamps** (not file modification dates, which are not
-semantic after clone). For knowledge element `K` at `knowledge/<cat>/<name>/`: `tK` = timestamp
-of last commit touching `K`. For each node `P` in `K`'s scope: `tP` = timestamp of last commit
-touching `.yggdrasil/model/<P>/`. If `max(tP) - tK > knowledge_staleness_days`, report W008
-stale-knowledge for `K`.
-
 **Unmatched event relations**: a node declares an `emits` relation to a target but the target
 has no matching `listens`, or vice versa — event-based communication is declared unilaterally.
 Tools compare declarations on both sides and signal the missing complement.
+
+**Missing required aspect coverage**: a node of type X has `required_aspects` in config but the node
+lacks coverage (direct aspect or via implies) for one or more required aspects. Tools report this as
+a warning (W011).
 
 ### Role of Validation
 
@@ -432,58 +307,91 @@ before merge, ensuring structural integrity of the semantic memory base is maint
 
 ---
 
-## Drift Detection
+## Bidirectional Drift Detection
 
-Drift is divergence between the graph and outputs — source files changed outside the
-semantic memory cycle. Tools detect it by comparing file hashes.
+Drift is divergence between graph and outputs. Drift detection is **bidirectional** — it
+tracks both source files (code mapped via `node.yaml` mappings) and graph artifacts
+(`.yggdrasil/` files that participate in a node's context package). A change on either side
+is drift; a change on both sides is full drift.
 
 ### Mechanism
 
-For each node with a mapping, tools compute a SHA-256 hash of mapped files and compare it
-against the stored state. State is stored in `.yggdrasil/.drift-state` (YAML).
+For each node with a mapping, tools collect all **tracked files** — both source files from
+the mapping and graph artifact files that contribute to the node's context package. Tools
+compute a SHA-256 hash of the tracked file set and compare it against the stored state.
+State is stored in `.yggdrasil/.drift-state` (YAML).
 
-`.drift-state` contains the hash of each mapped file at the time of last synchronization.
+`.drift-state` contains the hash of each tracked file at the time of last synchronization.
 The file is committed to the repository — drift state is shared across the team, not local
 per-developer.
 
-Hash computation depends on mapping strategy:
+#### Tracked file collection (`collectTrackedFiles`)
 
-| Strategy    | Hash algorithm                                                                                  |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `file`      | SHA-256 of file content                                                                         |
-| `directory` | SHA-256 of sorted list of (path, SHA-256-of-content) pairs; path is relative to the directory.  |
-|             | Files matching `.gitignore` (project root) are excluded from the hash.                          |
-| `files`     | SHA-256 of sorted list of (filepath, SHA-256-of-content) pairs                                 |
+The set of tracked files for a node mirrors the traversal of context assembly
+(`build-context`) but returns file paths instead of rendered content. Six layers are
+collected:
 
-`directory` and `files` strategies produce one canonical hash — adding, removing, or changing
-any file changes the group hash.
+1. **Own** — `node.yaml` and config-filtered artifacts of the node itself.
+2. **Hierarchical** — `node.yaml` and artifacts of all ancestor nodes from root to parent.
+3. **Aspects** — `aspect.yaml` and content files for all resolved aspects (own + ancestor +
+   flow-propagated, with recursive `implies` expansion).
+4. **Relational dependencies** — structural-context artifacts of structural relation targets
+   (`uses`, `calls`, `extends`, `implements`).
+5. **Relational flows** — `flow.yaml` and content artifacts of all flows listing this node or
+   an ancestor as a participant.
+6. **Source** — files from the node's `mapping.paths`.
 
-The mechanism is deliberately simple: **hash changed → something changed**. Tools do not
-interpret what changed — that is creative work for the agent. Tools report the fact;
-the agent assesses the significance.
+Layers 1--5 produce graph-category files (paths under `.yggdrasil/`). Layer 6 produces
+source-category files. Each file is tracked exactly once (deduplicated by path).
+
+#### Hash computation
+
+Each path in `mapping.paths` is checked at runtime — if it is a file, its content is hashed
+directly (SHA-256). If it is a directory, it is scanned recursively (respecting `.gitignore`),
+each file is hashed individually, and a canonical hash is computed from sorted
+(relative-path, SHA-256-of-content) pairs. Adding, removing, or changing any file in a
+directory changes the canonical hash.
+
+The overall drift state for a node combines both source and graph file hashes into a single
+canonical hash. Per-file hashes are also stored for diagnostics — enabling tools to report
+exactly which files changed and whether they are source or graph files.
+
+The mechanism is deliberately simple: **hash changed → something changed**. Tools classify
+the change by checking which files differ and whether they are source or graph files. The
+agent assesses the significance and decides on resolution.
 
 ### Drift States
 
-Every mapped node has one of four states:
+Every mapped node has one of six states:
 
-| State            | Meaning                                                        |
-| ---------------- | -------------------------------------------------------------- |
-| `ok`             | Hash matches — file has not changed since last synchronization |
-| `drift`          | Hash does not match — file was modified                        |
-| `missing`        | Mapped file does not exist on disk                             |
-| `unmaterialized` | Node has a mapping but the file has never been created         |
+| State            | Meaning                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `ok`             | All tracked file hashes match — nothing changed since last synchronization           |
+| `source-drift`   | Source file(s) changed but graph artifacts unchanged                                 |
+| `graph-drift`    | Graph artifact(s) changed but source files unchanged                                 |
+| `full-drift`     | Both source and graph files changed                                                  |
+| `missing`        | Mapped source files do not exist on disk                                             |
+| `unmaterialized` | Node has a mapping but files have never been created (no entry in `.drift-state`)    |
 
 ### Drift Resolution
 
-When drift is detected, there are two resolution paths:
+Resolution depends on the type of drift detected:
 
-- **Absorption**: the agent updates the graph to reflect the changes in the file. Tools update
-  the stored hash. Outputs become the truth.
-- **Rejection**: the agent re-materializes the file from the graph. Hash is updated after
-  materialization. The graph remains the truth.
+- **Source drift** — source files changed outside the semantic memory cycle. The agent
+  reviews the changes, updates graph artifacts to reflect the new source state, then runs
+  `drift-sync` to record the new baseline.
+- **Graph drift** — graph artifacts changed (e.g., updated responsibility, added constraints)
+  but source code was not updated to match. The agent reviews the graph changes, updates
+  affected source files to align with the new specification, then runs `drift-sync`.
+- **Full drift** — both sides changed independently. The agent must reconcile both: review
+  source changes, review graph changes, resolve any conflicts, update both sides as needed,
+  then run `drift-sync`.
+- **Missing** — mapped source files were deleted. The agent determines whether to
+  re-materialize from the graph or remove the mapping.
+- **Unmaterialized** — files have never been created. The agent materializes from the graph.
 
-The human decides which direction to take. The agent executes the decision. Tools record the
-new state.
+In all cases, the human decides the resolution direction. The agent executes the decision.
+Tools record the new state via `drift-sync`.
 
 ---
 
@@ -497,8 +405,8 @@ after window fill), interruptible (the user ends the session at any point), and 
 
 Any semantic knowledge living only in conversation is at risk of loss.
 
-A full graph update — creating a Markdown artifact, expanding `node.yaml`, adding a knowledge
-element — requires focus and interrupts the creative flow. The agent faces a trade-off: save
+A full graph update — creating a Markdown artifact, expanding `node.yaml`, adding an aspect
+or flow — requires focus and interrupts the creative flow. The agent faces a trade-off: save
 to graph immediately (risk of interrupting flow) or defer until later (risk of loss on context
 compression or session interruption).
 
@@ -628,7 +536,7 @@ Read operations modify nothing. They can be called as frequently as needed.
 
 **Impact analysis** in simulation mode runs the context assembly algorithm on a hypothetical
 graph state: current state with proposed changes applied. Output is a list of affected context
-packages with diffs relative to current state — added or removed knowledge elements, changed
+packages with diffs relative to current state — added or removed content, changed
 dependency artifacts, budget shifts. The assembly algorithm is the same; only the input changes.
 
 ### Validation Operations
@@ -665,8 +573,8 @@ configures integration with the agent platform.
 
 ### Responsibility Boundary
 
-Tools do **not** write semantic knowledge to the graph. They do not create nodes, add relations,
-write artifacts, or manage knowledge elements. That is creative work belonging to the agent.
+Tools do **not** write semantic content to the graph. They do not create nodes, add relations,
+write artifacts, or manage aspects and flows. That is creative work belonging to the agent.
 
 Tools maintain only operational metadata:
 
@@ -676,7 +584,7 @@ Tools maintain only operational metadata:
 
 This model is analogous to the programmer–compiler relationship: the programmer writes code,
 the compiler checks correctness. The only exception is initialization, which creates the
-starting structure and config. After initialization, all knowledge changes in the graph are
+starting structure and config. After initialization, all content changes in the graph are
 the work of the agent or human — tools only read.
 
 ---
@@ -686,43 +594,28 @@ the work of the agent or human — tools only read.
 Given graph state:
 
 ```
-config.yaml                          tags: service, requires-audit, data-access
-model/orders/order-service/node.yaml tags: requires-audit
+config.yaml
+model/orders/order-service/node.yaml aspects: [requires-audit]
                                      relations: calls payments/payment-service
                                                         consumes: charge, refund
-                                     knowledge: decisions/002-event-sourcing
 
-aspects/audit-logging/aspect.yaml    bound to tag: requires-audit
-
-knowledge/invariants/no-cross-service-db/knowledge.yaml  scope: global
-knowledge/patterns/error-handling/knowledge.yaml         scope tags: service
-knowledge/decisions/002-event-sourcing/knowledge.yaml    scope nodes: orders/order-service
+aspects/requires-audit/              aspect id = directory path
+  aspect.yaml                        name, optional description, optional implies
 
 flows/checkout/flow.yaml             lists orders/order-service as participant
-                                     references: knowledge/patterns/saga-pattern
 ```
 
 Context package for `orders/order-service` contains:
 
 ```
 Step 1.  config.yaml: standards and stack
-Step 2.  Invariant: No direct access to other services' databases  [global scope]
-Step 3.  (no tag-scoped match — node has requires-audit, not service)
-Step 4.  Decision: Event Sourcing  [node scope: lists this node]
-Step 5.  Decision: Event Sourcing  [node-declared reference — DEDUPLICATED with step 4]
-Step 6.  Domain context of orders/ module artifacts
-Step 7.  Own artifacts of OrderService: responsibility, interface, constraints, state
-Step 8.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
+Step 2.  Domain context of orders/ module artifacts
+Step 3.  Own artifacts of OrderService: responsibility, interface, constraints, state
+Step 4.  Aspect: Audit logging  [aspect requires-audit]
+Step 5.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
          + annotation: consumes charge, refund; on failure: retry 3x, then payment-failed
-Step 9.  Aspect: Audit logging  [tag requires-audit]
-Step 10. Flow: Checkout flow  [description.md, sequence.md]
-         Saga Pattern  [flow knowledge reference]
+         Flow: Checkout flow  [description.md, sequence.md]
 ```
-
-Note: `knowledge/patterns/error-handling` is **not** included — it has tag scope `service`
-and this node's tags are `requires-audit`. For the pattern to reach this node, either add
-the `service` tag to the node, or add the pattern to the node's `knowledge` list. The system
-never guesses.
 
 ---
 

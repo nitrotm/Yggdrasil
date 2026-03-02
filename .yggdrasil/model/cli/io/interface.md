@@ -5,7 +5,7 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## config-parser.ts
 
 - `parseConfig(filePath: string): Promise<YggConfig>`
-  - Reads and parses config.yaml. Throws on missing name, invalid node_types, invalid artifacts (reserved name `node`, invalid required.when), missing knowledge_categories, invalid quality (context_budget.error < warning), missing tags. Returns parsed config with quality defaults.
+  - Reads and parses config.yaml. Throws on missing name, invalid node_types, invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Returns parsed config with quality defaults.
 
 ## node-parser.ts
 
@@ -15,20 +15,14 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## aspect-parser.ts
 
 - `parseAspect(aspectDir: string, aspectYamlPath: string): Promise<AspectDef>`
-  - Throws on missing name or tag. Reads artifacts from aspectDir excluding aspect.yaml.
+  - Throws on missing name or id. Reads artifacts from aspectDir excluding aspect.yaml.
 
 ## flow-parser.ts
 
 - `parseFlow(flowDir: string, flowYamlPath: string): Promise<FlowDef>`
-  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding flow.yaml.
+  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
 
-## knowledge-parser.ts
-
-- `parseKnowledge(knowledgeDir: string, knowledgeYamlPath: string, category: string, relativePath: string): Promise<KnowledgeItem>`
-  - Throws on missing name, invalid scope (must be `global` or `{ tags: string[] }` or `{ nodes: string[] }` with non-empty arrays). Reads artifacts from knowledgeDir excluding knowledge.yaml.
-- Exports type: `KnowledgeScope = 'global' | { tags: string[] } | { nodes: string[] }`
-
-## template-parser.ts
+## schema-parser.ts
 
 - `parseSchema(filePath: string): Promise<SchemaDef>`
   - Validates file is parseable YAML. Infers `schemaType` from filename stem (e.g. `node.yaml` → `'node'`). Used by `loadSchemas` in cli/core/loader.

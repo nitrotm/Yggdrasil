@@ -21,10 +21,7 @@ describe('config-parser', () => {
     expect(typeof config.standards).toBe('string');
     expect(config.standards).toContain('ESLint');
     expect(config.quality?.context_budget.warning).toBe(8000);
-    expect(config.tags).toContain('requires-auth');
-    expect(config.tags).toContain('requires-audit');
-    expect(config.tags).toContain('public-api');
-    expect(config.node_types).toContain('service');
+    expect(config.node_types.some((t) => t.name === 'service')).toBe(true);
     expect(config.artifacts['responsibility.md']).toBeDefined();
   });
 
@@ -40,7 +37,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-tags: []
 `,
       'utf-8',
     );
@@ -52,7 +48,7 @@ tags: []
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('defaults empty tags to empty array', async () => {
+  it('parses minimal config without tags field', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-minimal');
     await mkdir(tmpDir, { recursive: true });
     const minimalConfigPath = path.join(tmpDir, 'config.yaml');
@@ -65,14 +61,12 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );
 
     const config = await parseConfig(minimalConfigPath);
-    expect(config.tags).toEqual([]);
+    expect(config.name).toBe('Minimal Config');
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -93,8 +87,6 @@ artifacts:
     required: never
     description: "API"
     structural_context: true
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );
@@ -112,7 +104,7 @@ tags: []
     expect(config.quality?.context_budget.error).toBe(16000);
   });
 
-  it('throws when artifact name is node (reserved)', async () => {
+  it('throws when artifact name is node.yaml (reserved)', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
@@ -121,19 +113,18 @@ tags: []
 name: "Reserved"
 node_types: [service]
 artifacts:
-  node:
+  node.yaml:
     required: always
     description: "x"
   responsibility:
     required: always
     description: "x"
-tags: []
 `,
       'utf-8',
     );
 
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "artifact name 'node' is reserved",
+      "artifact name 'node.yaml' is reserved",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -151,7 +142,6 @@ artifacts:
   responsibility:
     required: invalid_value
     description: "x"
-tags: []
 `,
       'utf-8',
     );
@@ -176,65 +166,12 @@ artifacts:
     required:
       when: has_foo
     description: "x"
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );
 
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
       "invalid 'required.when'",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('throws when knowledge_categories is missing', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-no-kc');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "NoKC"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-tags: []
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "missing 'knowledge_categories' field",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('throws when duplicate knowledge category', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-dup-cat');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "Dup"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories:
-  - name: decisions
-  - name: decisions
-tags: []
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      'duplicate knowledge category',
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -256,8 +193,6 @@ quality:
   context_budget:
     warning: 10000
     error: 5000
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );
@@ -269,32 +204,8 @@ tags: []
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('throws when tags field is missing', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-no-tags');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "NoTags"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories: []
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "missing 'tags' field",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
   it('throws when node_types is not array', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types');
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-types-not-array');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
       path.join(tmpDir, 'config.yaml'),
@@ -305,7 +216,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-tags: []
 `,
       'utf-8',
     );
@@ -329,7 +239,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-tags: []
 `,
       'utf-8',
     );
@@ -338,6 +247,78 @@ tags: []
       "'node_types' must be a non-empty array",
     );
 
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('parses node_types with name and required_aspects', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types');
+    await mkdir(tmpDir, { recursive: true });
+    const configPath = path.join(tmpDir, 'config.yaml');
+    await writeFile(
+      configPath,
+      `
+name: T
+node_types:
+  - name: module
+  - name: service
+    required_aspects: [requires-audit]
+artifacts:
+  responsibility.md:
+    required: always
+    description: x
+`,
+      'utf-8',
+    );
+    const cfg = await parseConfig(configPath);
+    expect(cfg.node_types).toHaveLength(2);
+    expect(cfg.node_types[0]).toEqual({ name: 'module' });
+    expect(cfg.node_types[1]).toEqual({ name: 'service', required_aspects: ['requires-audit'] });
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('backward compat: parses required_tags as required_aspects', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types-compat');
+    await mkdir(tmpDir, { recursive: true });
+    const configPath = path.join(tmpDir, 'config.yaml');
+    await writeFile(
+      configPath,
+      `
+name: T
+node_types:
+  - name: module
+  - name: service
+    required_tags: [requires-audit]
+artifacts:
+  responsibility.md:
+    required: always
+    description: x
+`,
+      'utf-8',
+    );
+    const cfg = await parseConfig(configPath);
+    expect(cfg.node_types).toHaveLength(2);
+    expect(cfg.node_types[1]).toEqual({ name: 'service', required_aspects: ['requires-audit'] });
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('accepts legacy node_types as string array', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-legacy-types');
+    await mkdir(tmpDir, { recursive: true });
+    const configPath = path.join(tmpDir, 'config.yaml');
+    await writeFile(
+      configPath,
+      `
+name: T
+node_types: [module, service]
+artifacts:
+  responsibility.md:
+    required: always
+    description: x
+`,
+      'utf-8',
+    );
+    const cfg = await parseConfig(configPath);
+    expect(cfg.node_types).toEqual([{ name: 'module' }, { name: 'service' }]);
     await rm(tmpDir, { recursive: true, force: true });
   });
 
@@ -350,7 +331,6 @@ tags: []
 name: "Bad"
 node_types: [service]
 artifacts: []
-tags: []
 `,
       'utf-8',
     );
@@ -358,59 +338,6 @@ tags: []
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
       "'artifacts' must be a non-empty object",
     );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('throws when tags is not array', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-tags-not-array');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "Tags"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories: []
-tags: "not-an-array"
-`,
-      'utf-8',
-    );
-
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "'tags' must be an array",
-    );
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('skips knowledge categories with invalid name', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-kc-skip');
-    await mkdir(tmpDir, { recursive: true });
-    await writeFile(
-      path.join(tmpDir, 'config.yaml'),
-      `
-name: "KC"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-knowledge_categories:
-  - name: decisions
-  - {}
-  - name: patterns
-tags: []
-`,
-      'utf-8',
-    );
-
-    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
-    expect(config.knowledge_categories).toHaveLength(2);
-    expect(config.knowledge_categories.map((c) => c.name)).toEqual(['decisions', 'patterns']);
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -426,14 +353,38 @@ node_types: [service]
 artifacts:
   responsibility:
     required: always
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );
 
     const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
     expect(config.artifacts.responsibility.description).toBe('');
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('accepts has_aspect: as valid when condition', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-has-aspect');
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      path.join(tmpDir, 'config.yaml'),
+      `
+name: "HasAspect"
+node_types: [service]
+artifacts:
+  responsibility:
+    required: always
+    description: "x"
+  compliance:
+    required:
+      when: has_aspect:regulated
+    description: "y"
+`,
+      'utf-8',
+    );
+
+    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
+    expect(config.artifacts.compliance.required).toEqual({ when: 'has_aspect:regulated' });
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -451,8 +402,6 @@ artifacts:
   responsibility:
     required: always
     description: "x"
-knowledge_categories: []
-tags: []
 `,
       'utf-8',
     );

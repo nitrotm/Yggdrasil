@@ -1,13 +1,11 @@
 name: Utils
 type: library
-tags: []
+aspects: [posix-paths]
 
 relations:
   - target: cli/model
     type: uses
     consumes: [NodeMapping]
-
-knowledge: []
 
 mapping:
   paths:

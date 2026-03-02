@@ -1,6 +1,6 @@
 name: DriftCommands
 type: library
-tags: [deterministic]
+aspects: [deterministic, cli-command-contract]
 
 relations:
   - target: cli/core/loader
@@ -9,9 +9,6 @@ relations:
   - target: cli/core/drift-detector
     type: uses
     consumes: [detectDrift, syncDriftState]
-
-knowledge:
-  - patterns/command-error-handling
 
 mapping:
   paths:

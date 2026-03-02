@@ -1,0 +1,10 @@
+name: Settings
+type: module
+aspects: [requires-auth]
+
+relations: []
+
+mapping:
+  paths:
+    - apps/web/src/pages/Settings.tsx
+    - apps/web/src/pages/Subscription.tsx

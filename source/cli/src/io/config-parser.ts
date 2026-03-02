@@ -3,15 +3,14 @@ import { parse as parseYaml } from 'yaml';
 import type {
   YggConfig,
   ArtifactConfig,
-  KnowledgeCategory,
   QualityConfig,
+  NodeTypeConfig,
 } from '../model/types.js';
 
 const DEFAULT_QUALITY: QualityConfig = {
   min_artifact_length: 50,
   max_direct_relations: 10,
   context_budget: { warning: 10000, error: 20000 },
-  knowledge_staleness_days: 90,
 };
 
 export async function parseConfig(filePath: string): Promise<YggConfig> {
@@ -22,10 +21,35 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     throw new Error(`config.yaml: missing or invalid 'name' field`);
   }
 
-  const nodeTypes = raw.node_types;
-  if (!Array.isArray(nodeTypes) || nodeTypes.length === 0) {
+  const nodeTypesRaw = raw.node_types;
+  if (!Array.isArray(nodeTypesRaw) || nodeTypesRaw.length === 0) {
     throw new Error(`config.yaml: 'node_types' must be a non-empty array`);
   }
+  const nodeTypes: NodeTypeConfig[] = nodeTypesRaw.map((item) => {
+    if (typeof item === 'string') {
+      return { name: item };
+    }
+    if (
+      typeof item === 'object' &&
+      item !== null &&
+      'name' in item &&
+      typeof (item as { name: unknown }).name === 'string'
+    ) {
+      const obj = item as { name: string; required_aspects?: unknown; required_tags?: unknown };
+      const requiredAspects = Array.isArray(obj.required_aspects)
+        ? (obj.required_aspects as unknown[]).filter((t): t is string => typeof t === 'string')
+        : Array.isArray(obj.required_tags)
+          ? (obj.required_tags as unknown[]).filter((t): t is string => typeof t === 'string')
+          : undefined;
+      return {
+        name: obj.name,
+        required_aspects: requiredAspects && requiredAspects.length > 0 ? requiredAspects : undefined,
+      };
+    }
+    throw new Error(
+      `config.yaml: node_types entry must be string or { name, required_aspects? }`,
+    );
+  });
 
   const artifacts = raw.artifacts;
   if (
@@ -39,8 +63,8 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
 
   const artifactsMap: Record<string, ArtifactConfig> = {};
   for (const [key, val] of Object.entries(artifacts)) {
-    if (key === 'node') {
-      throw new Error(`config.yaml: artifact name 'node' is reserved`);
+    if (key === 'node.yaml') {
+      throw new Error(`config.yaml: artifact name 'node.yaml' is reserved`);
     }
     const a = val as Record<string, unknown>;
     const required = a.required;
@@ -56,10 +80,11 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
       const validWhen =
         when === 'has_incoming_relations' ||
         when === 'has_outgoing_relations' ||
-        (typeof when === 'string' && when.startsWith('has_tag:'));
+        (typeof when === 'string' &&
+          (when.startsWith('has_aspect:') || when.startsWith('has_tag:')));
       if (!validWhen) {
         throw new Error(
-          `config.yaml: artifact '${key}' has invalid 'required.when': must be has_incoming_relations, has_outgoing_relations, or has_tag:<name>`,
+          `config.yaml: artifact '${key}' has invalid 'required.when': must be has_incoming_relations, has_outgoing_relations, or has_aspect:<name>`,
         );
       }
     }
@@ -68,25 +93,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
       description: (a.description as string) ?? '',
       structural_context: (a.structural_context as boolean) ?? false,
     };
-  }
-
-  if (!('knowledge_categories' in raw)) {
-    throw new Error(
-      `config.yaml: missing 'knowledge_categories' field (required, may be empty list)`,
-    );
-  }
-  const knowledgeCategoriesRaw = raw.knowledge_categories;
-  if (!Array.isArray(knowledgeCategoriesRaw)) {
-    throw new Error(`config.yaml: 'knowledge_categories' must be an array`);
-  }
-  const knowledgeCategories = knowledgeCategoriesRaw as KnowledgeCategory[];
-  const categoryNames = new Set<string>();
-  for (const kc of knowledgeCategories) {
-    if (!kc?.name || typeof kc.name !== 'string') continue;
-    if (categoryNames.has(kc.name)) {
-      throw new Error(`config.yaml: duplicate knowledge category '${kc.name}'`);
-    }
-    categoryNames.add(kc.name);
   }
 
   const qualityRaw = raw.quality as Record<string, unknown> | undefined;
@@ -104,9 +110,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
             (qualityRaw.context_budget as Record<string, number>)?.error ??
             DEFAULT_QUALITY.context_budget.error,
         },
-        knowledge_staleness_days:
-          (qualityRaw.knowledge_staleness_days as number) ??
-          DEFAULT_QUALITY.knowledge_staleness_days,
       }
     : DEFAULT_QUALITY;
 
@@ -116,23 +119,12 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     );
   }
 
-  if (!('tags' in raw)) {
-    throw new Error(`config.yaml: missing 'tags' field (required, may be empty list)`);
-  }
-  const tags = raw.tags;
-  if (!Array.isArray(tags)) {
-    throw new Error(`config.yaml: 'tags' must be an array`);
-  }
-  const tagsList = (tags as unknown[]).filter((t): t is string => typeof t === 'string');
-
   return {
     name: (raw.name as string).trim(),
     stack: (raw.stack as Record<string, string>) ?? {},
     standards: typeof raw.standards === 'string' ? raw.standards : '',
-    tags: tagsList,
-    node_types: nodeTypes as string[],
+    node_types: nodeTypes,
     artifacts: artifactsMap,
-    knowledge_categories: knowledgeCategories.filter((kc) => kc?.name),
     quality,
   };
 }

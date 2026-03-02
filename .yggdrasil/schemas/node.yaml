@@ -1,0 +1,14 @@
+name: ComponentName
+type: service
+aspects: []
+blackbox: false
+
+relations:
+  - target: other/module-path
+    type: calls
+    consumes: [methodA, methodB]
+    failure: "retry 3x, then circuit-break"
+
+mapping:
+  paths:
+    - src/modules/component/

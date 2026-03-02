@@ -18,8 +18,6 @@ name: Checkout Flow
 nodes:
   - orders/order-service
   - auth/auth-api
-knowledge:
-  - decisions/001-example
 `,
       'utf-8',
     );
@@ -28,7 +26,6 @@ knowledge:
 
     expect(flow.name).toBe('Checkout Flow');
     expect(flow.nodes).toEqual(['orders/order-service', 'auth/auth-api']);
-    expect(flow.knowledge).toEqual(['decisions/001-example']);
     expect(flow.artifacts).toBeDefined();
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -126,26 +123,6 @@ nodes: [123, {}]
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('filters knowledge to strings only', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-knowledge');
-    await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
-    await writeFile(
-      flowYaml,
-      `
-name: Test Flow
-nodes: [a/b]
-knowledge: [dec/001, 123, "ok"]
-`,
-      'utf-8',
-    );
-
-    const flow = await parseFlow(tmpDir, flowYaml);
-    expect(flow.knowledge).toEqual(['dec/001', 'ok']);
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
   it('trims name', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-trim');
     await mkdir(tmpDir, { recursive: true });
@@ -161,6 +138,55 @@ nodes: [a/b]
 
     const flow = await parseFlow(tmpDir, flowYaml);
     expect(flow.name).toBe('Checkout Flow');
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('parses optional aspects array', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-aspects');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    await writeFile(
+      flowYaml,
+      `
+name: Saga Flow
+nodes: [a/b]
+aspects:
+  - requires-saga
+  - requires-idempotency
+`,
+      'utf-8',
+    );
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+
+    expect(flow.aspects).toEqual(['requires-saga', 'requires-idempotency']);
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('sets path to basename of flowDir', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-path');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    await writeFile(flowYaml, 'name: Path Test\nnodes: [a/b]', 'utf-8');
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+
+    expect(flow.path).toBe(path.basename(tmpDir));
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns undefined when aspects absent', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-no-aspects');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    await writeFile(flowYaml, 'name: Plain\nnodes: [a/b]', 'utf-8');
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+
+    expect(flow.aspects).toBeUndefined();
 
     await rm(tmpDir, { recursive: true, force: true });
   });

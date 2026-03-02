@@ -15,8 +15,8 @@ cd your-project
 yg init --platform <platform>
 ```
 
-Supported platforms: `cursor`, `claude-code`, `copilot`, `clinerules`,
-`codex`, `windsurf`, `aider`, `gemini`, `amp`
+Supported platforms: `cursor`, `claude-code`, `copilot`, `cline`,
+`roocode`, `codex`, `windsurf`, `aider`, `gemini`, `amp`, `generic`
 
 ## 3) Done
 

@@ -2,14 +2,17 @@
 // Config
 // ============================================================
 
+export interface NodeTypeConfig {
+  name: string;
+  required_aspects?: string[];
+}
+
 export interface YggConfig {
   name: string;
   stack: Record<string, string>;
   standards: string;
-  tags: string[];
-  node_types: string[];
+  node_types: NodeTypeConfig[];
   artifacts: Record<string, ArtifactConfig>;
-  knowledge_categories: KnowledgeCategory[];
   quality?: QualityConfig;
 }
 
@@ -20,16 +23,10 @@ export interface ArtifactConfig {
   structural_context?: boolean;
 }
 
-export interface KnowledgeCategory {
-  name: string;
-  description: string;
-}
-
 export interface QualityConfig {
   min_artifact_length: number;
   max_direct_relations: number;
   context_budget: { warning: number; error: number };
-  knowledge_staleness_days: number;
 }
 
 // ============================================================
@@ -41,10 +38,9 @@ export type RelationType = 'uses' | 'calls' | 'extends' | 'implements' | 'emits'
 export interface NodeMeta {
   name: string;
   type: string;
-  tags?: string[];
+  aspects?: string[];
   blackbox?: boolean;
   relations?: Relation[];
-  knowledge?: string[];
   mapping?: NodeMapping;
 }
 
@@ -67,6 +63,8 @@ export interface GraphNode {
   path: string;
   /** Parsed node.yaml content */
   meta: NodeMeta;
+  /** Raw node.yaml file content (for context assembly without disk access) */
+  nodeYamlRaw?: string;
   /** All artifact files in the node's directory */
   artifacts: Artifact[];
   /** Child nodes (subdirectories with node.yaml) */
@@ -88,7 +86,10 @@ export interface Artifact {
 
 export interface AspectDef {
   name: string;
-  tag: string;
+  id: string;
+  description?: string;
+  /** Ids of aspects to include automatically (composition) */
+  implies?: string[];
   artifacts: Artifact[];
 }
 
@@ -97,30 +98,21 @@ export interface AspectDef {
 // ============================================================
 
 export interface FlowDef {
+  /** Directory name under flows/, e.g. "checkout-flow" */
+  path: string;
   name: string;
   nodes: string[];
-  knowledge?: string[];
+  /** Optional aspect ids — aspects propagate to all participants */
+  aspects?: string[];
   artifacts: Artifact[];
 }
 
 // ============================================================
-// Knowledge
-// ============================================================
-
-export interface KnowledgeItem {
-  name: string;
-  scope: 'global' | { tags: string[] } | { nodes: string[] };
-  category: string;
-  path: string;
-  artifacts: Artifact[];
-}
-
-// ============================================================
-// Schema (graph layer reference, lives in templates/)
+// Schema (graph layer reference, lives in schemas/)
 // ============================================================
 
 export interface SchemaDef {
-  /** Inferred from filename: 'node' | 'aspect' | 'flow' | 'knowledge' */
+  /** Inferred from filename: 'node' | 'aspect' | 'flow' */
   schemaType: string;
 }
 
@@ -148,7 +140,6 @@ export interface Graph {
   nodes: Map<string, GraphNode>;
   aspects: AspectDef[];
   flows: FlowDef[];
-  knowledge: KnowledgeItem[];
   schemas: SchemaDef[];
   /** Absolute path to the .yggdrasil/ directory */
   rootPath: string;
@@ -160,12 +151,10 @@ export interface Graph {
 
 export type ContextSectionKey =
   | 'Global'
-  | 'Knowledge'
   | 'Hierarchy'
   | 'OwnArtifacts'
-  | 'Dependencies'
   | 'Aspects'
-  | 'Flows';
+  | 'Relational';
 
 export interface ContextPackage {
   nodePath: string;
@@ -177,10 +166,12 @@ export interface ContextPackage {
 }
 
 export interface ContextLayer {
-  type: 'global' | 'knowledge' | 'hierarchy' | 'own' | 'relational' | 'aspects' | 'flows';
+  type: 'global' | 'hierarchy' | 'own' | 'relational' | 'aspects' | 'flows';
   label: string;
   content: string;
   source?: string;
+  /** Optional attrs for formatters (e.g. target, type for dependency) */
+  attrs?: Record<string, string>;
 }
 
 export interface ContextSection {
@@ -221,28 +212,40 @@ export interface ValidationResult {
 // Drift
 // ============================================================
 
-export type DriftStatus = 'ok' | 'drift' | 'missing' | 'unmaterialized';
+/** Category of a drifted file — source (mapping) or graph (.yggdrasil/) */
+export type DriftCategory = 'source' | 'graph';
+
+/** Per-file drift detail */
+export interface DriftFileChange {
+  filePath: string;
+  category: DriftCategory;
+}
+
+export type DriftStatus = 'ok' | 'source-drift' | 'graph-drift' | 'full-drift' | 'missing' | 'unmaterialized';
 
 export interface DriftEntry {
   nodePath: string;
-  mappingPaths: string[];
   status: DriftStatus;
+  /** Changed files with their category (source or graph) */
+  changedFiles?: DriftFileChange[];
   details?: string;
 }
 
 export interface DriftNodeState {
   hash: string;
-  files?: Record<string, string>;
+  files: Record<string, string>;  // path → sha256 hex — now required, not optional
 }
 
-/** Map: node-path → hash (legacy) or DriftNodeState (extended with per-file hashes) */
-export type DriftState = Record<string, string | DriftNodeState>;
+/** Map: node-path → DriftNodeState. Legacy string format no longer supported. */
+export type DriftState = Record<string, DriftNodeState>;
 
 export interface DriftReport {
   entries: DriftEntry[];
   totalChecked: number;
   okCount: number;
-  driftCount: number;
+  sourceDriftCount: number;
+  graphDriftCount: number;
+  fullDriftCount: number;
   missingCount: number;
   unmaterializedCount: number;
 }

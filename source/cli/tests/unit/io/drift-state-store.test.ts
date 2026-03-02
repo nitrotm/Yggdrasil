@@ -5,26 +5,39 @@ import { fileURLToPath } from 'node:url';
 import {
   readDriftState,
   writeDriftState,
-  getCanonicalHash,
-  getFileHashes,
 } from '../../../src/io/drift-state-store.js';
+import type { DriftState } from '../../../src/model/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('drift-state-store', () => {
-  it('reads existing drift state (v2.2 flat format)', async () => {
+  it('reads existing drift state (DriftNodeState format)', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-read');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
       path.join(tmpDir, '.drift-state'),
-      'orders/order-service: abc123def456\nauth/auth-api: fff789\n',
+      `orders/order-service:
+  hash: abc123def456
+  files:
+    src/orders/order.service.ts: abc123def456
+auth/auth-api:
+  hash: fff789
+  files:
+    src/auth/auth.controller.ts: fff789
+`,
       'utf-8',
     );
 
     const state = await readDriftState(tmpDir);
 
-    expect(state['orders/order-service']).toBe('abc123def456');
-    expect(state['auth/auth-api']).toBe('fff789');
+    expect(state['orders/order-service']).toEqual({
+      hash: 'abc123def456',
+      files: { 'src/orders/order.service.ts': 'abc123def456' },
+    });
+    expect(state['auth/auth-api']).toEqual({
+      hash: 'fff789',
+      files: { 'src/auth/auth.controller.ts': 'fff789' },
+    });
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -44,8 +57,8 @@ describe('drift-state-store', () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-write');
     await mkdir(tmpDir, { recursive: true });
 
-    const state: Record<string, string> = {
-      'test/node': 'abc123',
+    const state: DriftState = {
+      'test/node': { hash: 'abc123', files: { 'src/test.ts': 'abc123' } },
     };
 
     await writeDriftState(tmpDir, state);
@@ -55,7 +68,7 @@ describe('drift-state-store', () => {
     expect(content).toContain('abc123');
 
     const readBack = await readDriftState(tmpDir);
-    expect(readBack['test/node']).toBe('abc123');
+    expect(readBack['test/node']).toEqual({ hash: 'abc123', files: { 'src/test.ts': 'abc123' } });
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -93,25 +106,8 @@ describe('drift-state-store', () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('getCanonicalHash: string entry returns as-is', () => {
-    expect(getCanonicalHash('abc123def456')).toBe('abc123def456');
-  });
-
-  it('getCanonicalHash: DriftNodeState returns entry.hash', () => {
-    expect(getCanonicalHash({ hash: 'sha256xyz', files: { 'a.ts': 'h1' } })).toBe('sha256xyz');
-  });
-
-  it('getFileHashes: string entry returns undefined', () => {
-    expect(getFileHashes('abc123')).toBeUndefined();
-  });
-
-  it('getFileHashes: DriftNodeState returns entry.files', () => {
-    const files = { 'src/a.ts': 'h1', 'src/b.ts': 'h2' };
-    expect(getFileHashes({ hash: 'x', files })).toEqual(files);
-  });
-
-  it('readDriftState: v2.2 object format', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-v22');
+  it('skips legacy string entries silently', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-legacy-skip');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
       path.join(tmpDir, '.drift-state'),
@@ -126,13 +122,15 @@ auth/auth-api: flat-hash-abc
 
     const state = await readDriftState(tmpDir);
 
+    // Object entry is preserved
     expect(state['orders/order-service']).toEqual({
       hash: '28f3c41611792a2e0cc8a4fdffc9b2294aa49d46',
       files: {
         'src/orders/order.service.ts': '28f3c41611792a2e0cc8a4fdffc9b2294aa49d46',
       },
     });
-    expect(state['auth/auth-api']).toBe('flat-hash-abc');
+    // Legacy string entry is skipped
+    expect(state['auth/auth-api']).toBeUndefined();
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -141,15 +139,21 @@ auth/auth-api: flat-hash-abc
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-drift-roundtrip');
     await mkdir(tmpDir, { recursive: true });
 
-    const state: Record<string, string> = {
-      'multi/svc': 'sha256abc123',
-      'other/node': 'sha256def456',
+    const state: DriftState = {
+      'multi/svc': { hash: 'sha256abc123', files: { 'src/multi.ts': 'sha256abc123' } },
+      'other/node': { hash: 'sha256def456', files: { 'src/other.ts': 'sha256def456' } },
     };
 
     await writeDriftState(tmpDir, state);
     const readBack = await readDriftState(tmpDir);
-    expect(readBack['multi/svc']).toBe('sha256abc123');
-    expect(readBack['other/node']).toBe('sha256def456');
+    expect(readBack['multi/svc']).toEqual({
+      hash: 'sha256abc123',
+      files: { 'src/multi.ts': 'sha256abc123' },
+    });
+    expect(readBack['other/node']).toEqual({
+      hash: 'sha256def456',
+      files: { 'src/other.ts': 'sha256def456' },
+    });
 
     await rm(tmpDir, { recursive: true, force: true });
   });

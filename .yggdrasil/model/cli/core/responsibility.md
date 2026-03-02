@@ -1,28 +1,33 @@
 # Core Responsibility
 
-Graph logic module — loading, context building, validation, drift detection, dependency resolution. Implements deterministic algorithms from docs/idea/engine.md and docs/idea/tools.md.
+Pure domain logic layer — graph operations independent of CLI presentation. Implements the deterministic algorithms specified in docs/idea/engine.md and docs/idea/tools.md.
 
-**Shared core contract (all children):**
+## Boundary
 
-- **Deterministic:** same inputs → same outputs. No randomness, no implicit system state. Tag: `deterministic`.
-- **Graph-first:** structural validation enforces graph integrity before materialization; graph is intended truth (invariants/002).
-- **Context reproducibility:** assembled context must suffice to reconstruct source behavior without reading raw code (invariants/001).
-- **Read-only graph writes:** CLI does not create or edit model nodes, artifacts, aspects, flows, knowledge (decisions/001).
+Core has no dependency on Commander, process.exit, stdout, or stderr. It receives typed inputs and returns typed outputs. On error, core functions throw — callers (commands) are responsible for catching exceptions and presenting them to the user.
 
-**Reference:** docs/idea/foundation.md (Division of labor), aspects/determinism.
+## Components
 
-**Flows:** loader, validator, context, drift-detector participate in build-context, validate, drift flows (see .yggdrasil/flows/).
+| Sub-node | Exports | Role |
+| -------- | ------- | ---- |
+| cli/core/loader | `loadGraph`, `loadGraphFromRef` | Scan model/, aspects/, flows/, schemas/ to build the in-memory graph. Git archive for ref-based loading. Consumes cli/io, cli/model, cli/utils. |
+| cli/core/context | `buildContext` | 5-step layer assembly: global, hierarchy, own, aspects, relational. Produces the deterministic context package for a node. Consumes cli/model, cli/utils. |
+| cli/core/validator | `validate` | Structural checks (E001-E017, W001-W011). Scope filtering, context budget enforcement. Consumes cli/core/context, cli/model, cli/utils. |
+| cli/core/drift-detector | `detectDrift`, `syncDriftState` | Hash comparison vs .drift-state. Reports per-file status: ok, drift, missing, unmaterialized. Consumes cli/io, cli/model, cli/utils. |
+| cli/core/dependency-resolver | `resolveDeps`, `findChangedNodes`, `buildDependencyTree`, `formatDependencyTree`, `collectTransitiveDeps` | Topological sort of structural relations, git diff integration, tree output. Consumes cli/model only. |
 
-**Sub-nodes:**
+## Shared core contract (all children)
 
-- **cli/core/loader**: `loadGraph`, `loadGraphFromRef` — scan model/, aspects/, flows/, knowledge/, templates/; git archive for ref-based loading. Consumes cli/io, cli/model, cli/utils.
-- **cli/core/context**: `buildContext` — 10-step layer assembly (global, knowledge, hierarchy, own, relational, aspects, flows). Consumes cli/model, cli/utils.
-- **cli/core/validator**: `validate` — structural checks (E001–E017, W001–W009); scope filtering; context budget; stale knowledge. Consumes cli/core/context, cli/model, cli/utils.
-- **cli/core/drift-detector**: `detectDrift`, `syncDriftState` — hash comparison vs .drift-state; states ok|drift|missing|unmaterialized. Consumes cli/io, cli/model, cli/utils.
-- **cli/core/dependency-resolver**: `resolveDeps`, `findChangedNodes`, `buildDependencyTree`, `formatDependencyTree`, `collectTransitiveDeps` — topological sort, git diff, tree output. Consumes cli/model only.
+- **Deterministic:** same inputs produce same outputs. No randomness, no implicit system state.
+- **Graph-first:** structural validation enforces graph integrity before materialization; graph is intended truth.
+- **Context reproducibility:** assembled context must suffice to reconstruct source behavior without reading raw code.
+- **Read-only graph writes:** core does not create or edit model nodes, artifacts, aspects, or flows.
 
-**Out of scope:**
+**Reference:** docs/idea/foundation.md (Division of labor), aspects/deterministic.
 
-- YAML parsing (cli/io)
+## Out of scope
+
+- YAML parsing and file I/O (cli/io)
 - Output formatting (cli/formatters)
 - Type definitions (cli/model)
+- CLI argument handling and error presentation (cli/commands)

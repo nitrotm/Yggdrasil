@@ -22,16 +22,13 @@ function createGraph(nodes: Array<[string, GraphNode]>): Graph {
       name: 'Test',
       stack: {},
       standards: '',
-      tags: [],
-      node_types: ['service'],
+      node_types: [{ name: 'service' }],
       artifacts: { responsibility: { required: 'always', description: 'x' } },
-      knowledge_categories: [],
     },
     nodes: new Map(nodes),
     aspects: [],
     flows: [],
-    knowledge: [],
-    templates: [],
+    schemas: [],
     rootPath: '/workspace/project/.yggdrasil',
   };
 }

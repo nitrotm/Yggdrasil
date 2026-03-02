@@ -11,11 +11,6 @@ standards: |
   Clean Architecture pattern.
   Jest as test framework. Test coverage target: 80%.
 
-tags:
-  - requires-auth
-  - requires-audit
-  - public-api
-
 node_types:
   - module
   - service
@@ -36,16 +31,9 @@ artifacts:
     required: never
     description: 'Node description'
 
-knowledge_categories:
-  - name: decisions
-    description: 'Architectural decisions'
-  - name: patterns
-    description: 'Implementation patterns'
-
 quality:
   min_artifact_length: 50
   max_direct_relations: 10
   context_budget:
     warning: 8000
     error: 16000
-  knowledge_staleness_days: 90

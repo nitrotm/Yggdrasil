@@ -8,7 +8,9 @@ import {
   hashString,
   hashForMapping,
   perFileHashes,
+  hashTrackedFiles,
 } from '../../../src/utils/hash.js';
+import type { TrackedFile } from '../../../src/core/context-files.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -88,7 +90,7 @@ describe('hash', () => {
       await rm(tmpDir, { recursive: true, force: true });
     });
 
-    it('returns empty hash for ignored file when projectRoot provided', async () => {
+    it('hashes gitignored file when directly mapped (gitignore only applies to directory scans)', async () => {
       const tmpDir = path.join(__dirname, '../../fixtures/tmp-hash-ignored-file');
       await mkdir(tmpDir, { recursive: true });
       await writeFile(path.join(tmpDir, '.gitignore'), 'ignored.txt\n', 'utf-8');
@@ -96,8 +98,9 @@ describe('hash', () => {
       await writeFile(ignoredPath, 'secret', 'utf-8');
 
       const hash = await hashPath(ignoredPath, { projectRoot: tmpDir });
-      expect(hash).toBe(hashString(''));
-      expect(hash).not.toBe(hashString('secret'));
+      // Mapped files are always hashed regardless of gitignore
+      expect(hash).not.toBe(hashString(''));
+      expect(hash).toMatch(/^[a-f0-9]{64}$/);
 
       await rm(tmpDir, { recursive: true, force: true });
     });
@@ -287,6 +290,182 @@ describe('hash', () => {
       expect(result).toEqual([]);
 
       await rm(tmpDir, { recursive: true, force: true });
+    });
+  });
+
+  describe('hashTrackedFiles', () => {
+    it('hashes a single file', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-single');
+      await mkdir(tmpDir, { recursive: true });
+      try {
+        const relPath = 'single.txt';
+        await writeFile(path.join(tmpDir, relPath), 'hello world', 'utf-8');
+
+        const trackedFiles: TrackedFile[] = [{ path: relPath, category: 'source' }];
+        const { canonicalHash, fileHashes } = await hashTrackedFiles(tmpDir, trackedFiles);
+
+        const expectedFileHash = hashString('hello world');
+        expect(fileHashes).toEqual({ [relPath]: expectedFileHash });
+
+        // Canonical hash is sha256 of "path:hash"
+        expect(canonicalHash).toBe(hashString(`${relPath}:${expectedFileHash}`));
+        expect(canonicalHash).toMatch(/^[a-f0-9]{64}$/);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('hashes multiple files with deterministic ordering', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-ordering');
+      await mkdir(tmpDir, { recursive: true });
+      try {
+        await writeFile(path.join(tmpDir, 'alpha.txt'), 'alpha content', 'utf-8');
+        await writeFile(path.join(tmpDir, 'beta.txt'), 'beta content', 'utf-8');
+
+        const trackedFilesAB: TrackedFile[] = [
+          { path: 'alpha.txt', category: 'source' },
+          { path: 'beta.txt', category: 'graph' },
+        ];
+        const trackedFilesBA: TrackedFile[] = [
+          { path: 'beta.txt', category: 'graph' },
+          { path: 'alpha.txt', category: 'source' },
+        ];
+
+        const resultAB = await hashTrackedFiles(tmpDir, trackedFilesAB);
+        const resultBA = await hashTrackedFiles(tmpDir, trackedFilesBA);
+
+        expect(resultAB.canonicalHash).toBe(resultBA.canonicalHash);
+        expect(Object.keys(resultAB.fileHashes).sort()).toEqual(['alpha.txt', 'beta.txt']);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('skips missing files gracefully', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-missing');
+      await mkdir(tmpDir, { recursive: true });
+      try {
+        await writeFile(path.join(tmpDir, 'present.txt'), 'exists', 'utf-8');
+
+        const trackedFiles: TrackedFile[] = [
+          { path: 'present.txt', category: 'source' },
+          { path: 'does-not-exist.txt', category: 'graph' },
+        ];
+
+        // Should not throw even though one file is missing
+        const result = await hashTrackedFiles(tmpDir, trackedFiles);
+
+        expect(Object.keys(result.fileHashes)).not.toContain('does-not-exist.txt');
+        expect(result.fileHashes).toHaveProperty('present.txt');
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('handles empty TrackedFile list', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-empty');
+      await mkdir(tmpDir, { recursive: true });
+      try {
+        const { canonicalHash, fileHashes } = await hashTrackedFiles(tmpDir, []);
+
+        expect(fileHashes).toEqual({});
+        // Canonical hash of empty input: hashString('') — deterministic
+        expect(canonicalHash).toBe(hashString(''));
+        expect(canonicalHash).toMatch(/^[a-f0-9]{64}$/);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('excludes root-gitignored files when expanding directory tracked files', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-gitignore');
+      await mkdir(path.join(tmpDir, 'src'), { recursive: true });
+      await mkdir(path.join(tmpDir, 'src', 'node_modules', 'dep'), { recursive: true });
+      await mkdir(path.join(tmpDir, 'src', 'dist'), { recursive: true });
+      try {
+        // Root .gitignore ignoring node_modules/ and dist/
+        await writeFile(path.join(tmpDir, '.gitignore'), 'node_modules/\ndist/\n', 'utf-8');
+        await writeFile(path.join(tmpDir, 'src', 'app.ts'), 'console.log("app")', 'utf-8');
+        await writeFile(
+          path.join(tmpDir, 'src', 'node_modules', 'dep', 'index.js'),
+          'module.exports = 1',
+          'utf-8',
+        );
+        await writeFile(path.join(tmpDir, 'src', 'dist', 'bundle.js'), 'bundled', 'utf-8');
+
+        const trackedFiles: TrackedFile[] = [{ path: 'src', category: 'source' }];
+        const { fileHashes } = await hashTrackedFiles(tmpDir, trackedFiles);
+
+        // Only app.ts should be hashed — node_modules and dist must be excluded
+        const hashedPaths = Object.keys(fileHashes);
+        expect(hashedPaths).toContain('src/app.ts');
+        expect(hashedPaths.some((p) => p.includes('node_modules'))).toBe(false);
+        expect(hashedPaths.some((p) => p.includes('dist'))).toBe(false);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('excludes files matched by nested .gitignore in subdirectories', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-htf-nested-gitignore');
+      await mkdir(path.join(tmpDir, 'project', 'sub'), { recursive: true });
+      try {
+        // Root .gitignore — does NOT ignore *.db
+        await writeFile(path.join(tmpDir, '.gitignore'), 'node_modules/\n', 'utf-8');
+        // Nested .gitignore in project/ — ignores *.db and *.log
+        await writeFile(path.join(tmpDir, 'project', '.gitignore'), '*.db\n*.log\n', 'utf-8');
+
+        await writeFile(path.join(tmpDir, 'project', 'app.ts'), 'code', 'utf-8');
+        await writeFile(path.join(tmpDir, 'project', 'data.db'), 'sqlite data', 'utf-8');
+        await writeFile(path.join(tmpDir, 'project', 'sub', 'test.db'), 'more db', 'utf-8');
+        await writeFile(path.join(tmpDir, 'project', 'sub', 'debug.log'), 'log data', 'utf-8');
+        await writeFile(path.join(tmpDir, 'project', 'sub', 'index.ts'), 'export {}', 'utf-8');
+
+        const trackedFiles: TrackedFile[] = [{ path: 'project', category: 'source' }];
+        const { fileHashes } = await hashTrackedFiles(tmpDir, trackedFiles);
+
+        const hashedPaths = Object.keys(fileHashes);
+        // Only .ts files should remain — *.db and *.log must be excluded by nested .gitignore
+        expect(hashedPaths).toContain('project/app.ts');
+        expect(hashedPaths).toContain('project/sub/index.ts');
+        expect(hashedPaths.some((p) => p.endsWith('.db'))).toBe(false);
+        expect(hashedPaths.some((p) => p.endsWith('.log'))).toBe(false);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('hashPath — nested .gitignore', () => {
+    it('respects nested .gitignore patterns in subdirectories', async () => {
+      const tmpDir = path.join(__dirname, '../../fixtures/tmp-hashpath-nested-gi');
+      await mkdir(path.join(tmpDir, 'sub'), { recursive: true });
+      try {
+        // Root .gitignore — no *.dat pattern
+        await writeFile(path.join(tmpDir, '.gitignore'), 'node_modules/\n', 'utf-8');
+        // Nested .gitignore in sub/ — ignores *.dat
+        await writeFile(path.join(tmpDir, 'sub', '.gitignore'), '*.dat\n', 'utf-8');
+
+        await writeFile(path.join(tmpDir, 'keep.ts'), 'keep', 'utf-8');
+        await writeFile(path.join(tmpDir, 'sub', 'keep.ts'), 'keep2', 'utf-8');
+        await writeFile(path.join(tmpDir, 'sub', 'ignored.dat'), 'binary data', 'utf-8');
+
+        const hashBefore = await hashPath(tmpDir, { projectRoot: tmpDir });
+
+        // Changing ignored.dat should NOT change the hash
+        await writeFile(path.join(tmpDir, 'sub', 'ignored.dat'), 'changed binary', 'utf-8');
+        const hashAfter = await hashPath(tmpDir, { projectRoot: tmpDir });
+
+        expect(hashAfter).toBe(hashBefore);
+
+        // Changing keep.ts SHOULD change the hash
+        await writeFile(path.join(tmpDir, 'sub', 'keep.ts'), 'modified', 'utf-8');
+        const hashModified = await hashPath(tmpDir, { projectRoot: tmpDir });
+
+        expect(hashModified).not.toBe(hashBefore);
+      } finally {
+        await rm(tmpDir, { recursive: true, force: true });
+      }
     });
   });
 });

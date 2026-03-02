@@ -1,0 +1,9 @@
+name: Categories
+type: module
+aspects: [requires-auth]
+
+relations: []
+
+mapping:
+  paths:
+    - apps/web/src/pages/Categories.tsx

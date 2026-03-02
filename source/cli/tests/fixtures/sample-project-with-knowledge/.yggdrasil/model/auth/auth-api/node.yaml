@@ -1,5 +1,0 @@
-name: AuthApi
-type: service
-mapping:
-  paths:
-    - src/auth/auth.controller.ts

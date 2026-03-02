@@ -43,7 +43,8 @@ Prints the full structure of the semantic memory.
 yg build-context --node <node-path>
 ```
 
-Shows the exact context package your agent reads before working on a node.
+Shows the exact context package your agent reads before working on a node (plain text with
+XML-like tags).
 
 ```bash
 yg owner --file <path>
@@ -62,6 +63,25 @@ Shows direct and transitive node dependencies.
 
 ---
 
+### `yg preflight`
+
+Unified diagnostic report combining journal, drift, status, and validation.
+
+```bash
+yg preflight
+```
+
+Outputs:
+
+- **Journal** — pending entries from previous sessions
+- **Drift** — nodes with source or graph drift
+- **Status** — node, aspect, flow, and mapping counts
+- **Validation** — structural errors and completeness warnings
+
+Exit code 0 if fully clean, 1 if journal entries, drift, or validation errors found.
+
+---
+
 ## Validation
 
 ```bash
@@ -75,15 +95,29 @@ Exit code 1 on errors — useful as a CI merge gate.
 
 ---
 
+## Aspects
+
+```bash
+yg aspects
+```
+
+Lists all defined aspects with metadata.
+
+Output: YAML format with fields: `id`, `name`, `description`, `implies`.
+
+---
+
 ## Drift detection
 
 ```bash
-yg drift [--scope <scope>]
+yg drift [--scope <scope>] [--drifted-only]
 ```
 
-Detects files that changed outside the semantic memory.
+Detects source and graph drift — files that changed outside the semantic memory (source drift)
+and graph artifacts that changed without a corresponding `drift-sync` (graph drift).
 
 - `--scope <scope>` — `all` or node-path (default: `all`)
+- `--drifted-only` — Show only nodes with drift (hide ok entries)
 
 ```bash
 yg drift-sync --node <path>
@@ -97,11 +131,18 @@ Records current file hash after resolving drift.
 
 ```bash
 yg impact --node <path> [--simulate]
+yg impact --aspect <id> [--simulate]
+yg impact --flow <name> [--simulate]
 ```
 
-Shows what depends on a node and how changes would propagate.
+Shows the blast radius of changes to a node, aspect, or flow.
 
+- `--node` — Show reverse dependencies, descendants, flows, aspects, and co-aspect nodes
+- `--aspect` — Show all nodes where this aspect is effective (own, hierarchy, flow, or implied)
+- `--flow` — Show all participants and their descendants
 - `--simulate` — Simulate context package impact (compare HEAD vs current)
+
+Exactly one of `--node`, `--aspect`, or `--flow` is required.
 
 ---
 

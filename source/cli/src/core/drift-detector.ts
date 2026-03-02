@@ -3,15 +3,15 @@ import type {
   DriftReport,
   DriftEntry,
   DriftStatus,
-  DriftNodeState,
+  DriftFileChange,
+  DriftCategory,
 } from '../model/types.js';
 import {
   readDriftState,
   writeDriftState,
-  getCanonicalHash,
-  getFileHashes,
 } from '../io/drift-state-store.js';
-import { hashForMapping, perFileHashes } from '../utils/hash.js';
+import { hashTrackedFiles } from '../utils/hash.js';
+import { collectTrackedFiles } from './context-files.js';
 import { normalizeMappingPaths } from '../utils/paths.js';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
@@ -35,8 +35,7 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
       const allMissing = await allPathsMissing(projectRoot, mappingPaths);
       entries.push({
         nodePath,
-        mappingPaths,
-        status: allMissing ? 'unmaterialized' : 'drift',
+        status: allMissing ? 'unmaterialized' : 'source-drift',
         details: allMissing
           ? 'No drift state recorded, files do not exist'
           : 'No drift state recorded, files exist (run drift-sync after materialization)',
@@ -44,72 +43,98 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
       continue;
     }
 
-    const storedHash = getCanonicalHash(storedEntry);
-    let status: DriftStatus = 'ok';
-    let details = '';
-
-    try {
-      const currentHash = await hashForMapping(projectRoot, mapping);
-      if (currentHash !== storedHash) {
-        status = 'drift';
-        const changedFiles = await diagnoseChangedFiles(
-          projectRoot,
-          mapping,
-          getFileHashes(storedEntry),
-        );
-        details =
-          changedFiles.length > 0
-            ? `Changed files: ${changedFiles.join(', ')}`
-            : 'File(s) modified since last sync';
-      }
-    } catch {
-      status = 'missing';
-      details = 'Mapped path(s) do not exist';
+    // Check if source files are entirely missing (all mapping paths gone)
+    // This must happen BEFORE hash comparison — a node whose source files
+    // are all gone is 'missing' regardless of whether graph-only hashes match.
+    const sourceFilesMissing = await allPathsMissing(projectRoot, mappingPaths);
+    if (sourceFilesMissing) {
+      entries.push({
+        nodePath,
+        status: 'missing',
+        details: 'All source mapping paths are missing',
+      });
+      continue;
     }
 
-    entries.push({ nodePath, mappingPaths, status, details });
+    // Collect all tracked files (source + graph) for this node
+    const trackedFiles = collectTrackedFiles(node, graph);
+    const { canonicalHash, fileHashes } = await hashTrackedFiles(projectRoot, trackedFiles);
+
+    if (canonicalHash === storedEntry.hash) {
+      entries.push({ nodePath, status: 'ok' });
+      continue;
+    }
+
+    // Something changed — determine what
+    const changedFiles: DriftFileChange[] = [];
+    const storedFiles = storedEntry.files;
+
+    // Check current files against stored
+    for (const [filePath, hash] of Object.entries(fileHashes)) {
+      const storedHash = storedFiles[filePath];
+      if (!storedHash || storedHash !== hash) {
+        changedFiles.push({
+          filePath,
+          category: categorizeFile(filePath, graph.rootPath, projectRoot),
+        });
+      }
+    }
+
+    // Check for deleted files (in stored but not in current)
+    for (const storedPath of Object.keys(storedFiles)) {
+      if (!(storedPath in fileHashes)) {
+        changedFiles.push({
+          filePath: `${storedPath} (deleted)`,
+          category: categorizeFile(storedPath, graph.rootPath, projectRoot),
+        });
+      }
+    }
+
+    // Determine drift status from changed file categories
+    const hasSourceChanges = changedFiles.some((f) => f.category === 'source');
+    const hasGraphChanges = changedFiles.some((f) => f.category === 'graph');
+
+    let status: DriftStatus;
+    if (hasSourceChanges && hasGraphChanges) {
+      status = 'full-drift';
+    } else if (hasGraphChanges) {
+      status = 'graph-drift';
+    } else if (hasSourceChanges) {
+      status = 'source-drift';
+    } else {
+      // Hash changed but no individual file identified — fallback
+      status = 'source-drift';
+    }
+
+    const details =
+      changedFiles.length > 0
+        ? `Changed files: ${changedFiles.map((f) => f.filePath).join(', ')}`
+        : 'File(s) modified since last sync';
+
+    entries.push({ nodePath, status, details, changedFiles });
   }
 
   return {
     entries,
     totalChecked: entries.length,
     okCount: entries.filter((e) => e.status === 'ok').length,
-    driftCount: entries.filter((e) => e.status === 'drift').length,
+    sourceDriftCount: entries.filter((e) => e.status === 'source-drift').length,
+    graphDriftCount: entries.filter((e) => e.status === 'graph-drift').length,
+    fullDriftCount: entries.filter((e) => e.status === 'full-drift').length,
     missingCount: entries.filter((e) => e.status === 'missing').length,
     unmaterializedCount: entries.filter((e) => e.status === 'unmaterialized').length,
   };
 }
 
-async function diagnoseChangedFiles(
-  projectRoot: string,
-  mapping: { paths?: string[] },
-  storedFileHashes: Record<string, string> | undefined,
-): Promise<string[]> {
-  try {
-    const currentHashes = await perFileHashes(projectRoot, mapping);
-    if (!storedFileHashes) {
-      return currentHashes.map((h) => h.path).sort();
-    }
-
-    const changed: string[] = [];
-    const storedPaths = new Set(Object.keys(storedFileHashes));
-
-    for (const { path: filePath, hash } of currentHashes) {
-      const stored = storedFileHashes[filePath];
-      if (!stored || stored !== hash) {
-        changed.push(filePath);
-      }
-      storedPaths.delete(filePath);
-    }
-
-    for (const removed of storedPaths) {
-      changed.push(`${removed} (deleted)`);
-    }
-
-    return changed.sort();
-  } catch {
-    return [];
-  }
+/**
+ * Categorize a file path as 'source' or 'graph' based on whether it lives
+ * under the .yggdrasil/ directory.
+ */
+function categorizeFile(filePath: string, _rootPath: string, projectRoot: string): DriftCategory {
+  const yggPrefix = path.relative(projectRoot, _rootPath);
+  const normalizedPrefix = yggPrefix.split(path.sep).join('/');
+  const normalizedFilePath = filePath.replace(/\\/g, '/');
+  return normalizedFilePath.startsWith(normalizedPrefix) ? 'graph' : 'source';
 }
 
 async function allPathsMissing(projectRoot: string, mappingPaths: string[]): Promise<boolean> {
@@ -132,22 +157,16 @@ export async function syncDriftState(
   const projectRoot = path.dirname(graph.rootPath);
   const node = graph.nodes.get(nodePath);
   if (!node) throw new Error(`Node not found: ${nodePath}`);
-  const mapping = node.meta.mapping;
-  if (!mapping) throw new Error(`Node has no mapping: ${nodePath}`);
+  if (!node.meta.mapping) throw new Error(`Node has no mapping: ${nodePath}`);
 
-  const currentHash = await hashForMapping(projectRoot, mapping);
-  const driftState = await readDriftState(graph.rootPath);
-  const previousEntry = driftState[nodePath];
-  const previousHash = previousEntry ? getCanonicalHash(previousEntry) : undefined;
+  const trackedFiles = collectTrackedFiles(node, graph);
+  const { canonicalHash, fileHashes } = await hashTrackedFiles(projectRoot, trackedFiles);
 
-  const fileHashes = await perFileHashes(projectRoot, mapping);
-  const files: Record<string, string> = {};
-  for (const fh of fileHashes) {
-    files[fh.path] = fh.hash;
-  }
+  const state = await readDriftState(graph.rootPath);
+  const previousHash = state[nodePath]?.hash;
 
-  const newEntry: DriftNodeState = { hash: currentHash, files };
-  driftState[nodePath] = newEntry;
-  await writeDriftState(graph.rootPath, driftState);
-  return { previousHash, currentHash };
+  state[nodePath] = { hash: canonicalHash, files: fileHashes };
+  await writeDriftState(graph.rootPath, state);
+
+  return { previousHash, currentHash: canonicalHash };
 }

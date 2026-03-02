@@ -1,10 +1,8 @@
 name: Model
 type: library
-tags: []
+aspects: []
 
 relations: []
-
-knowledge: []
 
 mapping:
   paths:

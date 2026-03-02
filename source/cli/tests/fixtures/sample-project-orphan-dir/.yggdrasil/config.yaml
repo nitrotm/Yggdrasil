@@ -9,6 +9,3 @@ artifacts:
   responsibility:
     required: always
     description: 'x'
-knowledge_categories: []
-tags:
-  - valid-tag

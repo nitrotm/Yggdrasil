@@ -1,6 +1,6 @@
 name: JournalCommands
 type: library
-tags: [deterministic]
+aspects: [deterministic, cli-command-contract]
 
 relations:
   - target: cli/io
@@ -9,9 +9,6 @@ relations:
   - target: cli/utils
     type: uses
     consumes: [findYggRoot]
-
-knowledge:
-  - patterns/command-error-handling
 
 mapping:
   paths:

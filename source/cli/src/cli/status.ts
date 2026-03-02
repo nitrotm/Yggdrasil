@@ -2,6 +2,8 @@ import { Command } from 'commander';
 import { loadGraph } from '../core/graph-loader.js';
 import { detectDrift } from '../core/drift-detector.js';
 import { validate } from '../core/validator.js';
+import { collectEffectiveAspectIds } from '../core/context-builder.js';
+import { normalizeMappingPaths } from '../utils/paths.js';
 
 export function registerStatusCommand(program: Command): void {
   program
@@ -24,7 +26,14 @@ export function registerStatusCommand(program: Command): void {
         let structuralRelations = 0;
         let eventRelations = 0;
         const structuralTypes = new Set(['uses', 'calls', 'extends', 'implements']);
+        let maxRelCount = 0;
+        let maxRelNode = '';
         for (const node of graph.nodes.values()) {
+          const relCount = (node.meta.relations ?? []).length;
+          if (relCount > maxRelCount) {
+            maxRelCount = relCount;
+            maxRelNode = node.path;
+          }
           for (const rel of node.meta.relations ?? []) {
             if (structuralTypes.has(rel.type)) structuralRelations += 1;
             else eventRelations += 1;
@@ -32,7 +41,6 @@ export function registerStatusCommand(program: Command): void {
         }
 
         const flowCount = graph.flows.length;
-        const knowledgeCount = graph.knowledge.length;
 
         const drift = await detectDrift(graph);
         const validation = await validate(graph, 'all');
@@ -40,6 +48,24 @@ export function registerStatusCommand(program: Command): void {
         const warningCount = validation.issues.filter(
           (issue) => issue.severity === 'warning',
         ).length;
+
+        // Quality metrics
+        const configuredArtifactTypes = Object.keys(graph.config.artifacts ?? {});
+        const totalSlots = graph.nodes.size * configuredArtifactTypes.length;
+        let filledSlots = 0;
+        let mappedNodeCount = 0;
+
+        for (const node of graph.nodes.values()) {
+          const allowed = new Set(configuredArtifactTypes);
+          filledSlots += node.artifacts.filter((a) => allowed.has(a.filename)).length;
+          if (normalizeMappingPaths(node.meta.mapping).length > 0) mappedNodeCount++;
+        }
+
+        let aspectCoveredNodes = 0;
+        for (const node of graph.nodes.values()) {
+          const effective = collectEffectiveAspectIds(graph, node.path);
+          if (effective.size > 0) aspectCoveredNodes++;
+        }
 
         process.stdout.write(`Graph: ${graph.config.name}\n`);
         const pluralize = (word: string, count: number) =>
@@ -54,12 +80,30 @@ export function registerStatusCommand(program: Command): void {
           `Relations: ${structuralRelations} structural, ${eventRelations} event\n`,
         );
         process.stdout.write(
-          `Aspects: ${graph.aspects.length}    Flows: ${flowCount}    Knowledge: ${knowledgeCount}\n`,
+          `Aspects: ${graph.aspects.length}    Flows: ${flowCount}\n`,
         );
         process.stdout.write(
-          `Drift: ${drift.driftCount} drift, ${drift.missingCount} missing, ${drift.unmaterializedCount} unmaterialized, ${drift.okCount} ok\n`,
+          `Drift: ${drift.sourceDriftCount} source-drift, ${drift.graphDriftCount} graph-drift, ${drift.fullDriftCount} full-drift, ${drift.missingCount} missing, ${drift.unmaterializedCount} unmaterialized, ${drift.okCount} ok\n`,
         );
         process.stdout.write(`Validation: ${errorCount} errors, ${warningCount} warnings\n`);
+
+        // Quality section
+        const fillPct = totalSlots > 0 ? Math.round((filledSlots / totalSlots) * 100) : 0;
+        const totalRelations = structuralRelations + eventRelations;
+        const avgRel = graph.nodes.size > 0 ? (totalRelations / graph.nodes.size).toFixed(1) : '0';
+        process.stdout.write(`\nQuality:\n`);
+        process.stdout.write(
+          `  Artifacts: ${filledSlots}/${totalSlots} slots filled (${fillPct}%) — ${configuredArtifactTypes.length} types × ${graph.nodes.size} nodes\n`,
+        );
+        process.stdout.write(
+          `  Relations: avg ${avgRel}/node, max ${maxRelCount}${maxRelNode ? ` (${maxRelNode})` : ''}\n`,
+        );
+        process.stdout.write(
+          `  Mapping: ${mappedNodeCount}/${graph.nodes.size} nodes mapped to source\n`,
+        );
+        process.stdout.write(
+          `  Aspects: ${aspectCoveredNodes}/${graph.nodes.size} nodes have aspect coverage\n`,
+        );
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);
         process.exit(1);

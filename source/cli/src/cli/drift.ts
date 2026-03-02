@@ -2,61 +2,153 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { loadGraph } from '../core/graph-loader.js';
 import { detectDrift } from '../core/drift-detector.js';
+import type { DriftEntry, DriftReport } from '../model/types.js';
 
 export function registerDriftCommand(program: Command): void {
   program
     .command('drift')
-    .description('Detect divergence between graph and code')
-    .option('--scope <scope>', 'Scope: all or node-path (default: all)', 'all')
-    .action(async (options: { scope?: string }) => {
+    .description('Detect divergences between graph and mapped files')
+    .option('--scope <scope>', 'Scope: "all" or node path', 'all')
+    .option('--drifted-only', 'Show only nodes with drift (hide ok entries)')
+    .action(async (opts: { scope: string; driftedOnly?: boolean }) => {
       try {
         const graph = await loadGraph(process.cwd());
-        const scope = (options.scope ?? 'all').trim() || 'all';
-        if (scope && scope !== 'all' && !graph.nodes.has(scope)) {
-          process.stderr.write(`Error: Node not found: ${scope}\n`);
-          process.exit(1);
-        }
-        if (scope && scope !== 'all') {
-          const scopedNode = graph.nodes.get(scope)!;
-          if (!scopedNode.meta.mapping) {
-            process.stderr.write(
-              `Error: Node has no mapping (does not participate in drift detection): ${options.scope}\n`,
-            );
+        const scope = (opts.scope ?? 'all').trim() || 'all';
+
+        if (scope !== 'all') {
+          const node = graph.nodes.get(scope);
+          if (!node) {
+            process.stderr.write(`Error: Node not found: ${scope}\n`);
+            process.exit(1);
+          }
+          if (!node.meta.mapping) {
+            process.stderr.write(`Error: Node has no mapping: ${scope}\n`);
             process.exit(1);
           }
         }
+
         const scopeNode = scope === 'all' ? undefined : scope;
         const report = await detectDrift(graph, scopeNode);
-        process.stdout.write('Drift:\n');
-        for (const entry of report.entries) {
-          const paths = entry.mappingPaths.join(', ');
-          switch (entry.status) {
-            case 'ok':
-              process.stdout.write(chalk.green(`  ok       ${entry.nodePath} -> ${paths}\n`));
-              break;
-            case 'drift':
-              process.stdout.write(chalk.red(`  drift    ${entry.nodePath} -> ${paths}\n`));
-              if (entry.details) process.stdout.write(`           ${entry.details}\n`);
-              break;
-            case 'missing':
-              process.stdout.write(chalk.yellow(`  missing  ${entry.nodePath} -> ${paths}\n`));
-              break;
-            case 'unmaterialized':
-              process.stdout.write(chalk.dim(`  unmat.   ${entry.nodePath} -> ${paths}\n`));
-              break;
-          }
-        }
-        process.stdout.write(
-          `\nSummary: ${report.driftCount} drift, ${report.missingCount} missing, ${report.unmaterializedCount} unmaterialized, ${report.okCount} ok\n`,
-        );
+        printReport(report, opts.driftedOnly ?? false);
 
-        if (report.driftCount > 0 || report.missingCount > 0 || report.unmaterializedCount > 0) {
-          process.exit(1);
-        }
-        process.exit(0);
+        const hasIssues =
+          report.sourceDriftCount > 0 ||
+          report.graphDriftCount > 0 ||
+          report.fullDriftCount > 0 ||
+          report.missingCount > 0 ||
+          report.unmaterializedCount > 0;
+        process.exit(hasIssues ? 1 : 0);
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);
         process.exit(1);
       }
     });
+}
+
+function printReport(report: DriftReport, driftedOnly: boolean): void {
+  const sourceEntries = classifyForSection(report.entries, 'source', driftedOnly);
+  const graphEntries = classifyForSection(report.entries, 'graph', driftedOnly);
+
+  process.stdout.write('Source drift:\n');
+  printSectionEntries(sourceEntries, 'source');
+
+  process.stdout.write('\nGraph drift:\n');
+  printSectionEntries(graphEntries, 'graph');
+
+  // Summary line
+  const parts: string[] = [
+    `${report.sourceDriftCount} source-drift`,
+    `${report.graphDriftCount} graph-drift`,
+    `${report.fullDriftCount} full-drift`,
+    `${report.missingCount} missing`,
+    `${report.unmaterializedCount} unmaterialized`,
+  ];
+
+  let summary = `\nSummary: ${parts.join(', ')}`;
+  if (driftedOnly && report.okCount > 0) {
+    summary += ` (${report.okCount} ok hidden)`;
+  } else {
+    summary += `, ${report.okCount} ok`;
+  }
+  process.stdout.write(summary + '\n');
+}
+
+/**
+ * Classify entries for a given section (source or graph).
+ * Source section shows: source-drift, full-drift, missing, unmaterialized, ok
+ * Graph section shows: graph-drift, full-drift, ok
+ */
+function classifyForSection(
+  entries: DriftEntry[],
+  section: 'source' | 'graph',
+  driftedOnly: boolean,
+): DriftEntry[] {
+  return entries.filter((entry) => {
+    if (section === 'source') {
+      // Source section: source-drift, full-drift, missing, unmaterialized, ok
+      if (entry.status === 'graph-drift') return false;
+      if (entry.status === 'ok' && driftedOnly) return false;
+      return true;
+    } else {
+      // Graph section: graph-drift, full-drift, ok
+      if (
+        entry.status === 'source-drift' ||
+        entry.status === 'missing' ||
+        entry.status === 'unmaterialized'
+      )
+        return false;
+      if (entry.status === 'ok' && driftedOnly) return false;
+      return true;
+    }
+  });
+}
+
+function printSectionEntries(entries: DriftEntry[], section: 'source' | 'graph'): void {
+  if (entries.length === 0) {
+    process.stdout.write(chalk.dim('  (none)\n'));
+    return;
+  }
+
+  for (const entry of entries) {
+    printEntryLine(entry);
+    printChangedFiles(entry, section);
+  }
+}
+
+function printEntryLine(entry: DriftEntry): void {
+  const pad = 13; // width for status label column
+  switch (entry.status) {
+    case 'ok':
+      process.stdout.write(chalk.green(`  ${'[ok]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+    case 'source-drift':
+      process.stdout.write(chalk.red(`  ${'[drift]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+    case 'graph-drift':
+      process.stdout.write(chalk.magenta(`  ${'[drift]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+    case 'full-drift':
+      process.stdout.write(chalk.red(`  ${'[drift]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+    case 'missing':
+      process.stdout.write(chalk.yellow(`  ${'[missing]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+    case 'unmaterialized':
+      process.stdout.write(chalk.dim(`  ${'[unmat.]'.padEnd(pad)}${entry.nodePath}\n`));
+      break;
+  }
+}
+
+function printChangedFiles(entry: DriftEntry, section: 'source' | 'graph'): void {
+  if (!entry.changedFiles || entry.changedFiles.length === 0) return;
+
+  const indent = ' '.repeat(15); // align under node path
+  const relevantFiles = entry.changedFiles.filter((f) => {
+    if (section === 'source') return f.category === 'source';
+    return f.category === 'graph';
+  });
+
+  for (const file of relevantFiles) {
+    process.stdout.write(chalk.dim(`${indent}${file.filePath}  (changed)\n`));
+  }
 }

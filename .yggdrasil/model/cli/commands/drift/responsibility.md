@@ -6,11 +6,16 @@
 
 - Load graph via loadGraph(process.cwd()). Scope: --scope option, default "all". Trim whitespace; empty string treated as "all".
 - If scope is a node path (not "all"): validate node exists in graph; if not, exit 1 with "Node not found: ${scope}".
-- If scope is a node path: validate node has mapping; if not, exit 1 with "Node has no mapping (does not participate in drift detection)".
+- If scope is a node path: validate node has mapping; if not, exit 1 with "Node has no mapping: ${scope}".
 - Call detectDrift(graph, scopeNode) where scopeNode is undefined when scope is "all".
-- Output per entry: status (ok, drift, missing, unmaterialized), nodePath, mappingPaths. Use chalk: green ok, red drift, yellow missing, dim unmaterialized. Include entry.details for drift when present.
-- Summary line: driftCount, missingCount, unmaterializedCount, okCount.
+- Output is split into two sections: "Source drift:" and "Graph drift:".
+  - Source drift section shows: source-drift, full-drift, missing, unmaterialized entries. Also ok entries unless --drifted-only.
+  - Graph drift section shows: graph-drift, full-drift entries. Also ok entries unless --drifted-only.
+  - Under each drifted entry: show changedFiles filtered by section category (source or graph).
+- Color coding: red for source-drift/full-drift, magenta for graph-drift, yellow for missing, dim for unmaterialized, green for ok.
+- Summary line: source-drift count, graph-drift count, full-drift count, missing count, unmaterialized count. When --drifted-only and okCount > 0: append "(N ok hidden)". Otherwise append ok count.
 - Exit 1 if any drift, missing, or unmaterialized. Exit 0 otherwise.
+- --drifted-only flag hides ok entries from both sections.
 
 **drift-sync:**
 

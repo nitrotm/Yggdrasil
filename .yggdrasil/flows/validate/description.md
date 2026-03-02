@@ -1,13 +1,38 @@
 # Validate Flow
 
-End-to-end flow for `yg validate`: check graph structural integrity and completeness signals.
+## Business context
 
-**Sequence:** commands/validation (orchestrates) → loader (load graph, tolerateInvalidConfig) → validator (E001–E017, W001–W009).
+CLI validation of graph structural integrity and completeness. Agents and CI use this to ensure the semantic memory graph is valid before build-context or merge.
 
-**Participants:**
+## Trigger
+
+User runs `yg validate [--scope <path>]`.
+
+## Goal
+
+Report structural errors (E001–E017) and completeness warnings (W001–W011) to stdout; exit 1 if any errors.
+
+## Participants
 
 - `cli/commands/validation` — orchestrates loadGraph, validate; outputs errors/warnings
-- `cli/core/loader` — loads graph from `.yggdrasil/`
-- `cli/core/validator` — structural checks, scope filtering, context budget, stale knowledge
+- `cli/core/loader` — loads graph from `.yggdrasil/` (tolerates invalid config for partial validation)
+- `cli/core/validator` — structural checks, scope filtering, context budget
 
-**Output:** Errors and warnings to stdout; exit 1 if any errors.
+## Paths
+
+### Happy path
+
+Graph loads; validator runs all checks. Output: list of issues (errors first, then warnings); summary "X errors, Y warnings". Exit 0 if no errors (warnings allowed).
+
+### Config parse error
+
+`config.yaml` fails to parse. Loader sets `configError`; validator reports E012. Validation continues for other checks where possible. Exit 1.
+
+### Scope node not found
+
+User passes `--scope <path>` but node does not exist. Validator returns operation error. Exit 1.
+
+## Invariants across all paths
+
+- Read-only: validation never modifies the graph.
+- Same check order: config-dependent first, then structure checks, scope filter last.

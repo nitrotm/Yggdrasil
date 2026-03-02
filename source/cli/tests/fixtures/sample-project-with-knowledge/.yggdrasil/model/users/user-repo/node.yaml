@@ -1,5 +1,0 @@
-name: UserRepo
-type: repository
-mapping:
-  paths:
-    - src/users/user.repository.ts

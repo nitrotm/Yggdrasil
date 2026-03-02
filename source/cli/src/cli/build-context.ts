@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { loadGraph } from '../core/graph-loader.js';
 import { buildContext } from '../core/context-builder.js';
 import { validate } from '../core/validator.js';
-import { formatContextMarkdown } from '../formatters/markdown.js';
+import { formatContextText } from '../formatters/context-text.js';
 
 export function registerBuildCommand(program: Command): void {
   program
@@ -25,8 +25,8 @@ export function registerBuildCommand(program: Command): void {
 
         const nodePath = options.node.trim().replace(/\/$/, '');
         const pkg = await buildContext(graph, nodePath);
-        const warningThreshold = graph.config.quality?.context_budget.warning ?? 5000;
-        const errorThreshold = graph.config.quality?.context_budget.error ?? 10000;
+        const warningThreshold = graph.config.quality?.context_budget.warning ?? 10000;
+        const errorThreshold = graph.config.quality?.context_budget.error ?? 20000;
         const budgetStatus =
           pkg.tokenCount >= errorThreshold
             ? 'error'
@@ -34,15 +34,14 @@ export function registerBuildCommand(program: Command): void {
               ? 'warning'
               : 'ok';
 
-        let output = formatContextMarkdown(pkg);
+        let output = formatContextText(pkg);
         output += `Budget status: ${budgetStatus}\n`;
         process.stdout.write(output);
 
         if (budgetStatus === 'error') {
           process.stderr.write(
-            `Error: context package exceeds error budget (${pkg.tokenCount} >= ${errorThreshold}).\n`,
+            `Warning: context package exceeds error budget (${pkg.tokenCount} >= ${errorThreshold}). Consider splitting the node.\n`,
           );
-          process.exit(1);
         }
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);

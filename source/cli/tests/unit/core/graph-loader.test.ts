@@ -15,7 +15,7 @@ describe('graph-loader', () => {
     await mkdir(yggRoot, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\nknowledge_categories: []\ntags: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
       'utf-8',
     );
 
@@ -49,12 +49,22 @@ describe('graph-loader', () => {
     expect(graph.flows[0].nodes).toContain('orders/order-service');
   });
 
+  it('populates flow.path with the directory name', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+
+    expect(graph.flows).toHaveLength(1);
+    expect(graph.flows[0].path).toBe('checkout-flow');
+  });
+
   it('loads aspects correctly', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
 
-    expect(graph.aspects).toHaveLength(1);
-    expect(graph.aspects[0].name).toBe('Audit Logging');
-    expect(graph.aspects[0].tag).toBe('requires-audit');
+    expect(graph.aspects).toHaveLength(2);
+    const audit = graph.aspects.find((a) => a.id === 'requires-audit');
+    const logging = graph.aspects.find((a) => a.id === 'requires-logging');
+    expect(audit?.name).toBe('Audit Logging');
+    expect(audit?.implies).toEqual(['requires-logging']);
+    expect(logging?.name).toBe('Structured Logging');
   });
 
   it('top-level nodes have parent = null', async () => {
@@ -95,11 +105,10 @@ describe('graph-loader', () => {
     expect(result.stdout).toContain('order-service');
   });
 
-  it('skips reserved directories (aspects, templates, knowledge)', async () => {
+  it('skips reserved directories (aspects, schemas)', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     expect(graph.nodes.has('aspects')).toBe(false);
-    expect(graph.nodes.has('templates')).toBe(false);
-    expect(graph.nodes.has('knowledge')).toBe(false);
+    expect(graph.nodes.has('schemas')).toBe(false);
   });
 
   it('flows directory is not scanned for model nodes', async () => {
@@ -128,28 +137,7 @@ describe('graph-loader', () => {
     expect(Array.isArray(graph.aspects)).toBe(true);
   });
 
-  it('loads graph when knowledge dir is empty or missing', async () => {
-    const { mkdir, writeFile, rm } = await import('node:fs/promises');
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-graph-no-knowledge');
-    const yggRoot = path.join(tmpDir, '.yggdrasil');
-    const modelDir = path.join(yggRoot, 'model', 'svc');
-    await mkdir(modelDir, { recursive: true });
-    await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: []',
-    );
-    await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
-
-    try {
-      const graph = await loadGraph(tmpDir);
-      expect(graph.knowledge).toEqual([]);
-      expect(graph.nodes.size).toBeGreaterThan(0);
-    } finally {
-      await rm(tmpDir, { recursive: true, force: true });
-    }
-  });
-
-  it('loads empty schemas when templates dir does not exist', async () => {
+  it('loads empty schemas when schemas dir does not exist', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     expect(Array.isArray(graph.schemas)).toBe(true);
   });
@@ -163,7 +151,7 @@ describe('graph-loader', () => {
     await mkdir(path.join(modelDir, 'svc', 'empty-dir'), { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
     await writeFile(path.join(modelDir, 'svc', 'node.yaml'), 'name: Svc\ntype: module\n');
     await writeFile(
@@ -190,7 +178,7 @@ describe('graph-loader', () => {
     await writeFile(path.join(yggRoot, 'aspects'), 'not-a-dir', 'utf-8');
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
     await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
 
@@ -203,7 +191,7 @@ describe('graph-loader', () => {
     }
   });
 
-  it('loads empty arrays when aspects/flows/knowledge/templates dirs do not exist', async () => {
+  it('loads empty arrays when aspects/flows/schemas dirs do not exist', async () => {
     const { mkdir, writeFile, rm } = await import('node:fs/promises');
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-graph-minimal-dirs');
     const yggRoot = path.join(tmpDir, '.yggdrasil');
@@ -211,16 +199,15 @@ describe('graph-loader', () => {
     await mkdir(modelDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []\nknowledge_categories: []',
+      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
     await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
-    // No aspects/, flows/, knowledge/, templates/ dirs
+    // No aspects/, flows/, schemas/ dirs
 
     try {
       const graph = await loadGraph(tmpDir);
       expect(graph.aspects).toEqual([]);
       expect(graph.flows).toEqual([]);
-      expect(graph.knowledge).toEqual([]);
       expect(graph.schemas).toEqual([]);
       expect(graph.nodes.size).toBeGreaterThan(0);
     } finally {

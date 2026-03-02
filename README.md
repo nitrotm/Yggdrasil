@@ -28,7 +28,7 @@ It maintains the system's intent, rules, and boundaries in structured Markdown a
 
 The agent stops guessing. It knows exactly what it is looking at, what constraints it must follow, and what the surrounding dependencies require.
 
-**Primary goals:** Build knowledge for new projects from day one. Reverse-engineer existing codebases and capture their intent. Keep semantic memory alive autonomously — your agent maintains the graph as it works, so you never re-explain, re-discover, or lose context.
+**Primary goals:** Build semantic memory for new projects from day one. Reverse-engineer existing codebases and capture their intent. Keep semantic memory alive autonomously — your agent maintains the graph as it works, so you never re-explain, re-discover, or lose context.
 
 ### You change nothing about how you work
 

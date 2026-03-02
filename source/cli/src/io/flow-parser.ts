@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { FlowDef } from '../model/types.js';
 import { readArtifacts } from './artifact-reader.js';
@@ -20,16 +21,23 @@ export async function parseFlow(flowDir: string, flowYamlPath: string): Promise<
   if (nodePaths.length === 0) {
     throw new Error(`flow.yaml at ${flowYamlPath}: 'nodes' must contain string node paths`);
   }
-  const knowledge = Array.isArray(raw.knowledge)
-    ? (raw.knowledge as unknown[]).filter((k): k is string => typeof k === 'string')
-    : undefined;
+
+  let aspects: string[] | undefined;
+  if (raw.aspects !== undefined) {
+    if (!Array.isArray(raw.aspects)) {
+      throw new Error(`flow.yaml at ${flowYamlPath}: 'aspects' must be an array of strings`);
+    }
+    const aspectTags = (raw.aspects as unknown[]).filter((a): a is string => typeof a === 'string');
+    aspects = aspectTags.length > 0 ? aspectTags : [];
+  }
 
   const artifacts = await readArtifacts(flowDir, ['flow.yaml']);
 
   return {
+    path: path.basename(flowDir),
     name: (raw.name as string).trim(),
     nodes: nodePaths,
-    knowledge,
+    ...(aspects !== undefined && { aspects }),
     artifacts,
   };
 }

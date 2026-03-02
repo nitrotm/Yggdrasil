@@ -1,8 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { Graph, ValidationResult, ValidationIssue, ArtifactConfig } from '../model/types.js';
-import { getLastCommitTimestamp } from '../utils/git.js';
-import { buildContext } from './context-builder.js';
+import { buildContext, resolveAspects } from './context-builder.js';
 import { normalizeMappingPaths } from '../utils/paths.js';
 
 /** Reserved directories that are NOT nodes (within model/) */
@@ -32,29 +31,26 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
 
   if (!graph.configError) {
     issues.push(...checkNodeTypes(graph));
-    issues.push(...checkTagsDefined(graph));
-    issues.push(...checkAspectTags(graph));
-    issues.push(...checkAspectTagUniqueness(graph));
+    issues.push(...checkAspectsDefined(graph));
+    issues.push(...checkAspectIds(graph));
+    issues.push(...checkAspectIdUniqueness(graph));
+    issues.push(...checkImpliedAspectsExist(graph));
+    issues.push(...checkImpliesNoCycles(graph));
+    issues.push(...checkRequiredAspectsCoverage(graph));
     issues.push(...checkRequiredArtifacts(graph));
-    issues.push(...(await checkUnknownKnowledgeCategories(graph)));
     issues.push(...checkInvalidArtifactConditions(graph));
-    issues.push(...checkScopeTagsDefined(graph));
-    issues.push(...(await checkMissingPatternExamples(graph)));
     issues.push(...(await checkContextBudget(graph)));
     issues.push(...checkHighFanOut(graph));
-    issues.push(...(await checkStaleKnowledge(graph)));
   }
 
   issues.push(...checkSchemas(graph));
   issues.push(...checkRelationTargets(graph));
   issues.push(...checkNoCycles(graph));
   issues.push(...checkMappingOverlap(graph));
-  issues.push(...checkBrokenKnowledgeRefs(graph));
   issues.push(...checkBrokenFlowRefs(graph));
-  issues.push(...checkBrokenScopeRefs(graph));
+  issues.push(...checkFlowAspectIds(graph));
   issues.push(...(await checkDirectoriesHaveNodeYaml(graph)));
   issues.push(...(await checkShallowArtifacts(graph)));
-  issues.push(...(await checkUnreachableKnowledge(graph)));
   issues.push(...checkUnpairedEvents(graph));
 
   let filtered = issues;
@@ -77,7 +73,7 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
 
 function checkNodeTypes(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const allowedTypes = new Set(graph.config.node_types ?? []);
+  const allowedTypes = new Set((graph.config.node_types ?? []).map((t) => t.name));
   for (const [nodePath, node] of graph.nodes) {
     if (!allowedTypes.has(node.meta.type)) {
       issues.push({
@@ -153,19 +149,19 @@ function checkRelationTargets(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- Rule 2: Tags defined in config.yaml ---
+// --- Rule 2: Node aspects must reference a defined aspect ---
 
-function checkTagsDefined(graph: Graph): ValidationIssue[] {
+function checkAspectsDefined(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const definedTags = new Set(graph.config.tags ?? []);
+  const validAspectIds = new Set(graph.aspects.map((a) => a.id));
   for (const [nodePath, node] of graph.nodes) {
-    for (const tag of node.meta.tags ?? []) {
-      if (!definedTags.has(tag)) {
+    for (const aspectId of node.meta.aspects ?? []) {
+      if (!validAspectIds.has(aspectId)) {
         issues.push({
           severity: 'error',
           code: 'E003',
-          rule: 'unknown-tag',
-          message: `Tag '${tag}' not defined in config.yaml`,
+          rule: 'unknown-aspect',
+          message: `Aspect '${aspectId}' has no corresponding directory in aspects/`,
           nodePath,
         });
       }
@@ -174,40 +170,139 @@ function checkTagsDefined(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- Rule 3: Aspects reference valid tags ---
+// --- Rule 3: Aspect ids (derived from directory path) — always valid when aspect exists ---
 
-function checkAspectTags(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const definedTags = new Set(graph.config.tags ?? []);
-  for (const aspect of graph.aspects) {
-    if (!definedTags.has(aspect.tag)) {
-      issues.push({
-        severity: 'error',
-        code: 'E007',
-        rule: 'broken-aspect-tag',
-        message: `Aspect '${aspect.name}' references undefined tag '${aspect.tag}'`,
-      });
-    }
-  }
-  return issues;
+function checkAspectIds(_graph: Graph): ValidationIssue[] {
+  // validAspectIds = graph.aspects.map(a => a.id), so every aspect's id is valid by definition
+  return [];
 }
 
-function checkAspectTagUniqueness(graph: Graph): ValidationIssue[] {
+function checkAspectIdUniqueness(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const byTag = new Map<string, string[]>();
+  const byId = new Map<string, string[]>();
   for (const aspect of graph.aspects) {
-    const names = byTag.get(aspect.tag) ?? [];
+    const names = byId.get(aspect.id) ?? [];
     names.push(aspect.name);
-    byTag.set(aspect.tag, names);
+    byId.set(aspect.id, names);
   }
-  for (const [tag, names] of byTag) {
+  for (const [id, names] of byId) {
     if (names.length <= 1) continue;
     issues.push({
       severity: 'error',
       code: 'E014',
       rule: 'duplicate-aspect-binding',
-      message: `Tag '${tag}' is bound to multiple aspects (${names.join(', ')})`,
+      message: `Aspect '${id}' is bound to multiple aspects (${names.join(', ')})`,
     });
+  }
+  return issues;
+}
+
+// --- Rule: Implied aspects exist ---
+
+function checkImpliedAspectsExist(graph: Graph): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const idToAspect = new Map<string, { name: string }>();
+  for (const a of graph.aspects) {
+    idToAspect.set(a.id, { name: a.name });
+  }
+  for (const aspect of graph.aspects) {
+    for (const impliedId of aspect.implies ?? []) {
+      if (!idToAspect.has(impliedId)) {
+        issues.push({
+          severity: 'error',
+          code: 'E016',
+          rule: 'implied-aspect-missing',
+          message: `Aspect '${aspect.name}' implies '${impliedId}' but no aspect with that id exists in aspects/`,
+        });
+      }
+    }
+  }
+  return issues;
+}
+
+// --- Rule: No cycles in aspect implies graph ---
+
+function checkImpliesNoCycles(graph: Graph): ValidationIssue[] {
+  const idToAspect = new Map<string, { implies?: string[] }>();
+  for (const a of graph.aspects) {
+    idToAspect.set(a.id, { implies: a.implies });
+  }
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map<string, number>();
+  for (const id of idToAspect.keys()) color.set(id, WHITE);
+
+  const issues: ValidationIssue[] = [];
+
+  function dfs(id: string, pathArr: string[]): boolean {
+    color.set(id, GRAY);
+    pathArr.push(id);
+    const aspect = idToAspect.get(id);
+    for (const implied of aspect?.implies ?? []) {
+      if (color.get(implied) === GRAY) {
+        const cycle = pathArr.slice(pathArr.indexOf(implied)).concat(implied);
+        issues.push({
+          severity: 'error',
+          code: 'E017',
+          rule: 'aspect-implies-cycle',
+          message: `Aspect implies cycle: ${cycle.join(' → ')}`,
+        });
+        pathArr.pop();
+        color.set(id, BLACK);
+        return true;
+      }
+      if (color.get(implied) === WHITE && dfs(implied, pathArr)) {
+        pathArr.pop();
+        color.set(id, BLACK);
+        return true;
+      }
+    }
+    pathArr.pop();
+    color.set(id, BLACK);
+    return false;
+  }
+
+  for (const id of idToAspect.keys()) {
+    if (color.get(id) === WHITE) {
+      dfs(id, []);
+    }
+  }
+  return issues;
+}
+
+// --- Rule: Required aspects coverage per node type ---
+
+function checkRequiredAspectsCoverage(graph: Graph): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const typeConfig = new Map(
+    (graph.config.node_types ?? []).map((t) => [t.name, t.required_aspects ?? []]),
+  );
+  for (const [nodePath, node] of graph.nodes) {
+    if (node.meta.blackbox) continue;
+    const requiredAspects = typeConfig.get(node.meta.type);
+    if (!requiredAspects || requiredAspects.length === 0) continue;
+
+    const nodeAspects = node.meta.aspects ?? [];
+    let effectiveAspects;
+    try {
+      effectiveAspects = resolveAspects(nodeAspects, graph.aspects);
+    } catch {
+      continue;
+    }
+    const effectiveAspectIds = new Set(effectiveAspects.map((a) => a.id));
+
+    for (const required of requiredAspects) {
+      if (!effectiveAspectIds.has(required)) {
+        issues.push({
+          severity: 'warning',
+          code: 'W011',
+          rule: 'missing-required-aspect-coverage',
+          message: `Node '${nodePath}' (type: ${node.meta.type}) missing required aspect coverage for '${required}'`,
+          nodePath,
+        });
+      }
+    }
   }
   return issues;
 }
@@ -327,7 +422,7 @@ function artifactRequiredReason(
   graph: Graph,
   nodePath: string,
   node: {
-    meta: { relations?: Array<{ target: string }>; tags?: string[]; blackbox?: boolean };
+    meta: { relations?: Array<{ target: string }>; aspects?: string[]; blackbox?: boolean };
     artifacts: Array<{ filename: string }>;
   },
   required: ArtifactConfig['required'],
@@ -347,9 +442,10 @@ function artifactRequiredReason(
     const count = node.meta.relations?.length ?? 0;
     return count > 0 ? `${count} outgoing relation(s)` : null;
   }
-  if (when.startsWith('has_tag:')) {
-    const tag = when.slice(8);
-    return (node.meta.tags ?? []).includes(tag) ? `node has tag '${tag}'` : null;
+  if (when.startsWith('has_aspect:') || when.startsWith('has_tag:')) {
+    const prefix = when.startsWith('has_aspect:') ? 'has_aspect:' : 'has_tag:';
+    const aspectId = when.slice(prefix.length);
+    return (node.meta.aspects ?? []).includes(aspectId) ? `node has aspect '${aspectId}'` : null;
   }
   return null;
 }
@@ -400,34 +496,11 @@ function checkRequiredArtifacts(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- E005: Broken knowledge refs (node.meta.knowledge) ---
-
-function checkBrokenKnowledgeRefs(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const knowledgePaths = new Set(graph.knowledge.map((k) => k.path));
-  for (const [nodePath, node] of graph.nodes) {
-    for (const kPath of node.meta.knowledge ?? []) {
-      const norm = kPath.replace(/\/$/, '');
-      if (!knowledgePaths.has(norm) && !knowledgePaths.has(kPath)) {
-        issues.push({
-          severity: 'error',
-          code: 'E005',
-          rule: 'broken-knowledge-ref',
-          message: `Knowledge ref '${kPath}' does not resolve to existing knowledge item`,
-          nodePath,
-        });
-      }
-    }
-  }
-  return issues;
-}
-
-// --- E006: Broken flow refs (flow.nodes, flow.knowledge) ---
+// --- E006: Broken flow refs (flow.nodes) ---
 
 function checkBrokenFlowRefs(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const nodePaths = new Set(graph.nodes.keys());
-  const knowledgePaths = new Set(graph.knowledge.map((k) => k.path));
   for (const flow of graph.flows) {
     for (const n of flow.nodes) {
       if (!nodePaths.has(n)) {
@@ -439,15 +512,24 @@ function checkBrokenFlowRefs(graph: Graph): ValidationIssue[] {
         });
       }
     }
-    for (const kPath of flow.knowledge ?? []) {
-      const norm = kPath.replace(/\/$/, '');
-      if (!knowledgePaths.has(norm) && !knowledgePaths.has(kPath)) {
+  }
+  return issues;
+}
+
+// --- E007: Flow aspect ids must have corresponding aspect ---
+
+function checkFlowAspectIds(graph: Graph): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const validAspectIds = new Set(graph.aspects.map((a) => a.id));
+
+  for (const flow of graph.flows) {
+    for (const aspectId of flow.aspects ?? []) {
+      if (!validAspectIds.has(aspectId)) {
         issues.push({
           severity: 'error',
-          code: 'E005',
-          rule: 'broken-knowledge-ref',
-          message: `Flow '${flow.name}' references non-existent knowledge '${kPath}'`,
-          nodePath: `flows/${flow.name}`,
+          code: 'E007',
+          rule: 'broken-aspect-ref',
+          message: `Flow '${flow.name}' references aspect '${aspectId}' but no aspect with that id exists in aspects/`,
         });
       }
     }
@@ -455,105 +537,25 @@ function checkBrokenFlowRefs(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- E008: Broken scope refs (knowledge scope.nodes) ---
-
-function checkBrokenScopeRefs(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const nodePaths = new Set(graph.nodes.keys());
-  for (const k of graph.knowledge) {
-    if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-      for (const n of k.scope.nodes) {
-        if (!nodePaths.has(n)) {
-          issues.push({
-            severity: 'error',
-            code: 'E008',
-            rule: 'broken-scope-ref',
-            message: `Knowledge '${k.path}' scope references non-existent node '${n}'`,
-          });
-        }
-      }
-    }
-  }
-  return issues;
-}
-
-function checkScopeTagsDefined(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  const definedTags = new Set(graph.config.tags ?? []);
-  for (const k of graph.knowledge) {
-    if (typeof k.scope !== 'object' || !('tags' in k.scope)) continue;
-    for (const tag of k.scope.tags) {
-      if (definedTags.has(tag)) continue;
-      issues.push({
-        severity: 'error',
-        code: 'E008',
-        rule: 'broken-scope-ref',
-        message: `Knowledge '${k.path}' scope references undefined tag '${tag}'`,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- E011: Unknown knowledge categories (dirs under knowledge/ not in config) ---
-// --- E017: Missing knowledge category dir (category in config but no knowledge/<cat>/) ---
-
-async function checkUnknownKnowledgeCategories(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const categorySet = new Set((graph.config.knowledge_categories ?? []).map((c) => c.name));
-  const knowledgeDir = path.join(graph.rootPath, 'knowledge');
-  const existingDirs = new Set<string>();
-  try {
-    const entries = await readdir(knowledgeDir, { withFileTypes: true });
-    for (const e of entries) {
-      if (!e.isDirectory()) continue;
-      if (e.name.startsWith('.')) continue;
-      existingDirs.add(e.name);
-      if (!categorySet.has(e.name)) {
-        issues.push({
-          severity: 'error',
-          code: 'E011',
-          rule: 'unknown-knowledge-category',
-          message: `Directory knowledge/${e.name}/ does not match any config.knowledge_categories`,
-        });
-      }
-    }
-  } catch {
-    // knowledge/ may not exist
-  }
-
-  for (const cat of graph.config.knowledge_categories ?? []) {
-    if (!existingDirs.has(cat.name)) {
-      issues.push({
-        severity: 'error',
-        code: 'E017',
-        rule: 'missing-knowledge-category-dir',
-        message: `Category '${cat.name}' in config has no knowledge/${cat.name}/ directory`,
-      });
-    }
-  }
-
-  return issues;
-}
-
-// --- E013: Invalid artifact condition (has_tag:X where X not in config.tags) ---
+// --- E013: Invalid artifact condition (has_aspect:X where X has no aspect) ---
 
 function checkInvalidArtifactConditions(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const definedTags = new Set(graph.config.tags ?? []);
+  const validAspectIds = new Set(graph.aspects.map((a) => a.id));
   const artifacts = graph.config.artifacts ?? {};
   for (const [artifactName, config] of Object.entries(artifacts)) {
     const required = config.required;
     if (typeof required === 'object' && required && 'when' in required) {
       const when = (required as { when: string }).when;
-      if (when.startsWith('has_tag:')) {
-        const tag = when.slice(8);
-        if (!definedTags.has(tag)) {
+      if (when.startsWith('has_aspect:') || when.startsWith('has_tag:')) {
+        const prefix = when.startsWith('has_aspect:') ? 'has_aspect:' : 'has_tag:';
+        const aspectId = when.slice(prefix.length);
+        if (!validAspectIds.has(aspectId)) {
           issues.push({
             severity: 'error',
             code: 'E013',
             rule: 'invalid-artifact-condition',
-            message: `Artifact '${artifactName}' condition has_tag:${tag} references undefined tag`,
+            message: `Artifact '${artifactName}' condition has_aspect:${aspectId} has no corresponding aspect in aspects/`,
           });
         }
       }
@@ -574,115 +576,11 @@ async function checkShallowArtifacts(graph: Graph): Promise<ValidationIssue[]> {
           severity: 'warning',
           code: 'W002',
           rule: 'shallow-artifact',
-          message: `Artifact '${art.filename}' is below minimum length (${art.content.length} < ${minLen})`,
+          message: `Artifact '${art.filename}' is below minimum length (${art.content.trim().length} < ${minLen})`,
           nodePath,
         });
       }
     }
-  }
-  return issues;
-}
-
-// --- W003: Unreachable knowledge (does not reach any context package) ---
-
-async function checkUnreachableKnowledge(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const nodePaths = new Set(graph.nodes.keys());
-  const nodeTags = new Map<string, Set<string>>();
-  for (const [p, n] of graph.nodes) {
-    nodeTags.set(p, new Set(n.meta.tags ?? []));
-  }
-  const knowledgeReachable = new Set<string>();
-  for (const k of graph.knowledge) {
-    if (k.scope === 'global') {
-      knowledgeReachable.add(k.path);
-      continue;
-    }
-    if (typeof k.scope === 'object' && 'tags' in k.scope) {
-      for (const [, tags] of nodeTags) {
-        if (k.scope.tags.some((t) => tags.has(t))) {
-          knowledgeReachable.add(k.path);
-          break;
-        }
-      }
-    }
-    if (typeof k.scope === 'object' && 'nodes' in k.scope) {
-      if (k.scope.nodes.some((n) => nodePaths.has(n))) {
-        knowledgeReachable.add(k.path);
-      }
-    }
-  }
-  for (const [, node] of graph.nodes) {
-    for (const kPath of node.meta.knowledge ?? []) {
-      const k = graph.knowledge.find(
-        (i) => i.path === kPath || i.path === kPath.replace(/\/$/, ''),
-      );
-      if (k) knowledgeReachable.add(k.path);
-    }
-  }
-  for (const flow of graph.flows) {
-    for (const kPath of flow.knowledge ?? []) {
-      const k = graph.knowledge.find(
-        (i) => i.path === kPath || i.path === kPath.replace(/\/$/, ''),
-      );
-      if (k) knowledgeReachable.add(k.path);
-    }
-  }
-  for (const k of graph.knowledge) {
-    if (!knowledgeReachable.has(k.path)) {
-      issues.push({
-        severity: 'warning',
-        code: 'W003',
-        rule: 'unreachable-knowledge',
-        message: `Knowledge '${k.path}' does not reach any context package`,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- W004: Pattern without example file ---
-
-async function checkMissingPatternExamples(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const hasPatterns = (graph.config.knowledge_categories ?? []).some((c) => c.name === 'patterns');
-  if (!hasPatterns) return issues;
-  const patternsDir = path.join(graph.rootPath, 'knowledge', 'patterns');
-  try {
-    const entries = await readdir(patternsDir, { withFileTypes: true });
-    const exampleExtensions = new Set([
-      '.ts',
-      '.js',
-      '.tsx',
-      '.jsx',
-      '.py',
-      '.go',
-      '.rs',
-      '.java',
-      '.kt',
-    ]);
-    for (const e of entries) {
-      if (!e.isDirectory()) continue;
-      const itemDir = path.join(patternsDir, e.name);
-      const itemEntries = await readdir(itemDir, { withFileTypes: true });
-      const hasExample = itemEntries.some(
-        (f) =>
-          f.isFile() &&
-          f.name !== 'knowledge.yaml' &&
-          (f.name.startsWith('example') ||
-            exampleExtensions.has(path.extname(f.name).toLowerCase())),
-      );
-      if (!hasExample) {
-        issues.push({
-          severity: 'warning',
-          code: 'W004',
-          rule: 'missing-example',
-          message: `Pattern 'patterns/${e.name}' has no example file`,
-        });
-      }
-    }
-  } catch {
-    // patterns/ may not exist
   }
   return issues;
 }
@@ -701,68 +599,6 @@ function checkHighFanOut(graph: Graph): ValidationIssue[] {
         rule: 'high-fan-out',
         message: `Node has ${count} direct relations (max: ${maxRel})`,
         nodePath,
-      });
-    }
-  }
-  return issues;
-}
-
-// --- W008: Stale knowledge (Proxy: Git commit timestamps, not file mtime) ---
-
-function getNodesInScope(
-  k: { scope: 'global' | { tags?: string[]; nodes?: string[] } },
-  graph: Graph,
-): string[] {
-  if (k.scope === 'global') {
-    return [...graph.nodes.keys()];
-  }
-  if (typeof k.scope === 'object' && 'nodes' in k.scope && k.scope.nodes) {
-    return k.scope.nodes.filter((p) => graph.nodes.has(p));
-  }
-  if (typeof k.scope === 'object' && 'tags' in k.scope && k.scope.tags) {
-    const tagSet = new Set(k.scope.tags);
-    return [...graph.nodes.keys()].filter((p) => {
-      const node = graph.nodes.get(p)!;
-      return (node.meta.tags ?? []).some((t) => tagSet.has(t));
-    });
-  }
-  return [];
-}
-
-async function checkStaleKnowledge(graph: Graph): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  const stalenessDays = graph.config.quality?.knowledge_staleness_days ?? 90;
-  const projectRoot = path.dirname(graph.rootPath);
-  const yggRel = path.relative(projectRoot, graph.rootPath).replace(/\\/g, '/') || '.yggdrasil';
-
-  for (const k of graph.knowledge) {
-    const scopeNodes = getNodesInScope(k, graph);
-    if (scopeNodes.length === 0) continue;
-
-    const kPath = `${yggRel}/knowledge/${k.path}`;
-    const tK = getLastCommitTimestamp(projectRoot, kPath);
-    if (tK === null) continue;
-
-    let maxTp = 0;
-    let latestNode = '';
-    for (const nodePath of scopeNodes) {
-      const nodePathRel = `${yggRel}/model/${nodePath}`;
-      const tP = getLastCommitTimestamp(projectRoot, nodePathRel);
-      if (tP !== null && tP > maxTp) {
-        maxTp = tP;
-        latestNode = nodePath;
-      }
-    }
-    if (maxTp === 0) continue;
-
-    const diffDays = (maxTp - tK) / (60 * 60 * 24);
-    if (diffDays > stalenessDays) {
-      issues.push({
-        severity: 'warning',
-        code: 'W008',
-        rule: 'stale-knowledge',
-        message: `Knowledge '${k.path}' may be stale: node '${latestNode}' modified ${Math.floor(diffDays)} days later (Git commits)`,
-        nodePath: latestNode,
       });
     }
   }
@@ -820,9 +656,9 @@ function checkUnpairedEvents(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- Schema validation (required graph-layer schemas present in templates/) ---
+// --- Schema validation (required graph-layer schemas present in schemas/) ---
 
-const REQUIRED_SCHEMAS = ['node', 'aspect', 'flow', 'knowledge'] as const;
+const REQUIRED_SCHEMAS = ['node', 'aspect', 'flow'] as const;
 
 function checkSchemas(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -834,7 +670,7 @@ function checkSchemas(graph: Graph): ValidationIssue[] {
         severity: 'warning',
         code: 'W010',
         rule: 'missing-schema',
-        message: `Schema '${required}.yaml' missing from .yggdrasil/templates/`,
+        message: `Schema '${required}.yaml' missing from .yggdrasil/schemas/`,
       });
     }
   }
@@ -894,8 +730,8 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
 
 async function checkContextBudget(graph: Graph): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = [];
-  const warningThreshold = graph.config.quality?.context_budget.warning ?? 5000;
-  const errorThreshold = graph.config.quality?.context_budget.error ?? 10000;
+  const warningThreshold = graph.config.quality?.context_budget.warning ?? 10000;
+  const errorThreshold = graph.config.quality?.context_budget.error ?? 20000;
 
   for (const [nodePath, node] of graph.nodes) {
     if (node.meta.blackbox) continue;

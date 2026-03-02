@@ -1,11 +1,10 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type {
   Graph,
   GraphNode,
   AspectDef,
   FlowDef,
-  KnowledgeItem,
   SchemaDef,
   YggConfig,
 } from '../model/types.js';
@@ -13,8 +12,7 @@ import { parseConfig } from '../io/config-parser.js';
 import { parseNodeYaml } from '../io/node-parser.js';
 import { parseAspect } from '../io/aspect-parser.js';
 import { parseFlow } from '../io/flow-parser.js';
-import { parseKnowledge } from '../io/knowledge-parser.js';
-import { parseSchema } from '../io/template-parser.js';
+import { parseSchema } from '../io/schema-parser.js';
 import { readArtifacts } from '../io/artifact-reader.js';
 import { findYggRoot } from '../utils/paths.js';
 
@@ -26,10 +24,8 @@ const FALLBACK_CONFIG: YggConfig = {
   name: '',
   stack: {},
   standards: '',
-  tags: [],
   node_types: [],
   artifacts: {},
-  knowledge_categories: [],
 };
 
 export async function loadGraph(
@@ -65,11 +61,7 @@ export async function loadGraph(
 
   const aspects = await loadAspects(path.join(yggRoot, 'aspects'));
   const flows = await loadFlows(path.join(yggRoot, 'flows'));
-  const knowledge = await loadKnowledge(
-    path.join(yggRoot, 'knowledge'),
-    config.knowledge_categories,
-  );
-  const schemas = await loadSchemas(path.join(yggRoot, 'templates'));
+  const schemas = await loadSchemas(path.join(yggRoot, 'schemas'));
 
   return {
     config,
@@ -78,7 +70,6 @@ export async function loadGraph(
     nodes,
     aspects,
     flows,
-    knowledge,
     schemas,
     rootPath: yggRoot,
   };
@@ -101,9 +92,12 @@ async function scanModelDirectory(
 
   if (hasNodeYaml) {
     const graphPath = toModelPath(dirPath, modelDir);
+    const nodeYamlPath = path.join(dirPath, 'node.yaml');
     let meta;
+    let nodeYamlRaw: string | undefined;
     try {
-      meta = await parseNodeYaml(path.join(dirPath, 'node.yaml'));
+      nodeYamlRaw = await readFile(nodeYamlPath, 'utf-8');
+      meta = await parseNodeYaml(nodeYamlPath);
     } catch (err) {
       nodeParseErrors.push({
         nodePath: graphPath,
@@ -116,6 +110,7 @@ async function scanModelDirectory(
     const node: GraphNode = {
       path: graphPath,
       meta,
+      nodeYamlRaw,
       artifacts,
       children: [],
       parent,
@@ -158,17 +153,33 @@ async function scanModelDirectory(
 
 async function loadAspects(aspectsDir: string): Promise<AspectDef[]> {
   try {
-    const entries = await readdir(aspectsDir, { withFileTypes: true });
     const aspects: AspectDef[] = [];
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const aspectYamlPath = path.join(aspectsDir, entry.name, 'aspect.yaml');
-      const aspect = await parseAspect(path.join(aspectsDir, entry.name), aspectYamlPath);
-      aspects.push(aspect);
-    }
+    await scanAspectsDirectory(aspectsDir, aspectsDir, aspects);
     return aspects;
   } catch {
     return [];
+  }
+}
+
+async function scanAspectsDirectory(
+  dirPath: string,
+  aspectsRoot: string,
+  aspects: AspectDef[],
+): Promise<void> {
+  const entries = await readdir(dirPath, { withFileTypes: true });
+  const hasAspectYaml = entries.some((e) => e.isFile() && e.name === 'aspect.yaml');
+
+  if (hasAspectYaml) {
+    const id = path.relative(aspectsRoot, dirPath).split(path.sep).join('/');
+    const aspectYamlPath = path.join(dirPath, 'aspect.yaml');
+    const aspect = await parseAspect(dirPath, aspectYamlPath, id);
+    aspects.push(aspect);
+  }
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith('.')) continue;
+    await scanAspectsDirectory(path.join(dirPath, entry.name), aspectsRoot, aspects);
   }
 }
 
@@ -188,46 +199,14 @@ async function loadFlows(flowsDir: string): Promise<FlowDef[]> {
   }
 }
 
-async function loadKnowledge(
-  knowledgeDir: string,
-  categories: Array<{ name: string }>,
-): Promise<KnowledgeItem[]> {
-  const items: KnowledgeItem[] = [];
-  const categorySet = new Set(categories.map((c) => c.name));
-
+async function loadSchemas(schemasDir: string): Promise<SchemaDef[]> {
   try {
-    const catEntries = await readdir(knowledgeDir, { withFileTypes: true });
-    for (const catEntry of catEntries) {
-      if (!catEntry.isDirectory()) continue;
-      if (!categorySet.has(catEntry.name)) continue;
-
-      const catPath = path.join(knowledgeDir, catEntry.name);
-      const itemEntries = await readdir(catPath, { withFileTypes: true });
-
-      for (const itemEntry of itemEntries) {
-        if (!itemEntry.isDirectory()) continue;
-        const itemDir = path.join(catPath, itemEntry.name);
-        const knowledgeYamlPath = path.join(itemDir, 'knowledge.yaml');
-        const relativePath = `${catEntry.name}/${itemEntry.name}`;
-        const item = await parseKnowledge(itemDir, knowledgeYamlPath, catEntry.name, relativePath);
-        items.push(item);
-      }
-    }
-  } catch {
-    // knowledge/ may not exist
-  }
-
-  return items;
-}
-
-async function loadSchemas(templatesDir: string): Promise<SchemaDef[]> {
-  try {
-    const entries = await readdir(templatesDir, { withFileTypes: true });
+    const entries = await readdir(schemasDir, { withFileTypes: true });
     const schemas: SchemaDef[] = [];
     for (const entry of entries) {
       if (!entry.isFile()) continue;
       if (!entry.name.endsWith('.yaml') && !entry.name.endsWith('.yml')) continue;
-      const s = await parseSchema(path.join(templatesDir, entry.name));
+      const s = await parseSchema(path.join(schemasDir, entry.name));
       schemas.push(s);
     }
     return schemas;

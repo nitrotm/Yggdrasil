@@ -3,5 +3,3 @@ nodes:
   - cli/commands/validation
   - cli/core/loader
   - cli/core/validator
-knowledge:
-  - invariants/002-graph-intended-truth
