@@ -26,7 +26,7 @@ export async function expensesRoutes(app: FastifyInstance) {
     const id = Number(request.params.id);
     const row = expensesService.getById(user.userId, id);
     if (!row) {
-      return reply.status(404).send({ error: "Wydatek nie znaleziony" });
+      return reply.status(404).send({ error: "Expense not found" });
     }
     return reply.send(row);
   });
@@ -37,7 +37,7 @@ export async function expensesRoutes(app: FastifyInstance) {
     const parsed = expenseSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -48,7 +48,7 @@ export async function expensesRoutes(app: FastifyInstance) {
     } catch (err) {
       if (err instanceof Error && err.message === "EXPENSE_LIMIT") {
         return reply.status(403).send({
-          error: "Osiągnąłeś limit 50 wydatków w tym miesiącu. Upgrade do Pro dla nielimitowanych.",
+          error: "You've reached the 50 expenses limit this month. Upgrade to Pro for unlimited.",
         });
       }
       throw err;
@@ -62,7 +62,7 @@ export async function expensesRoutes(app: FastifyInstance) {
     const parsed = expenseSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -72,7 +72,7 @@ export async function expensesRoutes(app: FastifyInstance) {
       return reply.status(200).send({ ok: true });
     } catch (err) {
       if (err instanceof Error && err.message === "NOT_FOUND") {
-        return reply.status(404).send({ error: "Wydatek nie znaleziony" });
+        return reply.status(404).send({ error: "Expense not found" });
       }
       throw err;
     }
@@ -87,7 +87,7 @@ export async function expensesRoutes(app: FastifyInstance) {
       return reply.status(204).send();
     } catch (err) {
       if (err instanceof Error && err.message === "NOT_FOUND") {
-        return reply.status(404).send({ error: "Wydatek nie znaleziony" });
+        return reply.status(404).send({ error: "Expense not found" });
       }
       throw err;
     }

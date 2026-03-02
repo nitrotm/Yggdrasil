@@ -2,47 +2,47 @@ import { z } from "zod";
 
 export const registerSchema = z
   .object({
-    email: z.string().min(1, "Email jest wymagany").email("Nieprawidłowy email"),
-    password: z.string().min(8, "Hasło musi mieć min. 8 znaków"),
+    email: z.string().min(1, "Email is required").email("Invalid email"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     passwordConfirm: z.string(),
   })
   .refine((data) => data.password === data.passwordConfirm, {
-    message: "Hasła muszą się zgadzać",
+    message: "Passwords must match",
     path: ["passwordConfirm"],
   });
 
 export const loginSchema = z.object({
-  email: z.string().min(1, "Email jest wymagany").email("Nieprawidłowy email"),
-  password: z.string().min(1, "Hasło jest wymagane"),
+  email: z.string().min(1, "Email is required").email("Invalid email"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const expenseSchema = z.object({
-  category_id: z.number().int().positive("Wybierz kategorię"),
-  amount: z.number().int().positive("Kwota musi być większa od 0"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data w formacie YYYY-MM-DD"),
+  category_id: z.number().int().positive("Select a category"),
+  amount: z.number().int().positive("Amount must be greater than 0"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   description: z.string().optional().default(""),
 });
 
 export const categorySchema = z.object({
-  name: z.string().min(1, "Nazwa jest wymagana").max(50),
+  name: z.string().min(1, "Name is required").max(50),
   icon: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
 });
 
 export const budgetSchema = z.object({
   category_id: z.number().int().positive(),
-  month: z.string().regex(/^\d{4}-\d{2}$/, "Miesiąc w formacie YYYY-MM"),
-  limit_amount: z.number().int().min(0, "Limit nie może być ujemny"),
+  month: z.string().regex(/^\d{4}-\d{2}$/, "Month must be YYYY-MM"),
+  limit_amount: z.number().int().min(0, "Limit cannot be negative"),
 });
 
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, "Obecne hasło jest wymagane"),
-    newPassword: z.string().min(8, "Nowe hasło musi mieć min. 8 znaków"),
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(8, "New password must be at least 8 characters"),
     newPasswordConfirm: z.string(),
   })
   .refine((data) => data.newPassword === data.newPasswordConfirm, {
-    message: "Hasła muszą się zgadzać",
+    message: "Passwords must match",
     path: ["newPasswordConfirm"],
   });
 

@@ -12,12 +12,12 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   if (!token) {
-    return reply.status(401).send({ error: "Brak tokenu autoryzacji" });
+    return reply.status(401).send({ error: "Missing authorization token" });
   }
 
   try {
     request.user = authService.verifyToken(token);
   } catch {
-    return reply.status(401).send({ error: "Nieprawidłowy lub wygasły token" });
+    return reply.status(401).send({ error: "Invalid or expired token" });
   }
 }

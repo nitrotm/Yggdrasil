@@ -69,7 +69,7 @@ export function AddExpense() {
           </select>
         </div>
         <div style={{ marginBottom: "1rem" }}>
-          <label style={{ display: "block", marginBottom: "0.5rem" }}>Amount (PLN)</label>
+          <label style={{ display: "block", marginBottom: "0.5rem" }}>Amount (USD)</label>
           <input
             type="number"
             step="0.01"

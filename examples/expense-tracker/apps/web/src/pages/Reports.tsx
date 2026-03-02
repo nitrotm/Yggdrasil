@@ -38,13 +38,13 @@ export function Reports() {
           {data.map((r) => (
             <tr key={r.id}>
               <td>{r.icon} {r.name}</td>
-              <td style={{ textAlign: "right" }}>{formatAmount(r.total)} PLN</td>
+              <td style={{ textAlign: "right" }}>{formatAmount(r.total)} USD</td>
               <td style={{ textAlign: "right" }}>{total > 0 ? ((r.total / total) * 100).toFixed(1) : "0"}%</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p style={{ marginTop: "1rem", fontWeight: "bold" }}>Total: {formatAmount(total)} PLN</p>
+      <p style={{ marginTop: "1rem", fontWeight: "bold" }}>Total: {formatAmount(total)} USD</p>
     </div>
   );
 }

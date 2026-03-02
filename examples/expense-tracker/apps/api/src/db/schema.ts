@@ -46,12 +46,12 @@ CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
 `;
 
 const PREDEF_CATEGORIES = [
-  { name: "Jedzenie", icon: "🍽️", color: "#4CAF50" },
+  { name: "Food", icon: "🍽️", color: "#4CAF50" },
   { name: "Transport", icon: "🚗", color: "#2196F3" },
-  { name: "Rozrywka", icon: "🎬", color: "#9C27B0" },
-  { name: "Zakupy", icon: "🛒", color: "#FF9800" },
-  { name: "Zdrowie", icon: "💊", color: "#F44336" },
-  { name: "Inne", icon: "📦", color: "#607D8B" },
+  { name: "Entertainment", icon: "🎬", color: "#9C27B0" },
+  { name: "Shopping", icon: "🛒", color: "#FF9800" },
+  { name: "Health", icon: "💊", color: "#F44336" },
+  { name: "Other", icon: "📦", color: "#607D8B" },
 ];
 
 export function seedPredefCategories(db: import("better-sqlite3").Database): void {

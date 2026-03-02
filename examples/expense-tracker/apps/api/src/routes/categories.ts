@@ -19,7 +19,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
     const parsed = categorySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -29,7 +29,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
       return reply.status(201).send({ id });
     } catch (err) {
       if (err instanceof Error && err.message === "CATEGORY_LIMIT") {
-        return reply.status(403).send({ error: "Maksymalnie 5 własnych kategorii na planie Free" });
+        return reply.status(403).send({ error: "Maximum 5 custom categories on Free plan" });
       }
       throw err;
     }
@@ -42,7 +42,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
     const parsed = categorySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -52,7 +52,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
       return reply.status(200).send({ ok: true });
     } catch (err) {
       if (err instanceof Error && err.message === "NOT_FOUND") {
-        return reply.status(404).send({ error: "Kategoria nie znaleziona" });
+        return reply.status(404).send({ error: "Category not found" });
       }
       throw err;
     }
@@ -67,7 +67,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
       return reply.status(204).send();
     } catch (err) {
       if (err instanceof Error && err.message === "NOT_FOUND") {
-        return reply.status(404).send({ error: "Kategoria nie znaleziona" });
+        return reply.status(404).send({ error: "Category not found" });
       }
       throw err;
     }

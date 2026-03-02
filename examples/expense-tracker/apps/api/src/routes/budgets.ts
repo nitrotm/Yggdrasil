@@ -19,7 +19,7 @@ export async function budgetsRoutes(app: FastifyInstance) {
     const parsed = budgetSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }

@@ -28,14 +28,14 @@ export function Dashboard() {
       {summary && (
         <div style={{ marginBottom: "2rem", padding: "1rem", background: "#f5f5f5", borderRadius: "8px" }}>
           <h2>This month</h2>
-          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{formatAmount(summary.total)} PLN</p>
+          <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{formatAmount(summary.total)} USD</p>
           {summary.topCategories.length > 0 && (
             <div>
               <h3>Top categories</h3>
               <ul style={{ listStyle: "none", padding: 0 }}>
                 {summary.topCategories.map((c) => (
                   <li key={c.name}>
-                    {c.icon} {c.name}: {formatAmount(c.total)} PLN
+                    {c.icon} {c.name}: {formatAmount(c.total)} USD
                   </li>
                 ))}
               </ul>
@@ -61,7 +61,7 @@ export function Dashboard() {
                 <tr key={e.id}>
                   <td>{e.date}</td>
                   <td>{e.category_name}</td>
-                  <td style={{ textAlign: "right" }}>{formatAmount(e.amount)} PLN</td>
+                  <td style={{ textAlign: "right" }}>{formatAmount(e.amount)} USD</td>
                 </tr>
               ))}
             </tbody>

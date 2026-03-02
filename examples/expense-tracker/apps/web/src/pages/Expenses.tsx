@@ -58,7 +58,7 @@ export function Expenses() {
               <td>{e.date}</td>
               <td>{e.category_name}</td>
               <td>{e.description ?? ""}</td>
-              <td style={{ textAlign: "right" }}>{formatAmount(e.amount)} PLN</td>
+              <td style={{ textAlign: "right" }}>{formatAmount(e.amount)} USD</td>
               <td>
                 <Link to={`/expenses/${e.id}/edit`}>Edit</Link>{" "}
                 <button onClick={() => handleDelete(e.id)} style={{ cursor: "pointer", color: "red", background: "none", border: "none" }}>

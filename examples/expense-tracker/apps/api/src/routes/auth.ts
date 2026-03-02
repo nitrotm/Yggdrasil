@@ -7,7 +7,7 @@ export async function authRoutes(app: FastifyInstance) {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -17,7 +17,7 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.status(201).send({ token });
     } catch (err) {
       if (err instanceof Error && err.message === "EMAIL_TAKEN") {
-        return reply.status(409).send({ error: "Ten adres email jest już używany" });
+        return reply.status(409).send({ error: "This email address is already in use" });
       }
       throw err;
     }
@@ -27,7 +27,7 @@ export async function authRoutes(app: FastifyInstance) {
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
-        error: "Walidacja nie powiodła się",
+        error: "Validation failed",
         details: parsed.error.flatten().fieldErrors,
       });
     }
@@ -37,7 +37,7 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.send({ token });
     } catch (err) {
       if (err instanceof Error && err.message === "INVALID_CREDENTIALS") {
-        return reply.status(401).send({ error: "Nieprawidłowy email lub hasło" });
+        return reply.status(401).send({ error: "Invalid email or password" });
       }
       throw err;
     }

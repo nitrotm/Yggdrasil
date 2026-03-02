@@ -100,7 +100,7 @@ function BudgetRow({
   return (
     <tr>
       <td>{category.name}</td>
-      <td style={{ textAlign: "right" }}>{budget ? formatAmount(budget.current_total) : "0"} PLN</td>
+      <td style={{ textAlign: "right" }}>{budget ? formatAmount(budget.current_total) : "0"} USD</td>
       <td>
         <form onSubmit={handleSubmit} style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
           <input
