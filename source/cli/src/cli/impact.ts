@@ -89,6 +89,19 @@ export function buildTransitiveChains(
   return chains.sort();
 }
 
+export function collectDescendants(graph: Graph, nodePath: string): string[] {
+  const node = graph.nodes.get(nodePath);
+  if (!node) return [];
+  const result: string[] = [];
+  const stack = [...node.children];
+  while (stack.length > 0) {
+    const child = stack.pop()!;
+    result.push(child.path);
+    stack.push(...child.children);
+  }
+  return result.sort();
+}
+
 export function registerImpactCommand(program: Command): void {
   program
     .command('impact')
@@ -151,21 +164,32 @@ export function registerImpactCommand(program: Command): void {
             process.stdout.write(`  ${chain}\n`);
           }
         }
+
+        const descendants = collectDescendants(graph, nodePath);
+        if (descendants.length > 0) {
+          process.stdout.write('\nDescendants (hierarchy impact):\n');
+          for (const desc of descendants) {
+            process.stdout.write(`  ${desc}\n`);
+          }
+        }
+
         process.stdout.write(`\nFlows: ${flows.length > 0 ? flows.join(', ') : '(none)'}\n`);
         process.stdout.write(
           `Aspects (scope covers node): ${aspectsInScope.length > 0 ? aspectsInScope.join(', ') : '(none)'}\n`,
         );
+
+        const allAffected = new Set([...allDependents, ...descendants]);
         process.stdout.write(
-          `\nTotal scope: ${allDependents.length} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects\n`,
+          `\nTotal scope: ${allAffected.size} nodes, ${flows.length} flows, ${aspectsInScope.length} aspects\n`,
         );
 
-        if (options.simulate && allDependents.length > 0) {
+        if (options.simulate && allAffected.size > 0) {
           process.stdout.write('\nChanges in context packages:\n\n');
           const baselineGraph = await loadGraphFromRef(process.cwd(), 'HEAD');
           const driftReport = await detectDrift(graph);
           const driftByNode = new Map(driftReport.entries.map((e) => [e.nodePath, e]));
 
-          for (const dep of allDependents) {
+          for (const dep of allAffected) {
             try {
               const pkg = await buildContext(graph, dep);
               const status =

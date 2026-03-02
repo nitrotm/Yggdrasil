@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   collectReverseDependents,
   buildTransitiveChains,
+  collectDescendants,
 } from '../../../src/cli/impact.js';
 import type { Graph, GraphNode } from '../../../src/model/types.js';
 
@@ -158,5 +159,25 @@ describe('buildTransitiveChains', () => {
     const { direct, allDependents, reverse } = collectReverseDependents(graph, 'a');
     const chains = buildTransitiveChains('a', direct, allDependents, reverse);
     expect(chains).toEqual([]);
+  });
+});
+
+describe('collectDescendants', () => {
+  it('returns all descendants of a parent node', () => {
+    const parent = makeNode('mod');
+    const child1 = makeNode('mod/a', { parent });
+    const child2 = makeNode('mod/b', { parent });
+    const grandchild = makeNode('mod/a/x', { parent: child1 });
+    parent.children = [child1, child2];
+    child1.children = [grandchild];
+    const graph = makeGraph([parent, child1, child2, grandchild]);
+    const result = collectDescendants(graph, 'mod');
+    expect(result.sort()).toEqual(['mod/a', 'mod/a/x', 'mod/b']);
+  });
+
+  it('returns empty for leaf node', () => {
+    const leaf = makeNode('leaf');
+    const graph = makeGraph([leaf]);
+    expect(collectDescendants(graph, 'leaf')).toEqual([]);
   });
 });
