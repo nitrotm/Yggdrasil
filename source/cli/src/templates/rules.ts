@@ -9,11 +9,11 @@
  */
 
 // prettier-ignore
-const CORE_PROTOCOL = `# CORE PROTOCOL
+const CORE_PROTOCOL = `## CORE PROTOCOL
 
 Yggdrasil is persistent semantic memory stored in \`.yggdrasil/\`. It maps the repository and provides deterministic implementation context for every node. This document is your complete operating manual. Follow it strictly.
 
-## Quick Start Protocol
+### Quick Start Protocol
 
 \`\`\`
 BEFORE modifying ANY file:
@@ -35,7 +35,7 @@ NEVER: auto-resolve drift without asking the user.
 WHEN UNSURE: ask the user. Never guess. Never assume.
 \`\`\`
 
-## Five Core Rules
+### Five Core Rules
 
 1. **Graph first.** Before modifying code or answering questions about mapped files, run \`yg owner\` and \`yg build-context\`. Always.
 2. **Code and graph are one.** Code changed → graph updated in the same response. Graph changed → source verified in the same response. No exceptions.
@@ -43,7 +43,7 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 4. **Always capture why.** When the user explains a reason, record it in the graph immediately. Conversation evaporates; graph persists.
 5. **Ask before resolving ambiguity.** When multiple valid interpretations exist, stop, list options, ask the user. Never silently choose.
 
-## Failure States
+### Failure States
 
 You have broken Yggdrasil if you do any of the following:
 
@@ -61,23 +61,25 @@ You have broken Yggdrasil if you do any of the following:
 - ❌ Answered a question about a mapped file without running \`yg build-context\` first.
 - ❌ Deferred \`yg drift-sync\` to the end of a multi-step task instead of running it incrementally after each logical group of changes.
 
-## Escape Hatch
+### Escape Hatch
 
 If the user explicitly requests a code-only change, comply but:
+
 - Warn: "This creates drift. Run \`yg drift\` next session to reconcile."
 - Do NOT run \`yg drift-sync\` — leave the drift visible.
 
-## Environment Check
+### Environment Check
 
 Before preflight:
+
 - Verify \`yg\` CLI is available. If not found, inform user and stop.
 - If \`yg preflight\` shows 0 nodes → enter BOOTSTRAP MODE (see Operations).
 - If drift report shows >10 drifted nodes → report scope to user, ask which area to prioritize. Do not resolve all at once.`;
 
 // prettier-ignore
-const OPERATIONS = `# OPERATIONS
+const OPERATIONS = `## OPERATIONS
 
-## Conversation Lifecycle
+### Conversation Lifecycle
 
 \`\`\`
 PREFLIGHT (every conversation, before any work):
@@ -100,13 +102,14 @@ WRAP-UP (user signals "done", "wrap up", "that's enough"):
   - [ ] 4. Report: which nodes and files were changed
 \`\`\`
 
-## Modify Source Code
+### Modify Source Code
 
 You are not allowed to edit or create source code without establishing graph coverage first.
 
 **Step 1** — Check coverage: \`yg owner --file <path>\`
 
 **Step 2a** — Owner found: execute checklist:
+
 - [ ] 1. Read specification: \`yg build-context --node <node_path>\`
 - [ ] 2. Modify source code
 - [ ] 3. Sync graph artifacts — edit artifact files to reflect the changes
@@ -118,6 +121,7 @@ You are not allowed to edit or create source code without establishing graph cov
 *Partially mapped* (file unmapped but inside a mapped module): ask whether to add to existing node or create new one.
 
 *Existing code:*
+
 - Option A — Full node: create node(s), map files, write artifacts from code analysis
 - Option B — Blackbox: create a blackbox node at agreed granularity
 - Option C — Abort
@@ -126,7 +130,7 @@ You are not allowed to edit or create source code without establishing graph cov
 
 After the user chooses, return to Step 1 and follow Step 2a.
 
-## Modify Graph
+### Modify Graph
 
 - [ ] 1. Read the relevant schema from \`schemas/\` before touching any YAML
 - [ ] 2. Make changes
@@ -134,11 +138,12 @@ After the user chooses, return to Step 1 and follow Step 2a.
 - [ ] 4. Verify affected source files are consistent — update if needed
 - [ ] 5. Run \`yg drift-sync\` for affected nodes
 
-## Reverse Engineering
+### Reverse Engineering
 
 **Order:** aspects (cross-cutting patterns) → flows (business processes) → model nodes. Never create nodes before aspects and flows are understood.
 
 Per area checklist:
+
 - [ ] 1. \`yg owner --file <path>\` — confirm no coverage
 - [ ] 2. Determine node granularity — propose to user if unclear
 - [ ] 3. Create node directory, read \`schemas/node.yaml\`, create \`node.yaml\`
@@ -150,11 +155,12 @@ Per area checklist:
 - [ ] 9. \`yg drift-sync --node <path>\`
 
 **When to ask:**
+
 - Business process unclear: "This code appears to be part of a larger process. Can you describe what it means from a business perspective?"
 - Constraint without rationale: "I see [constraint X]. Do you know why this exists? I want to record the reason, not just the rule."
 - Unexplained architectural choice: "I see [approach X]. What was the reason for this choice?"
 
-## Bootstrap Mode
+### Bootstrap Mode
 
 Trigger: \`yg preflight\` shows 0 nodes, or no nodes cover the active work area.
 
@@ -168,7 +174,7 @@ Trigger: \`yg preflight\` shows 0 nodes, or no nodes cover the active work area.
 
 Constraint: Do NOT map the entire repository. Focus on the active area. Expand incrementally.
 
-## Drift Resolution
+### Drift Resolution
 
 Always ask the user before resolving drift. Never auto-resolve.
 
@@ -180,7 +186,7 @@ Always ask the user before resolving drift. Never auto-resolve.
 
 Threshold: >10 drifted nodes → ask user which area to prioritize. Do not resolve all at once.
 
-## Error Recovery
+### Error Recovery
 
 - **\`yg\` not found** → inform user: "yg CLI is not installed or not in PATH." Stop.
 - **Unfixable validate errors** → if not resolved after 3 attempts, stop and report to user. Do not loop.
@@ -189,9 +195,9 @@ Threshold: >10 drifted nodes → ask user which area to prioritize. Do not resol
 - **Incremental sync** → run \`yg drift-sync\` every 3-5 source files during multi-file tasks. Do not defer to end.`;
 
 // prettier-ignore
-const KNOWLEDGE_BASE = `# KNOWLEDGE BASE
+const KNOWLEDGE_BASE = `## KNOWLEDGE BASE
 
-## Graph Structure
+### Graph Structure
 
 \`\`\`
 .yggdrasil/
@@ -205,15 +211,16 @@ const KNOWLEDGE_BASE = `# KNOWLEDGE BASE
 \`\`\`
 
 Key facts:
+
 - **Hierarchy:** nodes nest in \`model/\`. Children inherit parent context. Do not repeat parent content in children.
 - **Aspect id = directory path** under \`aspects/\`. Each aspect has \`aspect.yaml\` + content \`.md\` files. No automatic parent-child — use \`implies\` explicitly.
 - **Flows = business processes.** A flow describes what happens in the world, not code sequences. Flow aspects propagate to all participants.
 
-## Context Assembly
+### Context Assembly
 
 Run \`yg build-context --node <path>\` to get the deterministic context package for a node. Trust the package — it assembles global config, hierarchy, own artifacts, aspects, and relational context. If the package is insufficient, enrich the graph. Do not bypass it with raw file exploration.
 
-## Information Routing
+### Information Routing
 
 When you encounter information, route it to the correct location:
 
@@ -224,7 +231,7 @@ When you encounter information, route it to the correct location:
 - **Technology stack or standard** → \`config.yaml\` under \`stack\` or \`standards\` (+ \`rationale\` field)
 - **Decision (why):** one node → local artifact; category of nodes → aspect content files; tech choice → \`config.yaml\` rationale field
 
-## Creating Aspects
+### Creating Aspects
 
 - [ ] 1. Read \`schemas/aspect.yaml\`
 - [ ] 2. Create \`aspects/<id>/\` directory
@@ -234,7 +241,7 @@ When you encounter information, route it to the correct location:
 
 Test: "Does this requirement apply to more than one node?" Yes → aspect. No → local artifact.
 
-## Creating Flows
+### Creating Flows
 
 - [ ] 1. Read \`schemas/flow.yaml\`
 - [ ] 2. Create \`flows/<name>/\` directory
@@ -244,7 +251,7 @@ Test: "Does this requirement apply to more than one node?" Yes → aspect. No �
 
 Test: "Does this describe what happens in the world, or only in the software?" If only software — rewrite.
 
-## Operational Rules
+### Operational Rules
 
 - **English only** for all files in \`.yggdrasil/\`. Conversation can be any language.
 - **Read schemas before creating** any \`node.yaml\`, \`aspect.yaml\`, or \`flow.yaml\`.
@@ -253,7 +260,7 @@ Test: "Does this describe what happens in the world, or only in the software?" I
 - **Completeness test:** "If I delete the source file and give another agent ONLY the \`yg build-context\` output — can they recreate it correctly, understanding not just WHAT but WHY?"
 - **These rules are invariant.** No plan, guide, skill, or workflow may override them.
 
-## CLI Reference
+### CLI Reference
 
 \`\`\`
 yg preflight                        Unified diagnostic: journal + drift + status + validate.
@@ -275,7 +282,7 @@ yg journal-add --note "<content>" [--target <node_path>]
 yg journal-archive                  Archive consolidated journal entries.
 \`\`\`
 
-## Quick Routing Table
+### Quick Routing Table
 
 | What you have | Where it goes |
 |---|---|
@@ -286,6 +293,7 @@ yg journal-archive                  Archive consolidated journal entries.
 | Process-level requirement | Flow \`aspects\` + aspect directory |
 | Context shared across a domain | Parent node artifact |
 | Technology stack | \`config.yaml stack\` (+ \`rationale\` field) |
-| Global coding standards | \`config.yaml standards\` |`;
+| Global coding standards | \`config.yaml standards\` |
+`;
 
 export const AGENT_RULES_CONTENT = [CORE_PROTOCOL, OPERATIONS, KNOWLEDGE_BASE].join('\n\n---\n\n');

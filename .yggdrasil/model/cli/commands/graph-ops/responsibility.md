@@ -1,6 +1,14 @@
 # Graph Ops Commands Responsibility
 
-**In scope:** `yg status`, `yg tree`, `yg owner`, `yg deps`, `yg impact`. Graph navigation and introspection.
+**In scope:** `yg preflight`, `yg status`, `yg tree`, `yg owner`, `yg deps`, `yg impact`. Graph diagnostics, navigation, and introspection.
+
+**preflight:**
+
+- Unified diagnostic report: journal + drift + status counts + validation.
+- loadGraph(process.cwd()), findYggRoot(cwd), readJournal(yggRoot), detectDrift(graph), validate(graph, 'all').
+- Count nodes, aspects, flows, mapped paths.
+- Output sections: Journal (clean or N pending entries), Drift (clean or N nodes need attention), Status (counts), Validation (clean or errors/warnings with codes).
+- Exit code: 1 if journal entries OR drifted nodes OR validation errors. Warnings alone → exit 0.
 
 **status:**
 
@@ -34,6 +42,6 @@
 - Output: direct dependents (with consumes if present), transitive chains, flows (node in flow.nodes), aspects, knowledge (scope covers node).
 - If --simulate and transitive.length > 0: loadGraphFromRef(projectRoot, 'HEAD'), detectDrift. For each dependent: buildContext, budget status, baseline tokens (HEAD), drift status. Output per-node: changed dependency line (if direct structural dep on target), budget line, drift line.
 
-**Consumes:** loadGraph, loadGraphFromRef (cli/core/loader); validate (cli/core/validator); detectDrift (cli/core/drift-detector); formatDependencyTree (cli/core/dependency-resolver); buildContext (cli/core/context); normalizeMappingPaths, normalizeProjectRelativePath (cli/utils); Graph, GraphNode, OwnerResult (cli/model).
+**Consumes:** loadGraph, loadGraphFromRef (cli/core/loader); validate (cli/core/validator); detectDrift (cli/core/drift-detector); formatDependencyTree (cli/core/dependency-resolver); buildContext (cli/core/context); normalizeMappingPaths, normalizeProjectRelativePath, findYggRoot (cli/utils); readJournal (cli/io); Graph, GraphNode, OwnerResult (cli/model).
 
-**Out of scope:** Init, validation commands, drift commands, journal.
+**Out of scope:** Init, validation commands, drift commands, journal write/archive.

@@ -17,7 +17,7 @@ relations:
     consumes: [registerJournalAddCommand, registerJournalReadCommand, registerJournalArchiveCommand]
   - target: cli/commands/graph-ops
     type: uses
-    consumes: [registerStatusCommand, registerTreeCommand, registerOwnerCommand, registerDepsCommand, registerImpactCommand]
+    consumes: [registerPreflightCommand, registerStatusCommand, registerTreeCommand, registerOwnerCommand, registerDepsCommand, registerImpactCommand]
 
 mapping:
   paths:

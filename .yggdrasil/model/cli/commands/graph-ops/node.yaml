@@ -20,10 +20,13 @@ relations:
     consumes: [buildContext]
   - target: cli/utils
     type: uses
-    consumes: [normalizeMappingPaths, normalizeProjectRelativePath]
+    consumes: [normalizeMappingPaths, normalizeProjectRelativePath, findYggRoot]
   - target: cli/model
     type: uses
     consumes: [Graph, GraphNode, OwnerResult]
+  - target: cli/io
+    type: uses
+    consumes: [readJournal]
 
 mapping:
   paths:
@@ -32,3 +35,4 @@ mapping:
     - source/cli/src/cli/deps.ts
     - source/cli/src/cli/impact.ts
     - source/cli/src/cli/status.ts
+    - source/cli/src/cli/preflight.ts

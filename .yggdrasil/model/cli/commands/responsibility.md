@@ -1,6 +1,6 @@
 # Commands Responsibility
 
-CLI commands module — groups 13 command handlers registered in Commander. Each handler is a subcommand of `yg`.
+CLI commands module — groups 14 command handlers registered in Commander. Each handler is a subcommand of `yg`.
 
 **Shared command contract (all children):**
 
@@ -22,7 +22,7 @@ CLI commands module — groups 13 command handlers registered in Commander. Each
 | cli/commands/init | init |
 | cli/commands/validation | validate, build-context |
 | cli/commands/drift | drift, drift-sync |
-| cli/commands/graph-ops | status, tree, owner, deps, impact |
+| cli/commands/graph-ops | preflight, status, tree, owner, deps, impact |
 | cli/commands/journal | journal-add, journal-read, journal-archive |
 
 **Out of scope:**
