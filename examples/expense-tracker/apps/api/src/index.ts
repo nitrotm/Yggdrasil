@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import "./db/index.js";
 
 const app = Fastify({ logger: true });
 
