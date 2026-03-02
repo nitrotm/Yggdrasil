@@ -189,12 +189,16 @@ export async function buildOwnLayer(
 ): Promise<ContextLayer> {
   const parts: string[] = [];
 
-  const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'node.yaml');
-  try {
-    const nodeYamlContent = await readFile(nodeYamlPath, 'utf-8');
-    parts.push(`### node.yaml\n${nodeYamlContent.trim()}`);
-  } catch {
-    parts.push(`### node.yaml\n(not found)`);
+  if (node.nodeYamlRaw) {
+    parts.push(`### node.yaml\n${node.nodeYamlRaw.trim()}`);
+  } else {
+    const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'node.yaml');
+    try {
+      const nodeYamlContent = await readFile(nodeYamlPath, 'utf-8');
+      parts.push(`### node.yaml\n${nodeYamlContent.trim()}`);
+    } catch {
+      parts.push(`### node.yaml\n(not found)`);
+    }
   }
 
   const filtered = filterArtifactsByConfig(node.artifacts, config);

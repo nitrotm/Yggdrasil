@@ -854,6 +854,35 @@ describe('context-builder', () => {
       expect(aspectLabels).toContain('Aspect B (aspect: tag-b)');
     });
 
+    it('uses nodeYamlRaw from memory when disk read would fail', async () => {
+      const node: GraphNode = {
+        path: 'test/node',
+        meta: { name: 'TestNode', type: 'service' },
+        artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+        children: [],
+        parent: null,
+        nodeYamlRaw: 'name: TestNode\ntype: service\n',
+      };
+      const graph: Graph = {
+        config: {
+          name: 'T',
+          stack: {},
+          standards: '',
+          node_types: [{ name: 'service' }],
+          artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+        },
+        nodes: new Map([['test/node', node]]),
+        aspects: [],
+        flows: [],
+        schemas: [],
+        rootPath: '/nonexistent/path',  // disk read will fail
+      };
+      const pkg = await buildContext(graph, 'test/node');
+      const ownLayer = pkg.layers.find((l) => l.type === 'own');
+      expect(ownLayer?.content).toContain('name: TestNode');
+      expect(ownLayer?.content).not.toContain('(not found)');
+    });
+
     it('own layer includes raw node.yaml from fixture', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const pkg = await buildContext(graph, 'auth');

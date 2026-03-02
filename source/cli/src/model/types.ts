@@ -63,6 +63,8 @@ export interface GraphNode {
   path: string;
   /** Parsed node.yaml content */
   meta: NodeMeta;
+  /** Raw node.yaml file content (for context assembly without disk access) */
+  nodeYamlRaw?: string;
   /** All artifact files in the node's directory */
   artifacts: Artifact[];
   /** Child nodes (subdirectories with node.yaml) */

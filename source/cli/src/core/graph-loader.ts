@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type {
   Graph,
@@ -92,9 +92,12 @@ async function scanModelDirectory(
 
   if (hasNodeYaml) {
     const graphPath = toModelPath(dirPath, modelDir);
+    const nodeYamlPath = path.join(dirPath, 'node.yaml');
     let meta;
+    let nodeYamlRaw: string | undefined;
     try {
-      meta = await parseNodeYaml(path.join(dirPath, 'node.yaml'));
+      nodeYamlRaw = await readFile(nodeYamlPath, 'utf-8');
+      meta = await parseNodeYaml(nodeYamlPath);
     } catch (err) {
       nodeParseErrors.push({
         nodePath: graphPath,
@@ -107,6 +110,7 @@ async function scanModelDirectory(
     const node: GraphNode = {
       path: graphPath,
       meta,
+      nodeYamlRaw,
       artifacts,
       children: [],
       parent,
