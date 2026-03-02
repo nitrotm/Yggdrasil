@@ -579,4 +579,23 @@ describe.skipIf(!distExists)('CLI E2E', () => {
     expect(stdout).toContain('Relations:');
     expect(stdout).toContain('Nodes:');
   });
+
+  // --- preflight ---
+
+  describe('preflight', () => {
+    it('outputs all four report sections', () => {
+      const { stdout, status } = run(['preflight']);
+      expect(stdout).toContain('=== Preflight Report ===');
+      expect(stdout).toContain('Journal:');
+      expect(stdout).toContain('Drift:');
+      expect(stdout).toContain('Status:');
+      expect(stdout).toContain('Validation:');
+      expect(stdout).toMatch(/\d+ nodes/);
+    });
+
+    it('exits with numeric status code', () => {
+      const { status } = run(['preflight']);
+      expect(status === 0 || status === 1).toBe(true);
+    });
+  });
 });
