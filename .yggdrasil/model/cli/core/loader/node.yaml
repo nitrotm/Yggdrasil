@@ -1,6 +1,6 @@
 name: GraphLoader
 type: library
-aspects: [deterministic]
+aspects: [deterministic, silent-missing-files]
 
 relations:
   - target: cli/io

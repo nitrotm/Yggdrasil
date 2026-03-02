@@ -18,6 +18,8 @@ Assembles context packages for nodes — the 5-step layer assembly used by `yg b
 - **collectParticipatingFlows**: Internal; returns flows where node or any ancestor is in flow.nodes.
 - **Relation type sets**: STRUCTURAL_RELATION_TYPES (uses, calls, extends, implements), EVENT_RELATION_TYPES (emits, listens). Relations not in either set are skipped.
 
+- **collectTrackedFiles(node, graph)**: Mirrors build-context traversal but returns file paths instead of content. Used by drift-detector to know which files to track for a node. Collects: own files (node.yaml + artifacts), hierarchical (ancestor files), aspect files (recursive implies), relational-deps (structural target artifacts), relational-flows (flow files), source files (from mapping.paths). Synchronous — all data from loaded Graph.
+
 **Out of scope:**
 
 - Graph loading (cli/core/loader)

@@ -1,6 +1,6 @@
 name: DriftDetector
 type: library
-aspects: [deterministic]
+aspects: [deterministic, posix-paths]
 
 relations:
   - target: cli/io

@@ -1,6 +1,6 @@
 name: Utils
 type: library
-aspects: []
+aspects: [posix-paths]
 
 relations:
   - target: cli/model
