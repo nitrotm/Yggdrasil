@@ -17,7 +17,7 @@ relations:
     consumes: [formatDependencyTree]
   - target: cli/core/context
     type: uses
-    consumes: [buildContext]
+    consumes: [buildContext, collectAncestors, collectEffectiveAspectIds]
   - target: cli/utils
     type: uses
     consumes: [normalizeMappingPaths, normalizeProjectRelativePath, findYggRoot]
