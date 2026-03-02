@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { loadGraph } from '../core/graph-loader.js';
 import { loadGraphFromRef } from '../core/graph-from-git.js';
-import { buildContext } from '../core/context-builder.js';
+import { buildContext, collectEffectiveAspectIds } from '../core/context-builder.js';
 import { detectDrift } from '../core/drift-detector.js';
 import type { Graph } from '../model/types.js';
 
@@ -131,11 +131,10 @@ export function registerImpactCommand(program: Command): void {
           }
         }
 
+        const targetEffective = collectEffectiveAspectIds(graph, nodePath);
         const aspectsInScope: string[] = [];
-        const targetNode = graph.nodes.get(nodePath)!;
-        const targetAspectIds = new Set(targetNode.meta.aspects ?? []);
         for (const aspect of graph.aspects) {
-          if (targetAspectIds.has(aspect.id)) {
+          if (targetEffective.has(aspect.id)) {
             aspectsInScope.push(aspect.name);
           }
         }
@@ -177,6 +176,24 @@ export function registerImpactCommand(program: Command): void {
         process.stdout.write(
           `Aspects (scope covers node): ${aspectsInScope.length > 0 ? aspectsInScope.join(', ') : '(none)'}\n`,
         );
+
+        const coAspectNodes: Array<{ path: string; shared: string[] }> = [];
+        if (targetEffective.size > 0) {
+          for (const [p] of graph.nodes) {
+            if (p === nodePath) continue;
+            const nodeEffective = collectEffectiveAspectIds(graph, p);
+            const shared = [...targetEffective].filter((id) => nodeEffective.has(id));
+            if (shared.length > 0) {
+              coAspectNodes.push({ path: p, shared });
+            }
+          }
+        }
+        if (coAspectNodes.length > 0) {
+          process.stdout.write('Nodes sharing aspects:\n');
+          for (const { path: p, shared } of coAspectNodes.sort((a, b) => a.path.localeCompare(b.path))) {
+            process.stdout.write(`  ${p} (${shared.join(', ')})\n`);
+          }
+        }
 
         const allAffected = new Set([...allDependents, ...descendants]);
         process.stdout.write(

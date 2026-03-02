@@ -348,3 +348,29 @@ export function collectAncestors(node: GraphNode): GraphNode[] {
   }
   return ancestors;
 }
+
+/** Compute effective aspect ids for a node: own + hierarchy + flow + implies expanded. */
+export function collectEffectiveAspectIds(graph: Graph, nodePath: string): Set<string> {
+  const node = graph.nodes.get(nodePath);
+  if (!node) return new Set();
+
+  const raw = new Set<string>(node.meta.aspects ?? []);
+
+  // Hierarchy aspects
+  let ancestor = node.parent;
+  while (ancestor) {
+    for (const id of ancestor.meta.aspects ?? []) raw.add(id);
+    ancestor = ancestor.parent;
+  }
+
+  // Flow aspects (flows where node or ancestor participates)
+  const ancestorPaths = new Set([nodePath, ...collectAncestors(node).map((a) => a.path)]);
+  for (const flow of graph.flows) {
+    if (flow.nodes.some((n) => ancestorPaths.has(n))) {
+      for (const id of flow.aspects ?? []) raw.add(id);
+    }
+  }
+
+  // Expand implies
+  return new Set(expandAspects([...raw], graph.aspects));
+}
