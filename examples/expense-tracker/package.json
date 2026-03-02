@@ -8,6 +8,6 @@
     "dev:web": "npm run dev -w @expense-tracker/web"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^9.2.1"
   }
 }
