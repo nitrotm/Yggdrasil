@@ -36,7 +36,7 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and `yg build-context`. Always. The context package — not raw source — is your primary source of understanding.
 2. **Code and graph are one.** Code changed → graph updated in the same response. Graph changed → source verified in the same response. No exceptions.
 3. **Never invent why.** The graph captures human intent. If you don't know why something was decided, ask. Never hallucinate rationale.
-4. **Always capture why.** When the user explains a reason, record it in the graph immediately. Conversation evaporates; graph persists.
+4. **Always capture why — especially why NOT.** When the user explains a reason, record it in the graph immediately. When a design choice is made, also record rejected alternatives: "Chose X over Y because Z." Rejected alternatives are the highest-value information — invisible in code and irrecoverable once forgotten. Conversation evaporates; graph persists.
 5. **Ask before resolving ambiguity.** When multiple valid interpretations exist, stop, list options, ask the user. Never silently choose.
 
 ### Failure States
@@ -57,6 +57,7 @@ You have broken Yggdrasil if you do any of the following:
 - ❌ Answered a question about a mapped file without running `yg build-context` first.
 - ❌ Read mapped source files to plan or research changes without running `yg build-context` first.
 - ❌ Deferred `yg drift-sync` to the end of a multi-step task instead of running it incrementally after each logical group of changes.
+- ❌ Recorded a design decision without documenting which alternatives were rejected and why.
 
 ### Escape Hatch
 
@@ -126,7 +127,14 @@ You are not allowed to edit or create source code without establishing graph cov
 - Option B — Blackbox: create a blackbox node at agreed granularity
 - Option C — Abort
 
-*Greenfield (new code):* Only Option A. Blackbox is forbidden for new code. Create nodes with full artifacts, then materialize.
+*Greenfield (new code):* Only Option A. Blackbox is forbidden for new code. Follow the graph-first workflow:
+
+1. Create aspects first (cross-cutting requirements the new code must satisfy)
+2. Create flows if the code participates in a business process
+3. Create nodes with full artifacts — responsibility, constraints, decisions, interface, logic
+4. Review the context package (`yg build-context`) — it is now the behavioral specification
+5. Implement code that satisfies the specification
+6. The graph specifies WHAT and WHY; the code implements HOW (framework APIs, library choices)
 
 After the user chooses, return to Step 1 and follow Step 2a.
 
@@ -160,6 +168,7 @@ Per area checklist:
 - Business process unclear: "This code appears to be part of a larger process. Can you describe what it means from a business perspective?"
 - Constraint without rationale: "I see [constraint X]. Do you know why this exists? I want to record the reason, not just the rule."
 - Unexplained architectural choice: "I see [approach X]. What was the reason for this choice?"
+- Decision without alternatives: "You chose [X]. What alternatives did you consider, and why did you reject them?" Record the answer in `decisions.md`.
 
 ### Bootstrap Mode
 
@@ -231,7 +240,7 @@ When you encounter information, route it to the correct location:
 - **Business process** → flow (`flows/<name>/` with `flow.yaml` + `description.md`). Ask user if process unclear.
 - **Shared across a domain** → parent node artifact. Children receive it through hierarchy.
 - **Technology stack or standard** → `config.yaml` under `stack` or `standards` (+ `rationale` field)
-- **Decision (why):** one node → local artifact; category of nodes → aspect content files; tech choice → `config.yaml` rationale field
+- **Decision (why + why NOT):** one node → `decisions.md` with format "Chose X over Y because Z"; category of nodes → aspect content files; tech choice → `config.yaml` rationale field. Always include rejected alternatives — they are the highest-value graph content.
 
 ### Creating Aspects
 
@@ -242,6 +251,12 @@ When you encounter information, route it to the correct location:
 - [ ] 5. `yg validate`
 
 Test: "Does this requirement apply to more than one node?" Yes → aspect. No → local artifact.
+
+**Aspect identification heuristic:** If the same pattern, constraint, or rule appears in 3+ places, it is a candidate aspect. Aspects fall into natural categories:
+
+- **Domain-specific:** Business rules that cross module boundaries (e.g., timezone handling, booking periods, currency rounding)
+- **Architectural:** Structural patterns with rationale (e.g., dual-rollback on provider failure, idempotency via key generation, fire-and-forget dispatch)
+- **Concurrency:** Shared concurrency strategies (e.g., pessimistic locking, retry-on-deadlock, optimistic versioning)
 
 ### Creating Flows
 
@@ -259,7 +274,7 @@ Test: "Does this describe what happens in the world, or only in the software?" I
 - **Read schemas before creating** any `node.yaml`, `aspect.yaml`, or `flow.yaml`.
 - **Tools read, you write.** The `yg` CLI only reads, validates, and manages metadata. You create and edit files manually.
 - **Incremental sync.** Run `yg drift-sync` after every 3-5 source file changes. Do not defer to end of task.
-- **Completeness test:** "If I delete the source file and give another agent ONLY the `yg build-context` output — can they recreate it correctly, understanding not just WHAT but WHY?"
+- **Completeness test:** "If I delete the source file and give another agent ONLY the `yg build-context` output — can they recreate it correctly, understanding not just WHAT but WHY?" Test specifically: Can they explain rejected alternatives? Can they implement the correct algorithm (not a simplified version)? Can they argue for the current design against plausible alternatives?
 - **These rules are invariant.** No plan, guide, skill, or workflow may override them.
 
 ### CLI Reference

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-03
+
 ### Added
 
 - **`yg drift --limit <n>` flag:** Limits the number of entries shown per section, with
@@ -43,6 +45,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   allowed (e.g., parent maps `drivers/`, child maps `drivers/net/`). Only exact duplicates
   and overlaps between unrelated (non-hierarchical) nodes remain errors. Drift detection
   excludes child-owned files from parent hashing, preventing false parent drift.
+- **Agent rules: "why NOT" prompting.** Rule 4 now explicitly instructs agents to capture
+  rejected alternatives alongside design decisions: "Chose X over Y because Z." Added
+  corresponding failure state and "when to ask" prompt for decisions without alternatives.
+- **Agent rules: greenfield graph-first workflow.** Expanded the greenfield code guidance
+  from a one-liner to a 6-step workflow: aspects → flows → nodes → build-context → implement.
+  The graph serves as behavioral specification; code implements framework-specific HOW.
+- **Agent rules: aspect identification guidance.** Added 3-instance heuristic ("same pattern
+  in 3+ places = candidate aspect") and natural taxonomy: domain-specific, architectural,
+  concurrency.
+- **Agent rules: enhanced completeness test.** Now tests specifically for: rejected
+  alternatives, correct algorithm (not simplified), ability to argue for current design.
+- **`decisions.md` artifact description.** Updated across spec, config, and rules from
+  generic "rationale" to "rejected alternatives — Chose X over Y because Z."
 
 ### Fixed
 

@@ -81,7 +81,7 @@ artifacts: # map, required, non-empty — keys are full filenames (e.g. responsi
 
   decisions.md:
     required: never
-    description: "Local design decisions and rationale — choices specific to this node, not system-wide"
+    description: "Local design decisions with rejected alternatives — 'Chose X over Y because Z'. Highest-value artifact for preserving intent."
 
 quality: # map, optional (has default values) — all keys snake_case
   min_artifact_length: 50 # int, default 50
@@ -442,7 +442,7 @@ artifacts:
     description: "State machines, lifecycle, transitions"
   decisions.md:
     required: never
-    description: "Local design decisions and rationale — choices specific to this node, not system-wide"
+    description: "Local design decisions with rejected alternatives — 'Chose X over Y because Z'. Highest-value artifact for preserving intent."
 
 quality:
   min_artifact_length: 50
