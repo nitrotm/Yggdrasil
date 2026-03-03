@@ -916,12 +916,12 @@ Two levels of severity defined in the [Engine](engine) document.
 | `E004` | `broken-relation`            | Relation target does not resolve to an existing node   |
 | `E006` | `broken-flow-ref`            | Flow participant does not resolve                      |
 | `E007` | `broken-aspect-ref`          | Aspect reference does not resolve                      |
-| `E009` | `overlapping-mapping`        | Two nodes map to the same file/directory               |
+| `E009` | `overlapping-mapping`        | Overlapping mappings between unrelated nodes           |
 | `E010` | `structural-cycle`           | Cycle in structural relations (cycles involving blackbox are tolerated) |
 | `E012` | `invalid-config`             | `config.yaml` fails to parse or is invalid             |
 | `E013` | `invalid-artifact-condition` | Condition `has_aspect:<name>` refers to an undefined aspect  |
 | `E014` | `duplicate-aspect-binding`   | Aspect identifier is bound to multiple aspect directories |
-| `E015` | `missing-node-yaml`          | Directory in `model/` has content but no `node.yaml`   |
+| `E015` | `missing-node-yaml`          | Directory in `model/` has files but no `node.yaml`     |
 | `E016` | `implied-aspect-missing`     | Identifier in aspect's `implies` has no corresponding aspect in `aspects/`           |
 | `E017` | `aspect-implies-cycle`       | Cycle in aspect implies graph (A implies B implies A)                                |
 
@@ -938,6 +938,7 @@ Two levels of severity defined in the [Engine](engine) document.
 | `W010` | `missing-schema`        | Required schema (node, aspect, flow) missing from `.yggdrasil/schemas/`            |
 | `W011` | `missing-required-aspect-coverage` | Node of type with `required_aspects` lacks coverage (direct aspect or via implies) for one or more |
 | `W012` | `mapping-path-missing`             | Mapping path in `node.yaml` does not exist on disk — catches typos and stale mappings             |
+| `W013` | `directory-without-node`           | Directory in `model/` has only subdirectories but no `node.yaml` — bare intermediate directory    |
 
 **Message format:**
 
@@ -984,6 +985,7 @@ and the graph side (`.yggdrasil/` artifacts that contribute to the node's contex
 | -------------- | ------ | -------- | ----------------------------------------------------------------- |
 | `scope`        | string | No       | `all` or node path. When a node path is given, includes all descendant nodes. Default: `all`. |
 | `drifted-only` | bool   | No       | Hide `ok` entries; show only nodes with drift. Default: `false`.  |
+| `limit`        | number | No       | Max entries per section. Truncated sections show remaining count. |
 
 **Behavior:**
 

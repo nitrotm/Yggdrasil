@@ -124,7 +124,7 @@ Output: YAML format with fields: `name`, `nodes` (participants), `aspects`.
 ## Drift detection
 
 ```bash
-yg drift [--scope <scope>] [--drifted-only]
+yg drift [--scope <scope>] [--drifted-only] [--limit <n>]
 ```
 
 Detects source and graph drift — files that changed outside the semantic memory (source drift)
@@ -132,6 +132,7 @@ and graph artifacts that changed without a corresponding `drift-sync` (graph dri
 
 - `--scope <scope>` — `all` or node-path; includes descendant nodes (default: `all`)
 - `--drifted-only` — Show only nodes with drift (hide ok entries)
+- `--limit <n>` — Maximum entries to show per section (truncated sections show remaining count)
 
 ```bash
 yg drift-sync --node <path> [--recursive]

@@ -41,7 +41,7 @@ yg build-context --node orders/order-service
 
 **Diagnostics:**
 
-- `yg preflight` — Unified diagnostic report: journal, drift, status, validation
+- `yg preflight [--quick]` — Unified diagnostic report: journal, drift, status, validation
 
 **Reading and analysis:**
 
@@ -52,12 +52,14 @@ yg build-context --node orders/order-service
 - `yg deps --node <path>` — Forward dependency tree and materialization order
 - `yg impact --node <path> [--simulate]` — Reverse dependencies and context impact
 - `yg aspects` — List aspects with metadata (YAML output)
+- `yg flows` — List flows with metadata (YAML output)
 
 **Validation and drift:**
 
 - `yg validate [--scope all|node-path]` — Structural integrity and completeness
-- `yg drift [--scope all|node-path]` — Detect graph-to-file divergence
-- `yg drift-sync --node <path>` — Record current file hash after resolving drift
+- `yg drift [--scope all|node-path] [--drifted-only] [--limit <n>]` — Detect graph-to-file divergence
+- `yg drift-sync --node <path> [--recursive]` — Record current file hash after resolving drift
+- `yg drift-sync --all` — Sync all nodes with mappings in one command
 
 **Session journal:**
 

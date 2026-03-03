@@ -164,6 +164,7 @@ export async function hashTrackedFiles(
   projectRoot: string,
   trackedFiles: TrackedFile[],
   storedFileData?: StoredFileData,
+  excludePrefixes?: string[],
 ): Promise<{ canonicalHash: string; fileHashes: Record<string, string>; fileMtimes: Record<string, number> }> {
   const fileHashes: Record<string, string> = {};
   const fileMtimes: Record<string, number> = {};
@@ -197,9 +198,16 @@ export async function hashTrackedFiles(
     }
   }
 
+  // Exclude files owned by descendant nodes (child-wins model)
+  const filtered = excludePrefixes?.length
+    ? allFiles.filter((entry) =>
+        !excludePrefixes.some((prefix) =>
+          entry.relPath === prefix || entry.relPath.startsWith(prefix + '/')))
+    : allFiles;
+
   // Separate files into cached (mtime match) and dirty (need hashing)
   const dirty: FileEntry[] = [];
-  for (const entry of allFiles) {
+  for (const entry of filtered) {
     const storedMtime = storedFileData?.mtimes[entry.relPath];
     const storedHash = storedFileData?.hashes[entry.relPath];
     if (storedMtime !== undefined && storedHash !== undefined && entry.mtimeMs === storedMtime) {

@@ -16,6 +16,7 @@
 - Summary line: source-drift count, graph-drift count, full-drift count, missing count, unmaterialized count. When --drifted-only and okCount > 0: append "(N ok hidden)". Otherwise append ok count.
 - Exit 1 if any drift, missing, or unmaterialized. Exit 0 otherwise.
 - --drifted-only flag hides ok entries from both sections.
+- --limit N: slice each section to N entries. Truncated sections show "... M more (T total)". Exit code still reflects full report.
 
 **drift-sync:**
 

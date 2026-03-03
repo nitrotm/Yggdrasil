@@ -287,7 +287,7 @@ yg impact --aspect <id>             Show all nodes where aspect is effective.
 yg impact --flow <name>             Show flow participants and descendants.
 yg status                           Graph health: nodes, coverage, drift summary.
 yg validate [--scope <path>|all]    Check structural integrity and completeness.
-yg drift [--scope <path>|all] [--drifted-only]
+yg drift [--scope <path>|all] [--drifted-only] [--limit <n>]
                                     Detect source and graph drift (bidirectional).
 yg drift-sync --node <path> [--recursive] | --all
                                     Record file hashes as new baseline.

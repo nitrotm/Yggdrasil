@@ -16,6 +16,33 @@ import { normalizeMappingPaths } from '../utils/paths.js';
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 
+/**
+ * Compute mapping paths owned by descendant nodes that overlap with a node's own
+ * mapping paths. Used to exclude child-owned files from parent drift hashing
+ * ("child wins" model).
+ */
+function getChildMappingExclusions(graph: Graph, nodePath: string): string[] {
+  const node = graph.nodes.get(nodePath);
+  if (!node) return [];
+  const parentMappings = normalizeMappingPaths(node.meta.mapping);
+  if (parentMappings.length === 0) return [];
+
+  const exclusions: string[] = [];
+  for (const [childPath, childNode] of graph.nodes) {
+    if (childPath === nodePath) continue;
+    if (!childPath.startsWith(nodePath + '/')) continue; // not a descendant
+    const childMappings = normalizeMappingPaths(childNode.meta.mapping);
+    for (const cm of childMappings) {
+      for (const pm of parentMappings) {
+        if (cm === pm || cm.startsWith(pm + '/')) {
+          exclusions.push(cm);
+        }
+      }
+    }
+  }
+  return exclusions;
+}
+
 export async function detectDrift(graph: Graph, filterNodePath?: string): Promise<DriftReport> {
   const projectRoot = path.dirname(graph.rootPath);
   const driftState = await readDriftState(graph.rootPath);
@@ -58,12 +85,14 @@ export async function detectDrift(graph: Graph, filterNodePath?: string): Promis
 
     // Collect all tracked files (source + graph) for this node
     const trackedFiles = collectTrackedFiles(node, graph);
+    // Exclude files owned by descendant nodes (child-wins model)
+    const excludePrefixes = getChildMappingExclusions(graph, nodePath);
     // Pass stored file data for mtime-based optimization: skip hashing files whose
     // modification time has not changed since the last drift-sync.
     const storedFileData = storedEntry.files
       ? { hashes: storedEntry.files, mtimes: storedEntry.mtimes ?? {} }
       : undefined;
-    const { canonicalHash, fileHashes } = await hashTrackedFiles(projectRoot, trackedFiles, storedFileData);
+    const { canonicalHash, fileHashes } = await hashTrackedFiles(projectRoot, trackedFiles, storedFileData, excludePrefixes);
 
     if (canonicalHash === storedEntry.hash) {
       entries.push({ nodePath, status: 'ok' });
@@ -165,13 +194,15 @@ export async function syncDriftState(
   if (!node.meta.mapping) throw new Error(`Node has no mapping: ${nodePath}`);
 
   const trackedFiles = collectTrackedFiles(node, graph);
+  // Exclude files owned by descendant nodes (child-wins model)
+  const excludePrefixes = getChildMappingExclusions(graph, nodePath);
   // For sync, pass stored data so unchanged files can reuse cached hashes.
   const existingState = await readDriftState(graph.rootPath);
   const existingEntry = existingState[nodePath];
   const storedFileData = existingEntry?.files
     ? { hashes: existingEntry.files, mtimes: existingEntry.mtimes ?? {} }
     : undefined;
-  const { canonicalHash, fileHashes, fileMtimes } = await hashTrackedFiles(projectRoot, trackedFiles, storedFileData);
+  const { canonicalHash, fileHashes, fileMtimes } = await hashTrackedFiles(projectRoot, trackedFiles, storedFileData, excludePrefixes);
 
   const previousHash = existingEntry?.hash;
 

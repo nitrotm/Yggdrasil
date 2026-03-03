@@ -388,6 +388,10 @@ function arePathsOverlapping(pathA: string, pathB: string): boolean {
   return pathA.startsWith(pathB + '/') || pathB.startsWith(pathA + '/');
 }
 
+function isAncestorNode(possibleAncestor: string, possibleDescendant: string): boolean {
+  return possibleDescendant.startsWith(possibleAncestor + '/');
+}
+
 function checkMappingOverlap(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const ownership: Array<{ nodePath: string; mappingPath: string }> = [];
@@ -407,6 +411,15 @@ function checkMappingOverlap(graph: Graph): ValidationIssue[] {
       const candidate = ownership[nestedIndex];
       if (current.nodePath === candidate.nodePath) continue;
       if (!arePathsOverlapping(current.mappingPath, candidate.mappingPath)) continue;
+
+      // Allow containment overlaps between ancestor-descendant nodes ("child wins" model).
+      // Exact duplicates (same path) are always errors regardless of hierarchy.
+      const isContainment = current.mappingPath !== candidate.mappingPath;
+      const isHierarchical =
+        isAncestorNode(current.nodePath, candidate.nodePath) ||
+        isAncestorNode(candidate.nodePath, current.nodePath);
+
+      if (isContainment && isHierarchical) continue;
 
       issues.push({
         severity: 'error',
@@ -736,17 +749,28 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
 
     if (RESERVED_DIRS.has(dirName)) return;
 
-    const hasContent = entries.some((e) => e.isFile()) || entries.some((e) => e.isDirectory());
+    const hasFiles = entries.some((e) => e.isFile());
+    const hasSubdirs = entries.some((e) => e.isDirectory() && !RESERVED_DIRS.has(e.name) && !e.name.startsWith('.'));
     const graphPath = segments.join('/');
 
-    if (hasContent && !hasNodeYaml && graphPath !== '') {
-      issues.push({
-        severity: 'error',
-        code: 'E015',
-        rule: 'missing-node-yaml',
-        message: `Directory '${graphPath}' has content but no node.yaml`,
-        nodePath: graphPath,
-      });
+    if (!hasNodeYaml && graphPath !== '') {
+      if (hasFiles) {
+        issues.push({
+          severity: 'error',
+          code: 'E015',
+          rule: 'missing-node-yaml',
+          message: `Directory '${graphPath}' has files but no node.yaml`,
+          nodePath: graphPath,
+        });
+      } else if (hasSubdirs) {
+        issues.push({
+          severity: 'warning',
+          code: 'W013',
+          rule: 'directory-without-node',
+          message: `Directory '${graphPath}' has subdirectories but no node.yaml — consider creating a node`,
+          nodePath: graphPath,
+        });
+      }
     }
 
     for (const entry of entries) {

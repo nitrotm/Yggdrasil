@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`yg drift --limit <n>` flag:** Limits the number of entries shown per section, with
+  truncation notice showing remaining count. Exit code still reflects all entries.
+  Enables agents to page through large drift reports iteratively.
+- **W013 `directory-without-node` warning:** `validate` now warns when a directory under
+  `model/` has only subdirectories but no `node.yaml`, indicating a bare intermediate
+  directory that may need a node definition. E015 is refined to fire only for directories
+  with actual files (not just subdirectories).
 - **Expense Tracker example:** Mini SaaS in `examples/expense-tracker/` with full Yggdrasil graph (API + Web nodes), auth, expenses, categories, budgets, reports, subscription mock. App UI and messages in English.
 - **Examples blackbox node:** `examples/` mapped as blackbox in main graph — intentional coarse coverage.
 - **`config.yaml` schema:** Added `graph-schemas/config.yaml` with documented fields for
@@ -29,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   manual per-node sync loops.
 - **`.drift-state` in `.gitignore`:** `yg init` now includes `.drift-state` in the
   generated `.yggdrasil/.gitignore` since drift state is machine-local.
+
+### Changed
+
+- **E009 overlap model — "child wins":** Parent-child mapping containment overlaps are now
+  allowed (e.g., parent maps `drivers/`, child maps `drivers/net/`). Only exact duplicates
+  and overlaps between unrelated (non-hierarchical) nodes remain errors. Drift detection
+  excludes child-owned files from parent hashing, preventing false parent drift.
 
 ### Fixed
 
