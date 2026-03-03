@@ -259,4 +259,6 @@ export interface OwnerResult {
   file: string;
   nodePath: string | null;
   mappingPath?: string;
+  /** When false, file has no direct mapping; coverage comes from ancestor directory */
+  direct?: boolean;
 }

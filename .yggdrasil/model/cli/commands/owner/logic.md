@@ -12,6 +12,16 @@
 3. **Prefix match (longest wins):** If the file path starts with a mapping path followed by `/`, record it as a candidate. Among all prefix matches, the one with the longest mapping path wins (most specific owner).
 4. If no match found, return `{ nodePath: null }` indicating no graph coverage.
 
+## OwnerResult
+
+- `direct: true` — exact match (file or dir in mapping.paths).
+- `direct: false` — prefix match (file lies inside ancestor directory).
+
+## Output behavior
+
+- Primary line: `${file} -> ${nodePath}` or `${file} -> no graph coverage`.
+- When `direct === false` and `mappingPath` is set: append a second line explaining that the file has no direct mapping and context comes from the nearest ancestor directory, with a hint to run `yg build-context --node <nodePath>`.
+
 ## File existence check
 
 Before reporting "no graph coverage," the command checks if the file actually exists on disk (`fs.access`). If it does not exist, the output includes a `(file not found)` hint to distinguish from files that exist but lack graph coverage.

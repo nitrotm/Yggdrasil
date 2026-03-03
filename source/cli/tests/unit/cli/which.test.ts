@@ -47,6 +47,7 @@ describe('owner command (findOwner)', () => {
     expect(result.file).toBe('src/core/validator.ts');
     expect(result.nodePath).toBe('svc/validator');
     expect(result.mappingPath).toBe('src/core/validator.ts');
+    expect(result.direct).toBe(true);
   });
 
   it('returns contained match when query is inside mapped directory', () => {
@@ -58,6 +59,7 @@ describe('owner command (findOwner)', () => {
 
     expect(result.nodePath).toBe('svc/core');
     expect(result.mappingPath).toBe('src/core');
+    expect(result.direct).toBe(false);
   });
 
   it('returns no match when mapping is missing', () => {

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-03
+
+### Added
+
+- **`yg owner` ancestor hint:** When a file has no direct mapping but lies inside a mapped
+  directory, the output now includes a second line explaining that context comes from the
+  nearest ancestor and suggests `yg build-context --node <path>` for the agent.
+- **Agent rules: "BEFORE ENDING ANY RESPONSE" self-audit:** Pre-completion checklist: did I
+  modify code? If yes → did I update graph artifacts in this same response? Prevents agents
+  from finishing without syncing the graph.
+
 ## [1.1.0] - 2026-03-03
 
 ### Added

@@ -716,6 +716,15 @@ Owner node path or information about missing coverage.
 src/modules/orders/order.service.ts -> orders/order-service
 ```
 
+When the file has no direct mapping but lies inside a mapped directory, the output includes an
+additional line explaining that context comes from the nearest ancestor directory and suggests
+how to obtain it:
+
+```text
+src/modules/orders/subdir/helper.ts -> orders/order-service
+  Plik nie ma własnego mapowania; kontekst pochodzi z nadrzędnego katalogu src/modules/orders. Użyj: yg build-context --node orders/order-service
+```
+
 ```text
 src/utils/helpers.ts -> no graph coverage
 ```

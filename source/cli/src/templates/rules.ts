@@ -110,6 +110,10 @@ WRAP-UP (user signals "done", "wrap up", "that's enough"):
   - [ ] 2. yg drift --drifted-only → resolve
   - [ ] 3. yg validate → fix errors
   - [ ] 4. Report: which nodes and files were changed
+
+BEFORE ENDING ANY RESPONSE (self-audit):
+  - [ ] Did I modify source code? If yes → did I update graph artifacts in this same response?
+  - [ ] If you changed code and did not sync the graph, you have broken the protocol. Do not finish until both are done.
 \`\`\`
 
 ### Modify Source Code

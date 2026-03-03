@@ -20,7 +20,7 @@ export function findOwner(graph: Graph, projectRoot: string, rawPath: string): O
 
     for (const mappingPath of mappingPaths) {
       if (file === mappingPath) {
-        return { file, nodePath, mappingPath };
+        return { file, nodePath, mappingPath, direct: true };
       }
       if (file.startsWith(mappingPath + '/')) {
         if (!best || (best && mappingPath.length > best.mappingPath.length)) {
@@ -31,7 +31,7 @@ export function findOwner(graph: Graph, projectRoot: string, rawPath: string): O
   }
 
   return best
-    ? { file, nodePath: best.nodePath, mappingPath: best.mappingPath }
+    ? { file, nodePath: best.nodePath, mappingPath: best.mappingPath, direct: false }
     : { file, nodePath: null };
 }
 
@@ -64,6 +64,11 @@ export function registerOwnerCommand(program: Command): void {
           }
         } else {
           process.stdout.write(`${result.file} -> ${result.nodePath}\n`);
+          if (result.direct === false && result.mappingPath) {
+            process.stdout.write(
+              `  Plik nie ma własnego mapowania; kontekst pochodzi z nadrzędnego katalogu ${result.mappingPath}. Użyj: yg build-context --node ${result.nodePath}\n`,
+            );
+          }
         }
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);
