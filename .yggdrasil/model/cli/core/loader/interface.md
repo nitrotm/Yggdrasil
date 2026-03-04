@@ -9,3 +9,14 @@
 - `loadGraphFromRef(projectRoot: string, ref?: string): Promise<Graph | null>`
   - Parameters: `projectRoot` (string), `ref` (string, default 'HEAD').
   - Returns: Graph or null. Extracts .yggdrasil from git ref to temp dir via `git archive` + tar, loads via loadGraph(tmpDir). Returns null if: not git repo, ref missing (git rev-parse fails), or git archive fails. Temp dir cleaned in finally. No throw.
+
+
+## Failure Modes
+
+# Graph Loader Errors
+
+- **loadGraph**:
+  - Throws when model/ is missing (ENOENT): `Error("Directory .yggdrasil/model/ does not exist. Run 'yg init' first.", { cause })`.
+  - Config parse failure: propagated unless tolerateInvalidConfig; then FALLBACK_CONFIG used, configError set on Graph.
+  - Node parse errors: collected in nodeParseErrors; scan continues (no throw).
+- **loadGraphFromRef**: Returns null (no throw) if: not git repo, ref missing (git rev-parse fails), git archive fails. Temp dir cleaned in finally.

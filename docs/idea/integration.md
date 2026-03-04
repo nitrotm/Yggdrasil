@@ -42,6 +42,9 @@ This is achieved through behavioral directives that the agent follows as part of
   created): create proper nodes from the start; blackbox is forbidden. If existing code: ask the
   user to choose reverse-engineering (full node coverage), blackbox (at user-chosen granularity),
   or abort. Editing uncovered code without an explicit decision is not allowed.
+- **When using context packages**, the agent treats the graph as the primary source of
+  architectural understanding (intent, constraints, relations, rationale). For implementation-level
+  precision (exact behavior, error handling, edge cases), the agent verifies against source code.
 - **Before completing a unit of work**, the agent validates the graph’s consistency.
 
 The user experiences this as: “my agent writes better code.” The graph is invisible infrastructure —
@@ -73,7 +76,7 @@ A user who never uses an explicit trigger still benefits from ambient integratio
 ## The agent writes the graph directly
 
 The agent creates and edits graph files — both YAML metadata (`node.yaml`, `flow.yaml`,
-`aspect.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`,
+`aspect.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`, `internals.md`,
 `content.md`, etc.). Tools have no write operations to the graph — they are readers and validators of semantic content. Tools do write operational metadata (`.drift-state`, `.journal.yaml`) for drift tracking and session buffering; see the [Engine](engine) document.
 
 ### Condition: the agent knows how

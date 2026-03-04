@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`aspect_exceptions` in node.yaml:** Per-node exceptions to aspect-level generalizations.
+  Record deviations from aspect patterns (e.g., aspect says "fire-and-forget" but this node
+  awaits the call). Exceptions appear in context packages alongside aspect content.
+- **E018 `invalid-aspect-exception` validation error:** Fires when `aspect_exceptions[].aspect`
+  references an aspect not in the node's own `aspects` list.
+- **Node type `infrastructure`:** New node type for guards, resolvers, middleware, interceptors,
+  and validators that intercept or modify request flow without being explicitly called by
+  business logic. Key for blast radius analysis.
+- **Agent rules: Graph Audit workflow** — two-step protocol (consistency + completeness)
+  for reviewing graph quality.
+- **Agent rules: "rationale unknown" pattern** — when the rationale for a decision is unknown,
+  record it as "rationale: unknown" instead of inventing a plausible-sounding rationale.
+- **Agent rules: aspect lifecycle warning** — aspects decay catastrophically (~2.4-year
+  half-life, binary). After significant feature additions, review all aspects touching the
+  affected area.
+- **Agent rules: value calibration** — Yggdrasil's primary value is cross-module context;
+  invest depth where cross-module interactions demand it.
+
+### Changed
+
+- **Artifacts consolidated from 8 to 3:** `responsibility.md` (WHAT — identity, boundaries),
+  `interface.md` (HOW TO USE — public API, contracts, failure modes, exposed data structures),
+  `internals.md` (HOW IT WORKS + WHY — algorithms, business rules, state machines, design
+  decisions with rejected alternatives). New repos get 3 artifacts; existing repos can migrate
+  manually.
+- **Agent rules: calibrated graph trust** — graph is primary source of architectural
+  understanding; for implementation-level precision (exact behavior, error handling, edge
+  cases), verify against source code.
+- **Agent rules: failure states consolidated from 15 to 8** — removed redundancies,
+  clearer grouping.
+- **Agent rules: completeness test enhanced** — now includes both reconstruction test
+  ("can another agent recreate this?") and omission test ("does the graph capture every
+  important behavioral invariant?").
+- **Agent rules: drift triage** — prioritize aspects and internals.md (highest decay),
+  then responsibility.md and interface.md (most stable).
+
 ## [1.2.0] - 2026-03-03
 
 ### Added

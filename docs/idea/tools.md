@@ -40,6 +40,7 @@ node_types: # list of {name, required_aspects?}, required, non-empty
   - name: module
   - name: service
   - name: library
+  - name: infrastructure
   # With required_aspects per type:
   # - name: service
   #   required_aspects: [requires-audit]
@@ -53,35 +54,12 @@ artifacts: # map, required, non-empty — keys are full filenames (e.g. responsi
   interface.md:
     required:
       when: has_incoming_relations # structural condition
-    description: "Public API — methods, parameters, return types, contracts"
+    description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
     structural_context: true
 
-  logic.md:
+  internals.md:
     required: never
-    description: "Algorithmic flow, control flow, branching logic, decision trees — the 'how' of execution"
-
-  constraints.md:
-    required: never
-    description: "Validation rules, business rules, invariants"
-    structural_context: true
-
-  errors.md:
-    required:
-      when: has_incoming_relations
-    description: "Failure modes, edge cases, error conditions, recovery behavior"
-    structural_context: true
-
-  model.md:
-    required: never
-    description: "Data structures, schemas, entities, type definitions — the shape of data this node owns or manages"
-
-  state.md:
-    required: never
-    description: "State machines, lifecycle, transitions"
-
-  decisions.md:
-    required: never
-    description: "Local design decisions with rejected alternatives — 'Chose X over Y because Z'. Highest-value artifact for preserving intent."
+    description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
 
 quality: # map, optional (has default values) — all keys snake_case
   min_artifact_length: 50 # int, default 50
@@ -118,6 +96,9 @@ Node identity and all its outgoing connections.
 name: OrderService # string, required
 type: service # string, required — from config.node_types
 aspects: [requires-audit, requires-auth] # list of strings, optional — aspect identifiers (directory paths under aspects/)
+aspect_exceptions: # list, optional — per-node deviations from aspect patterns
+  - aspect: requires-audit # string, required — must be in this node's aspects list
+    note: "Batch import skips per-record audit" # string, required — describes the deviation
 blackbox: false # bool, optional, default false
 
 relations: # list, optional
@@ -152,6 +133,7 @@ are hashed directly, directories are scanned recursively (respecting `.gitignore
 - `name` must be non-empty.
 - `type` must be from the `config.node_types` list.
 - Each aspect identifier must correspond to a directory under `aspects/`.
+- Each `aspect_exceptions[].aspect` must reference an aspect in this node's `aspects` list (E018).
 - Each `relations[].target` must resolve to an existing node.
 - Each `relations[].type` must be from the table above.
 - Paths in `mapping.paths` must be relative to the repository root.
@@ -411,6 +393,7 @@ node_types:
   - name: module
   - name: service
   - name: library
+  - name: infrastructure
 
 artifacts:
   responsibility.md:
@@ -420,29 +403,11 @@ artifacts:
   interface.md:
     required:
       when: has_incoming_relations
-    description: "Public API — methods, parameters, return types, contracts"
+    description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
     structural_context: true
-  logic.md:
+  internals.md:
     required: never
-    description: "Algorithmic flow, control flow, branching logic, decision trees — the 'how' of execution"
-  constraints.md:
-    required: never
-    description: "Validation rules, business rules, invariants"
-    structural_context: true
-  errors.md:
-    required:
-      when: has_incoming_relations
-    description: "Failure modes, edge cases, error conditions, recovery behavior"
-    structural_context: true
-  model.md:
-    required: never
-    description: "Data structures, schemas, entities, type definitions — the shape of data this node owns or manages"
-  state.md:
-    required: never
-    description: "State machines, lifecycle, transitions"
-  decisions.md:
-    required: never
-    description: "Local design decisions with rejected alternatives — 'Chose X over Y because Z'. Highest-value artifact for preserving intent."
+    description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
 
 quality:
   min_artifact_length: 50
@@ -482,7 +447,7 @@ The 5-step algorithm defined in the [Engine](engine) document. Summary:
    declares its own; no inheritance). Expand implies recursively. Render content of each
    matching aspect. No source attribute on aspect output.
 5. **Relational** — for structural relations: artifacts with `structural_context: true`
-   (default: responsibility, interface, constraints, errors) of the target with consumes
+   (default: responsibility, interface) of the target with consumes
    and failure annotations. If the target has no artifacts with `structural_context: true`,
    all configured artifacts are included as fallback. For event relations: event name and
    type with consumes annotation. Flow artifacts for flows listing this node or any ancestor

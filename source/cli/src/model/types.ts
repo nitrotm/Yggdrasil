@@ -35,10 +35,16 @@ export interface QualityConfig {
 
 export type RelationType = 'uses' | 'calls' | 'extends' | 'implements' | 'emits' | 'listens';
 
+export interface AspectException {
+  aspect: string;
+  note: string;
+}
+
 export interface NodeMeta {
   name: string;
   type: string;
   aspects?: string[];
+  aspect_exceptions?: AspectException[];
   blackbox?: boolean;
   relations?: Relation[];
   mapping?: NodeMapping;

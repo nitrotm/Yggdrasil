@@ -1,0 +1,33 @@
+## Logic
+
+# Graph Loader Logic
+
+## loadGraph
+
+1. findYggRoot(projectRoot) → yggRoot
+2. parseConfig(config.yaml) — on error: throw or set configError if tolerateInvalidConfig
+3. scanModelDirectory(modelDir, modelDir, null, ...) — recursive scan
+4. loadAspects(aspectsDir), loadFlows(flowsDir), loadSchemas(schemasDir)
+5. Return Graph with nodes, aspects, flows, schemas, rootPath
+
+## scanModelDirectory
+
+- readdir; if no node.yaml and dir !== modelDir → return (skip)
+- If has node.yaml: parseNodeYaml, readArtifacts (exclude node.yaml, filter by config.artifacts)
+- Build GraphNode with path, meta, artifacts, children, parent
+- Recurse into subdirs; each subdir with node.yaml becomes child
+
+## loadAspects, loadFlows, loadSchemas
+
+- **Aspects, Flows:** readdir category dir; for each item parse YAML, read artifacts.
+- **Schemas:** `loadSchemas(schemasDir)` readdir; for each `.yaml`/`.yml` call `parseSchema` (validates YAML, infers schemaType from filename). Returns `SchemaDef[]`. On missing dir or parse error returns `[]`.
+
+## Decisions
+
+# Loader Decisions
+
+**tolerateInvalidConfig option:** The loader accepts an option to fall back to a minimal config when config.yaml is broken. This enables partial graph loading for commands like `validate` that need to report config errors alongside other issues, rather than failing entirely at the config parse stage.
+
+**Node parse errors collected, not thrown:** When scanning model directories, a broken node.yaml is recorded in `nodeParseErrors` and scanning continues to the next directory. One malformed node should not prevent loading the rest of the graph. The validator reports these as E001 errors.
+
+**loadGraphFromRef uses git archive + tar:** Extracting `.yggdrasil/` from a git ref uses `git archive` piped to `tar` in a temp directory. This avoids checking out the ref (which would modify the working tree) and works without a full worktree. The temp directory is cleaned up in a `finally` block regardless of success or failure.

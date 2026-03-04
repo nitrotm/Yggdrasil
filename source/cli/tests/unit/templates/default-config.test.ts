@@ -27,14 +27,21 @@ describe('default-config', () => {
     expect(names).toContain('library');
   });
 
-  it('DEFAULT_CONFIG responsibility, interface, constraints, errors have structural_context', () => {
+  it('DEFAULT_CONFIG responsibility and interface have structural_context, internals does not', () => {
     const parsed = parseYaml(DEFAULT_CONFIG) as {
       artifacts: Record<string, { structural_context?: boolean }>;
     };
     expect(parsed.artifacts['responsibility.md'].structural_context).toBe(true);
     expect(parsed.artifacts['interface.md'].structural_context).toBe(true);
-    expect(parsed.artifacts['constraints.md'].structural_context).toBe(true);
-    expect(parsed.artifacts['errors.md'].structural_context).toBe(true);
+    expect(parsed.artifacts['internals.md'].structural_context).toBeUndefined();
+  });
+
+  it('DEFAULT_CONFIG node_types includes infrastructure', () => {
+    const parsed = parseYaml(DEFAULT_CONFIG) as {
+      node_types: Array<{ name: string } | string>;
+    };
+    const names = parsed.node_types.map((t) => (typeof t === 'string' ? t : t.name));
+    expect(names).toContain('infrastructure');
   });
 
   it('DEFAULT_CONFIG quality.context_budget has warning and error', () => {

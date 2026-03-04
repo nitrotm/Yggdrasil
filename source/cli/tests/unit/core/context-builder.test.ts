@@ -58,6 +58,28 @@ describe('context-builder', () => {
       expect(layer.label).toContain('Audit');
       expect(layer.content).toContain('### rules.md');
     });
+
+    it('includes exception note when provided', () => {
+      const layer = buildAspectLayer(
+        {
+          name: 'PubSub Events',
+          id: 'pubsub-events',
+          artifacts: [{ filename: 'rules.md', content: 'Fire and forget pattern' }],
+        },
+        'updateUserSessions uses await — PubSub failure propagates to caller',
+      );
+      expect(layer.content).toContain('⚠ **Exception for this node:**');
+      expect(layer.content).toContain('updateUserSessions uses await');
+    });
+
+    it('does not include exception section when no exception provided', () => {
+      const layer = buildAspectLayer({
+        name: 'PubSub Events',
+        id: 'pubsub-events',
+        artifacts: [{ filename: 'rules.md', content: 'Fire and forget pattern' }],
+      });
+      expect(layer.content).not.toContain('Exception for this node');
+    });
   });
 
   describe('buildStructuralRelationLayer', () => {

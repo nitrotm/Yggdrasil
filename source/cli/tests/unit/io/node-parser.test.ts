@@ -477,6 +477,79 @@ relations:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
+  it('parses aspect_exceptions correctly', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-aspect-exc');
+    await mkdir(tmpDir, { recursive: true });
+    const nodePath = path.join(tmpDir, 'node.yaml');
+    await writeFile(
+      nodePath,
+      `
+name: PubSubNode
+type: service
+aspects:
+  - pubsub-events
+  - pessimistic-locking
+aspect_exceptions:
+  - aspect: pubsub-events
+    note: "updateUserSessions uses await"
+`,
+      'utf-8',
+    );
+
+    const meta = await parseNodeYaml(nodePath);
+    expect(meta.aspect_exceptions).toEqual([
+      { aspect: 'pubsub-events', note: 'updateUserSessions uses await' },
+    ]);
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('throws when aspect_exception references aspect not in aspects list', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-bad-exc');
+    await mkdir(tmpDir, { recursive: true });
+    const nodePath = path.join(tmpDir, 'node.yaml');
+    await writeFile(
+      nodePath,
+      `
+name: BadExcNode
+type: service
+aspects:
+  - pubsub-events
+aspect_exceptions:
+  - aspect: nonexistent-aspect
+    note: "should fail"
+`,
+      'utf-8',
+    );
+
+    await expect(parseNodeYaml(nodePath)).rejects.toThrow(
+      'not in this node\'s aspects list',
+    );
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns undefined aspect_exceptions when not present', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-no-exc');
+    await mkdir(tmpDir, { recursive: true });
+    const nodePath = path.join(tmpDir, 'node.yaml');
+    await writeFile(
+      nodePath,
+      `
+name: NoExcNode
+type: service
+aspects:
+  - pubsub-events
+`,
+      'utf-8',
+    );
+
+    const meta = await parseNodeYaml(nodePath);
+    expect(meta.aspect_exceptions).toBeUndefined();
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
   it('parses node with relations including consumes and failure', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-rels');
     await mkdir(tmpDir, { recursive: true });

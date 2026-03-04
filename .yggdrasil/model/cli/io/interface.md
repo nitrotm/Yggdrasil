@@ -10,7 +10,8 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## node-parser.ts
 
 - `parseNodeYaml(filePath: string): Promise<NodeMeta>`
-  - Throws on missing name/type, invalid relations (non-array, invalid type, missing target), invalid mapping (paths must be relative, non-empty). Relation types: uses, calls, extends, implements, emits, listens.
+  - Throws on missing name/type, invalid relations (non-array, invalid type, missing target), invalid mapping (paths must be relative, non-empty), invalid aspect_exceptions (non-array, missing aspect/note, aspect not in node's aspects list). Relation types: uses, calls, extends, implements, emits, listens.
+  - Internally calls `parseAspectExceptions(raw, aspects, filePath)` which validates each entry has non-empty `aspect` and `note` strings, and that `aspect` references an id present in the node's `aspects` array. Returns `AspectException[]` or undefined.
 
 ## aspect-parser.ts
 
@@ -44,3 +45,24 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 - `readJournal(yggRoot: string): Promise<JournalEntry[]>` — returns `[]` on missing file or parse error
 - `appendJournalEntry(yggRoot: string, note: string, target?: string): Promise<JournalEntry>` — appends with ISO timestamp
 - `archiveJournal(yggRoot: string): Promise<{ archiveName: string; entryCount: number } | null>` — moves .journal.yaml to journals-archive/.journal.YYYYMMDD-HHMMSS.yaml; returns null if empty or missing
+
+
+## Failure Modes
+
+# IO Errors
+
+Parsers and stores throw `Error` on invalid input. No dedicated error codes — standard Error with descriptive message.
+
+**config-parser:** Missing name, invalid node_types, invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Propagates ENOENT, EACCES from readFile.
+
+**node-parser:** Missing name/type, invalid relations (non-array, invalid type, missing target), invalid mapping (paths must be relative, non-empty, no leading slash), invalid aspect_exceptions (non-array, entries without aspect/note, aspect id not in node's aspects list). Propagates ENOENT, EACCES from readFile.
+
+**aspect-parser:** Missing name or id. Propagates readFile and readArtifacts errors.
+
+**flow-parser:** Missing name, invalid or empty nodes array. Propagates readFile and readArtifacts errors.
+
+**schema-parser:** Invalid YAML (parseSchema). Propagates ENOENT, EACCES from readFile.
+
+**artifact-reader:** Propagates ENOENT, EACCES from readdir/readFile.
+
+**drift-state-store, journal-store:** ENOENT on read is handled gracefully (return {} or []). Write failures propagate (ENOENT, EACCES). archiveJournal returns null on missing/empty journal.

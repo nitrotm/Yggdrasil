@@ -135,6 +135,55 @@ describe('validator', () => {
     expect(issues[0].message).toContain('Aspect Two');
   });
 
+  it('invalid-aspect-exception (E018) when aspect_exceptions references aspect not in aspects list', async () => {
+    const graph = createGraph();
+    graph.nodes.set(
+      'a',
+      createNode('a', {
+        aspects: ['valid-tag'],
+        aspect_exceptions: [{ aspect: 'nonexistent-aspect', note: 'test' }],
+      }),
+    );
+
+    const result = await validate(graph);
+    const issues = result.issues.filter((i) => i.rule === 'invalid-aspect-exception');
+    expect(issues).toHaveLength(1);
+    expect(issues[0].code).toBe('E018');
+    expect(issues[0].message).toContain('nonexistent-aspect');
+  });
+
+  it('valid aspect_exceptions do not produce E018', async () => {
+    const graph = createGraph();
+    graph.nodes.set(
+      'a',
+      createNode('a', {
+        aspects: ['valid-tag'],
+        aspect_exceptions: [{ aspect: 'valid-tag', note: 'deviates from pattern' }],
+      }),
+    );
+
+    const result = await validate(graph);
+    const issues = result.issues.filter((i) => i.rule === 'invalid-aspect-exception');
+    expect(issues).toHaveLength(0);
+  });
+
+  it('infrastructure is accepted as valid node type', async () => {
+    const graph = createGraph({
+      config: {
+        name: 'Test',
+        stack: {},
+        standards: '',
+        node_types: [{ name: 'service' }, { name: 'infrastructure' }],
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      },
+    });
+    graph.nodes.set('guard', createNode('guard', { type: 'infrastructure' }));
+
+    const result = await validate(graph);
+    const typeErrors = result.issues.filter((i) => i.rule === 'unknown-node-type');
+    expect(typeErrors).toHaveLength(0);
+  });
+
   it('invalid-node-yaml reports parse errors from graph loader', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-validator-parse-error');
     const yggRoot = path.join(tmpDir, '.yggdrasil');

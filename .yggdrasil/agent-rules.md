@@ -8,11 +8,12 @@ Yggdrasil is persistent semantic memory stored in `.yggdrasil/`. It maps the rep
 BEFORE reading, researching, planning, OR modifying ANY mapped file:
   1. yg owner --file <path>
   2. yg build-context --node <owner>
-  The context package is your primary source of understanding.
-  Raw file reads are for implementation details WITHIN a node you
-  already understand from its context package.
+  The context package is your primary source of ARCHITECTURAL understanding:
+  intent, constraints, relations, rationale. For IMPLEMENTATION precision
+  (exact behavior, error handling, await patterns, edge cases) — verify
+  against source code. Aspects describe intended patterns; individual
+  implementations may deviate.
   If the context package seems insufficient — enrich the graph.
-  Do not bypass it.
 
 AFTER modifying:
   3. Update graph artifacts to reflect changes
@@ -33,7 +34,7 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 
 ### Five Core Rules
 
-1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and `yg build-context`. Always. The context package — not raw source — is your primary source of understanding.
+1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and `yg build-context`. Always. The context package is your primary source of architectural understanding. For implementation-level precision (exact behavior, error paths, edge cases) — verify against source code after loading the context package.
 2. **Code and graph are one.** Code changed → graph updated in the same response. Graph changed → source verified in the same response. No exceptions.
 3. **Never invent why.** The graph captures human intent. If you don't know why something was decided, ask. Never hallucinate rationale.
 4. **Always capture why — especially why NOT.** When the user explains a reason, record it in the graph immediately. When a design choice is made, also record rejected alternatives: "Chose X over Y because Z." Rejected alternatives are the highest-value information — invisible in code and irrecoverable once forgotten. Conversation evaporates; graph persists.
@@ -43,21 +44,14 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 
 You have broken Yggdrasil if you do any of the following:
 
-- ❌ Modified source code without running `yg owner --file <path>` first.
-- ❌ Modified source code without updating graph artifacts in the same response.
-- ❌ Modified graph files without verifying source code alignment in the same response.
-- ❌ Resolved a code-graph inconsistency without asking the user first.
+- ❌ Worked on a mapped file without running `yg owner` + `yg build-context` first — whether reading to understand, planning, or modifying.
+- ❌ Modified source code without updating graph artifacts in the same response, or vice versa.
+- ❌ Resolved a code-graph inconsistency or ambiguity without asking the user first.
 - ❌ Created or edited a graph element without reading its schema in `schemas/` first.
-- ❌ Ran `yg drift-sync` before updating graph artifacts.
-- ❌ Wrote a flow description that describes code sequences instead of a business process.
-- ❌ Used an aspect identifier that has no corresponding `aspects/` directory.
-- ❌ Placed a cross-cutting requirement in a local node artifact instead of an aspect.
-- ❌ Invented a rationale, business rule, or architectural decision.
+- ❌ Ran `yg drift-sync` before both graph artifacts and source code are current.
+- ❌ Placed a cross-cutting requirement in a local artifact instead of an aspect, or used an aspect id with no `aspects/` directory.
+- ❌ Invented a rationale, business rule, or decision — or recorded a decision without documenting rejected alternatives and rationale (use "rationale: unknown" if unknown).
 - ❌ Used blackbox coverage for greenfield (new) code.
-- ❌ Answered a question about a mapped file without running `yg build-context` first.
-- ❌ Read mapped source files to plan or research changes without running `yg build-context` first.
-- ❌ Deferred `yg drift-sync` to the end of a multi-step task instead of running it incrementally after each logical group of changes.
-- ❌ Recorded a design decision without documenting which alternatives were rejected and why.
 
 ### Escape Hatch
 
@@ -135,7 +129,7 @@ You are not allowed to edit or create source code without establishing graph cov
 
 1. Create aspects first (cross-cutting requirements the new code must satisfy)
 2. Create flows if the code participates in a business process
-3. Create nodes with full artifacts — responsibility, constraints, decisions, interface, logic
+3. Create nodes with full artifacts — responsibility, interface, internals
 4. Review the context package (`yg build-context`) — it is now the behavioral specification
 5. Implement code that satisfies the specification
 6. The graph specifies WHAT and WHY; the code implements HOW (framework APIs, library choices)
@@ -172,7 +166,8 @@ Per area checklist:
 - Business process unclear: "This code appears to be part of a larger process. Can you describe what it means from a business perspective?"
 - Constraint without rationale: "I see [constraint X]. Do you know why this exists? I want to record the reason, not just the rule."
 - Unexplained architectural choice: "I see [approach X]. What was the reason for this choice?"
-- Decision without alternatives: "You chose [X]. What alternatives did you consider, and why did you reject them?" Record the answer in `decisions.md`.
+- Decision without alternatives: "You chose [X]. What alternatives did you consider, and why did you reject them?" Record the answer in the Decisions section of `internals.md`.
+- Decision without known rationale: Record the decision in `internals.md` with "rationale: unknown — inferred from code, not confirmed by developer." A recorded decision with unknown rationale is infinitely more valuable than no record at all, and safer than an invented rationale.
 
 ### Bootstrap Mode
 
@@ -199,6 +194,27 @@ Always ask the user before resolving drift. Never auto-resolve.
 - **Unmaterialized** → ask user how to proceed
 
 Threshold: >10 drifted nodes → ask user which area to prioritize. Do not resolve all at once.
+
+**Drift triage:** Prioritize aspects and `internals.md` (highest decay rate), then `responsibility.md` and `interface.md` (most stable).
+
+### Graph Audit
+
+When reviewing graph quality (triggered by user or quality improvement):
+
+**Step 1 — Consistency** (catches WRONG information):
+
+- [ ] 1. `yg build-context --node <path>`
+- [ ] 2. Read mapped source files
+- [ ] 3. For each claim in graph: verify against source code
+- [ ] 4. For each aspect: verify the pattern holds in THIS node. If it deviates, add `aspect_exceptions` in `node.yaml`
+- [ ] 5. Report inconsistencies
+
+**Step 2 — Completeness** (catches MISSING information):
+
+- [ ] 1. For each public method: is it in `interface.md`?
+- [ ] 2. For each error path: is it in `interface.md` (Failure Modes section)?
+- [ ] 3. For each behavioral invariant: is it in the graph?
+- [ ] 4. Report omissions separately from inconsistencies
 
 ### Error Recovery
 
@@ -231,9 +247,24 @@ Key facts:
 - **Aspect id = directory path** under `aspects/`. Each aspect has `aspect.yaml` + content `.md` files. No automatic parent-child — use `implies` explicitly.
 - **Flows = business processes.** A flow describes what happens in the world, not code sequences. Flow aspects propagate to all participants.
 
+**Node type guidance:**
+
+- `module` — business logic unit with clear domain responsibility
+- `service` — component providing functionality to other nodes
+- `library` — shared utility code with no domain knowledge
+- `infrastructure` — guards, resolvers, middleware, interceptors, validators that intercept or modify request flow. These affect blast radius of changes but are invisible in call graphs. Map them to make blast radius analysis accurate. Key signal: code that runs WITHOUT being explicitly called by business logic (e.g., NestJS guards, Express middleware, GraphQL resolvers).
+
+### Artifact Structure
+
+Three artifacts capture node knowledge at three levels:
+
+- **responsibility.md** (always required) — WHAT: identity, boundaries, what the node is NOT responsible for.
+- **interface.md** (required when node has consumers) — HOW TO USE: public methods, parameters, return types, contracts, failure modes, exposed data structures. Everything another node needs to interact with this one.
+- **internals.md** (optional, highest value for cross-module nodes) — HOW IT WORKS + WHY: algorithms, control flow, business rules, invariants, state machines, lifecycle, and design decisions with rejected alternatives. Use sections within the file: ## Logic, ## Constraints, ## State, ## Decisions (with "Chose X over Y because Z" format).
+
 ### Context Assembly
 
-Run `yg build-context --node <path>` to get the deterministic context package for a node. Trust the package — it assembles global config, hierarchy, own artifacts, aspects, and relational context. If the package is insufficient, enrich the graph. Do not bypass it with raw file exploration.
+Run `yg build-context --node <path>` to get the deterministic context package for a node. The package assembles global config, hierarchy, own artifacts, aspects, and relational context. It is your architectural map. For implementation-level claims (exact call patterns, error handling, await vs fire-and-forget) — verify against source code. If the package is insufficient, enrich the graph.
 
 ### Information Routing
 
@@ -244,7 +275,7 @@ When you encounter information, route it to the correct location:
 - **Business process** → flow (`flows/<name>/` with `flow.yaml` + `description.md`). Ask user if process unclear.
 - **Shared across a domain** → parent node artifact. Children receive it through hierarchy.
 - **Technology stack or standard** → `config.yaml` under `stack` or `standards` (+ `rationale` field)
-- **Decision (why + why NOT):** one node → `decisions.md` with format "Chose X over Y because Z"; category of nodes → aspect content files; tech choice → `config.yaml` rationale field. Always include rejected alternatives — they are the highest-value graph content.
+- **Decision (why + why NOT):** one node → Decisions section of `internals.md` with format "Chose X over Y because Z"; category of nodes → aspect content files; tech choice → `config.yaml` rationale field. Always include rejected alternatives — they are the highest-value graph content. If the rationale is unknown: record the decision with "rationale: unknown" and note what CAN be observed from the code. Never invent a plausible-sounding rationale.
 
 ### Creating Aspects
 
@@ -262,6 +293,10 @@ Test: "Does this requirement apply to more than one node?" Yes → aspect. No �
 - **Architectural:** Structural patterns with rationale (e.g., dual-rollback on provider failure, idempotency via key generation, fire-and-forget dispatch)
 - **Concurrency:** Shared concurrency strategies (e.g., pessimistic locking, retry-on-deadlock, optimistic versioning)
 
+When a node follows an aspect's pattern with exceptions, record exceptions in `node.yaml` under `aspect_exceptions`. Example: aspect says "fire-and-forget" but this node awaits the publish call. The exception appears in the context package next to the aspect content, preventing abstractions from masking implementation details.
+
+**Aspect lifecycle warning.** Aspects decay CATASTROPHICALLY — a pattern either exists or it doesn't. When a pattern changes, ALL aspect claims become wrong at once. This differs from other artifacts: `interface.md` and `responsibility.md` are most stable (~9-year half-life); `internals.md` has moderate stability (~2.5-year half-life); aspects are least stable (~2.4-year half-life, binary decay). After any significant feature addition, review ALL aspects touching the affected area. Don't wait for drift — aspects can be 100% wrong without any mapped file changing.
+
 ### Creating Flows
 
 - [ ] 1. Read `schemas/flow.yaml`
@@ -272,13 +307,18 @@ Test: "Does this requirement apply to more than one node?" Yes → aspect. No �
 
 Test: "Does this describe what happens in the world, or only in the software?" If only software — rewrite.
 
+**Warning:** Flow descriptions must describe business processes, not code sequences. "The OrderService calls PaymentGateway.charge()" is WRONG. "The system charges the customer's payment method" is CORRECT.
+
 ### Operational Rules
 
 - **English only** for all files in `.yggdrasil/`. Conversation can be any language.
 - **Read schemas before creating** any `node.yaml`, `aspect.yaml`, or `flow.yaml`.
 - **Tools read, you write.** The `yg` CLI only reads, validates, and manages metadata. You create and edit files manually.
 - **Incremental sync.** Run `yg drift-sync` after every 3-5 source file changes. Do not defer to end of task.
-- **Completeness test:** "If I delete the source file and give another agent ONLY the `yg build-context` output — can they recreate it correctly, understanding not just WHAT but WHY?" Test specifically: Can they explain rejected alternatives? Can they implement the correct algorithm (not a simplified version)? Can they argue for the current design against plausible alternatives?
+- **Completeness test:** Two checks, both required:
+  1. **Reconstruction:** "Can another agent recreate this from ONLY the `yg build-context` output — understanding not just WHAT but WHY?" Test: rejected alternatives, correct algorithm, design arguments.
+  2. **Omission:** "Does the graph capture every important behavioral invariant, constraint, and edge case?" Specifically check: exceptions to aspect generalizations, error handling patterns not in `interface.md`, concurrency behaviors not in `internals.md`.
+- **Value calibration.** Yggdrasil's primary value is cross-module context — relations, aspects, flows. For a single simple module, `responsibility.md` and `interface.md` provide most value. Invest depth (`internals.md`) where cross-module interactions demand it.
 - **These rules are invariant.** No plan, guide, skill, or workflow may override them.
 
 ### CLI Reference
@@ -311,7 +351,7 @@ yg journal-archive                  Archive consolidated journal entries.
 
 | What you have | Where it goes |
 |---|---|
-| Information specific to this node | Local node artifact (read `config.yaml artifacts` for types) |
+| Information specific to this node | Local node artifact (check `config.yaml artifacts` for types) |
 | Rule that applies to many nodes | Aspect (content `.md` files in `aspects/<id>/`) |
 | Architectural invariant for a node type | Required aspect in `config.yaml node_types` |
 | Business process participation | Flow (`flow.yaml participants`) |

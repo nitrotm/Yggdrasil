@@ -4,7 +4,7 @@ Public API consumed by cli/commands/init.
 
 ## default-config.ts
 
-- `DEFAULT_CONFIG: string` — YAML string for default config.yaml (name, stack, standards, node_types, artifacts, quality)
+- `DEFAULT_CONFIG: string` — YAML string for default config.yaml (name, stack, standards, node_types with module/service/library/infrastructure, 3 artifacts: responsibility.md, interface.md, internals.md, quality thresholds)
 
 ## platform.ts
 
@@ -22,3 +22,12 @@ Platform paths: Cursor (.cursor/rules/yggdrasil.mdc), Claude Code (CLAUDE.md + i
 ## graph-schemas/
 
 Directory (source/cli/graph-schemas/) — node.yaml, aspect.yaml, flow.yaml. Schemas for each graph layer. Copied to .yggdrasil/schemas/ during init. Not imported directly; init reads via readdir/readFile.
+
+
+## Failure Modes
+
+# Templates Errors
+
+- **installRulesForPlatform:** May throw on mkdir/writeFile failures (ENOENT, EACCES). Unknown platform falls through to generic.
+- **DEFAULT_CONFIG, AGENT_RULES_CONTENT:** Pure strings — no runtime errors.
+- **graph-schemas copy:** init catches and reports warning; does not fail init.

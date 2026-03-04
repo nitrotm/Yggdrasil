@@ -146,7 +146,7 @@ from most general to most specific:
 - **Long-term memory** — decisions, patterns, system invariants (changes rarely)
 - **Domain context** — hierarchy, context of parent modules, domain business rules
   (changes on reorganization)
-- **Unit identity** — the node's own artifacts: responsibility, interface, constraints
+- **Unit identity** — the node's own artifacts: responsibility, interface, internals
   (changes on node evolution)
 - **Surroundings** — dependency interfaces, cross-cutting concerns, end-to-end flows
   (changes on neighbor evolution)
