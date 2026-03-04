@@ -14,7 +14,17 @@
 - `buildOwnLayer(node: GraphNode, config: YggConfig, graphRootPath: string, graph: Graph): Promise<ContextLayer>` — reads node.yaml from disk; uses node.artifacts; adds attrs.aspects from node aspects + expandAspects.
 - `buildStructuralRelationLayer(target: GraphNode, relation: Relation, config: YggConfig): ContextLayer` — prefers structural_context artifacts; includes consumes, failure.
 - `buildEventRelationLayer(target: GraphNode, relation: Relation): ContextLayer`
-- `buildAspectLayer(aspect: AspectDef): ContextLayer` — no source param; renders aspect content only.
+- `buildAspectLayer(aspect: AspectDef, exceptionNote?: string): ContextLayer` — renders aspect content; if `exceptionNote` is provided, appends a warning block: "Exception for this node: {note}". The exception note comes from `node.meta.aspect_exceptions` entries matched by aspect id.
 - `collectAncestors(node: GraphNode): GraphNode[]` — returns ancestors from parent chain.
 
 **Constants (internal):** `STRUCTURAL_RELATION_TYPES`, `EVENT_RELATION_TYPES`.
+
+
+## Failure Modes
+
+# Context Builder Errors
+
+- **Node not found**: Throws `Error("Node not found: ${nodePath}")` if nodePath not in graph.nodes.
+- **Broken relation**: Throws `Error("Broken relation: ${nodePath} -> ${relation.target} (target not found)")` when structural or event relation target not in graph.
+- **buildOwnLayer node.yaml read**: Catches readFile errors; emits `(not found)` in content instead of throwing.
+- **Artifact read failure**: Other readFile calls (e.g. in loader-provided artifacts) — not in context-builder; artifacts come pre-loaded.

@@ -1,6 +1,13 @@
+# type: module | service | library | infrastructure
+#   infrastructure — guards, resolvers, middleware, interceptors, validators
+#     that modify/intercept request flow without being explicitly called by
+#     business logic. Key for blast radius analysis.
 name: ComponentName
 type: service
 aspects: []
+aspect_exceptions:
+  - aspect: aspect-id
+    note: "Description of how this node deviates from the aspect pattern"
 blackbox: false
 
 relations:

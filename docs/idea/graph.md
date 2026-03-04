@@ -93,6 +93,7 @@ node_types:
   - name: controller
   - name: gateway
   - name: library
+  - name: infrastructure
   - name: external
 ```
 
@@ -116,35 +117,12 @@ artifacts:
   interface.md:
     required:
       when: has_incoming_relations
-    description: Public API — methods, parameters, return types, contracts
+    description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
     structural_context: true
 
-  logic.md:
+  internals.md:
     required: never
-    description: Algorithmic flow, control flow, branching logic, decision trees — the 'how' of execution
-
-  constraints.md:
-    required: never
-    description: Validation rules, business rules, invariants
-    structural_context: true
-
-  errors.md:
-    required:
-      when: has_incoming_relations
-    description: Failure modes, edge cases, error conditions, recovery behavior
-    structural_context: true
-
-  model.md:
-    required: never
-    description: Data structures, schemas, entities, type definitions — the shape of data this node owns or manages
-
-  state.md:
-    required: never
-    description: State machines, lifecycle, transitions
-
-  decisions.md:
-    required: never
-    description: Local design decisions and rationale — choices specific to this node, not system-wide
+    description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
 ```
 
 Artifact types are content files that nodes may contain. Each artifact key is the **full filename**
@@ -254,6 +232,10 @@ aspects:
   - requires-audit
   - requires-auth
 
+aspect_exceptions:
+  - aspect: requires-audit
+    note: "Batch import skips per-record audit — emits single summary event instead"
+
 relations:
   - target: payments/payment-service
     type: calls
@@ -269,14 +251,15 @@ mapping:
     - src/modules/orders/order.service.ts
 ```
 
-| Field       | Required | Purpose                                                      |
-| ----------- | -------- | ------------------------------------------------------------ |
-| `name`      | Yes      | Display name                                                 |
-| `type`      | Yes      | Node type from `config.node_types`                          |
-| `aspects`   | No       | Aspect identifiers linking node to aspects                   |
-| `relations` | No       | Outgoing dependencies to other nodes                         |
-| `mapping`   | No       | Link to source files (see Mapping section)                   |
-| `blackbox`  | No       | If `true`, node describes something existing, not controlled |
+| Field                | Required | Purpose                                                      |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| `name`               | Yes      | Display name                                                 |
+| `type`               | Yes      | Node type from `config.node_types`                           |
+| `aspects`            | No       | Aspect identifiers linking node to aspects                   |
+| `aspect_exceptions`  | No       | Per-node exceptions to aspect-level generalizations          |
+| `relations`          | No       | Outgoing dependencies to other nodes                         |
+| `mapping`            | No       | Link to source files (see Mapping section)                   |
+| `blackbox`           | No       | If `true`, node describes something existing, not controlled |
 
 Each block (hierarchy, own, flow) declares its own aspects. No inheritance — a node receives
 aspects only from blocks that explicitly list aspect identifiers. See the [Engine](engine) document for the
@@ -299,7 +282,7 @@ new project, code not yet written). For new code, create proper nodes from the s
   the graph.
 - They are **not** checked for context budget — they do not produce a package for generation.
 - They **do** participate in the relation graph — other nodes can depend on them and will
-  receive their artifacts (`interface`, `errors`) in their own context packages.
+  receive their artifacts (those with `structural_context: true`) in their own context packages.
 - They are **excluded** from materialization ordering — their outputs (if mapped) are whatever
   they are; the graph does not control them.
 
@@ -313,18 +296,13 @@ Content artifacts are text files placed next to `node.yaml`. Which artifacts exi
 when they are required is defined by configuration. Each config key is the full filename
 (e.g. `responsibility.md`, `api.txt`). Content must be UTF-8 encodable for context assembly.
 
-| File                | Purpose                                                              | Default requirement                        |
-| ------------------- | -------------------------------------------------------------------- | ------------------------------------------ |
-| `responsibility.md` | What the node is responsible for, and what it is not                 | Required always                            |
-| `interface.md`      | Public API — methods, parameters, return types, contracts            | Required when someone depends on this node |
-| `logic.md`          | Algorithmic flow, control flow, branching logic                      | Optional                                   |
-| `constraints.md`    | Validation rules, business rules, invariants                         | Optional                                   |
-| `errors.md`         | Failure modes, edge cases, error conditions, recovery behavior       | Required when someone depends on this node |
-| `model.md`          | Data structures, schemas, entities, type definitions                 | Optional                                   |
-| `state.md`          | State machines, lifecycle, transitions                                | Optional                                   |
-| `decisions.md`      | Local design decisions and rationale — choices specific to this node  | Optional                                   |
+| File                | Purpose                                                                                              | Default requirement                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `responsibility.md` | What the node is responsible for, and what it is not                                                  | Required always                            |
+| `interface.md`      | Public API — methods, parameters, return types, contracts, failure modes, exposed data structures     | Required when someone depends on this node |
+| `internals.md`      | How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives | Optional                                   |
 
-A simple utility node might have only `responsibility.md`. A complex service may have all eight,
+A simple utility node might have only `responsibility.md`. A complex service may have all three,
 plus project-specific artifacts (any filename in config). The self-calibrating granularity
 principle from the [Foundation](foundation) document applies: add detail where the agent
 produces bad outputs without it.
@@ -474,6 +452,12 @@ distributed automatically.
 
 Each aspect is bound to a single identifier. Aspects impose **obligations** and are tied to
 **need identifiers** like `requires-audit`, `requires-auth`.
+
+When a node follows an aspect's general pattern but has specific deviations, these are recorded
+as `aspect_exceptions` in `node.yaml`. Each exception names the aspect and provides a note
+explaining the deviation. Exceptions appear in context packages alongside the aspect content,
+preventing aspect-level abstractions from masking implementation details. See the Node metadata
+section above for the YAML format.
 
 If a requirement concerns multiple roles, the solution is a separate aspect
 (e.g. `requires-rate-limiting`) applied to appropriate nodes, not expanding a single aspect

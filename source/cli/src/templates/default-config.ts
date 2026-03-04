@@ -10,6 +10,7 @@ node_types:
   - name: module
   - name: service
   - name: library
+  - name: infrastructure
 
 artifacts:
   responsibility.md:
@@ -19,29 +20,11 @@ artifacts:
   interface.md:
     required:
       when: has_incoming_relations
-    description: "Public API — methods, parameters, return types, contracts"
+    description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
     structural_context: true
-  logic.md:
+  internals.md:
     required: never
-    description: "Algorithmic flow, control flow, branching logic, decision trees — the 'how' of execution"
-  constraints.md:
-    required: never
-    description: "Validation rules, business rules, invariants"
-    structural_context: true
-  errors.md:
-    required:
-      when: has_incoming_relations
-    description: "Failure modes, edge cases, error conditions, recovery behavior"
-    structural_context: true
-  model.md:
-    required: never
-    description: "Data structures, schemas, entities, type definitions — the shape of data this node owns or manages"
-  state.md:
-    required: never
-    description: "State machines, lifecycle, transitions"
-  decisions.md:
-    required: never
-    description: "Local design decisions and rationale — choices specific to this node, not system-wide"
+    description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
 
 quality:
   min_artifact_length: 50

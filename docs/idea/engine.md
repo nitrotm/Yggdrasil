@@ -76,10 +76,12 @@ Each step is deterministic.
                   a cycle (A implies B implies A) is an error. No source attribute on aspect
                   output — aspects are rendered without provenance. Aspects section = union of
                   aspect identifiers from hierarchy + own + flow blocks, expand implies, render content.
+                  If the node declares `aspect_exceptions` for a given aspect, the exception note
+                  is appended to that aspect's layer as a warning.
 
 5.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
-        - artifacts of target with structural_context (e.g. responsibility, interface, constraints, errors)
+        - artifacts of target with structural_context (e.g. responsibility, interface)
         - consumes annotation from the relation field (if declared)
         - failure annotation from the relation field (if declared)
       for each event relation of N (emits, listens):
@@ -129,12 +131,6 @@ Responsibility (full content of responsibility.md / PaymentService)
 ...
 
 Interface (full content of interface.md / PaymentService)
-...
-
-Constraints (full content of constraints.md / PaymentService)
-...
-
-Errors (full content of errors.md / PaymentService)
 ...
 ```
 
@@ -258,6 +254,7 @@ a graph with errors cannot produce reliable context packages.
 - Every aspect identifier must correspond to a directory under `aspects/`.
 - Every identifier in an aspect's `implies` must have a corresponding aspect in `aspects/`.
 - The aspect implies graph must be acyclic (no A implies B implies A).
+- Every `aspect_exceptions[].aspect` identifier in a node must reference an aspect in that node's own `aspects` list.
 
 **Mapping uniqueness**: no two nodes may map to the same file or have overlapping directory
 mappings.
@@ -610,9 +607,9 @@ Context package for `orders/order-service` contains:
 ```
 Step 1.  config.yaml: standards and stack
 Step 2.  Domain context of orders/ module artifacts
-Step 3.  Own artifacts of OrderService: responsibility, interface, constraints, state
+Step 3.  Own artifacts of OrderService: responsibility, interface, internals
 Step 4.  Aspect: Audit logging  [aspect requires-audit]
-Step 5.  Structural-context artifacts of PaymentService: responsibility, interface, constraints, errors
+Step 5.  Structural-context artifacts of PaymentService: responsibility, interface
          + annotation: consumes charge, refund; on failure: retry 3x, then payment-failed
          Flow: Checkout flow  [description.md, sequence.md]
 ```

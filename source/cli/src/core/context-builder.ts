@@ -70,7 +70,8 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
   }
   const aspectsToInclude = resolveAspects(allAspectIds, graph.aspects);
   for (const aspect of aspectsToInclude) {
-    layers.push(buildAspectLayer(aspect));
+    const exception = node.meta.aspect_exceptions?.find((e) => e.aspect === aspect.id);
+    layers.push(buildAspectLayer(aspect, exception?.note));
   }
 
   const fullText = layers.map((l) => l.content).join('\n\n');
@@ -292,8 +293,11 @@ export function buildEventRelationLayer(target: GraphNode, relation: Relation): 
   };
 }
 
-export function buildAspectLayer(aspect: AspectDef): ContextLayer {
-  const content = aspect.artifacts.map((a) => `### ${a.filename}\n${a.content}`).join('\n\n');
+export function buildAspectLayer(aspect: AspectDef, exceptionNote?: string): ContextLayer {
+  let content = aspect.artifacts.map((a) => `### ${a.filename}\n${a.content}`).join('\n\n');
+  if (exceptionNote) {
+    content += `\n\n⚠ **Exception for this node:** ${exceptionNote}`;
+  }
   return {
     type: 'aspects',
     label: `${aspect.name} (aspect: ${aspect.id})`,

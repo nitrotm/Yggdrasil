@@ -1,0 +1,33 @@
+## Logic
+
+# Validator Logic
+
+## validate(scope)
+
+1. **Early errors**: configError → E012; nodeParseErrors → E001
+2. **Config-dependent checks** (if !configError): checkNodeTypes, checkTagsDefined, checkAspectTags, checkAspectTagUniqueness, checkImpliedAspectsExist, checkImpliesNoCycles, checkRequiredAspectsCoverage, checkAspectExceptions, checkRequiredArtifacts, checkInvalidArtifactConditions, checkContextBudget, checkHighFanOut, checkSchemas
+3. **Graph-structure checks**: checkRelationTargets, checkNoCycles, checkMappingOverlap, checkBrokenFlowRefs, checkDirectoriesHaveNodeYaml, checkShallowArtifacts, checkUnpairedEvents
+4. **Scope filter**: if scope !== 'all', filter issues by nodePath; validate scope exists
+
+## Key rules
+
+- **checkSchemas**: REQUIRED_SCHEMAS = ['node','aspect','flow']; present = Set(graph.schemas.map(s => s.schemaType)); missing → W010
+- **checkNoCycles**: DFS with WHITE/GRAY/BLACK; cycles involving blackbox tolerated
+- **checkImpliedAspectsExist**: each id in aspect.implies must have corresponding aspect → E016
+- **checkImpliesNoCycles**: DFS on aspect implies graph; cycle → E017
+- **checkRequiredAspectsCoverage**: node type with required_aspects; coverage via direct aspect or resolveAspects → W011
+- **checkAspectExceptions**: for each node, iterates `aspect_exceptions`; if an exception's `aspect` id is not in the node's `aspects` list → E018 `invalid-aspect-exception`
+- **checkRequiredArtifacts**: artifactRequiredReason evaluates required (always | never | when conditions)
+- **checkContextBudget**: buildContext per node; compare tokenCount to warning/error thresholds
+
+## Order of checks
+
+Config-dependent first (need valid config). Structure checks can run with partial config. Scope filter applied last.
+
+## Decisions
+
+# Validator Decisions
+
+**Stable error codes E001-E018, W001-W011:** Each validation rule has a fixed code (E for errors, W for warnings). These codes are machine-readable identifiers stable across versions, enabling CI pipelines and automation to match on specific codes rather than fragile message text. New rules receive the next available code.
+
+**Warnings do not block build-context:** Warnings (W-codes) indicate quality suggestions such as shallow artifacts, high fan-out, or missing optional coverage. Errors (E-codes) indicate structural integrity failures such as broken relations, missing node.yaml, or cycles. Only errors represent states where the graph is structurally invalid. build-context operates on the loaded graph and does not consult validation results, so warnings never prevent context assembly.

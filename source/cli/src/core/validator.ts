@@ -37,6 +37,7 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
     issues.push(...checkImpliedAspectsExist(graph));
     issues.push(...checkImpliesNoCycles(graph));
     issues.push(...checkRequiredAspectsCoverage(graph));
+    issues.push(...checkAspectExceptions(graph));
     issues.push(...checkRequiredArtifacts(graph));
     issues.push(...checkInvalidArtifactConditions(graph));
     issues.push(...(await checkContextBudget(graph)));
@@ -317,6 +318,27 @@ function checkRequiredAspectsCoverage(graph: Graph): ValidationIssue[] {
           code: 'W011',
           rule: 'missing-required-aspect-coverage',
           message: `Node '${nodePath}' (type: ${node.meta.type}) missing required aspect coverage for '${required}'`,
+          nodePath,
+        });
+      }
+    }
+  }
+  return issues;
+}
+
+// --- Rule 3b: Aspect exceptions reference valid aspects ---
+
+function checkAspectExceptions(graph: Graph): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  for (const [nodePath, node] of graph.nodes) {
+    for (const exception of node.meta.aspect_exceptions ?? []) {
+      const nodeAspects = node.meta.aspects ?? [];
+      if (!nodeAspects.includes(exception.aspect)) {
+        issues.push({
+          severity: 'error',
+          code: 'E018',
+          rule: 'invalid-aspect-exception',
+          message: `aspect_exceptions references aspect '${exception.aspect}' which is not in this node's aspects list (${nodeAspects.join(', ') || 'none'})`,
           nodePath,
         });
       }

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { parse as parseYaml } from 'yaml';
-import type { NodeMeta, NodeMapping, Relation, RelationType } from '../model/types.js';
+import type { AspectException, NodeMeta, NodeMapping, Relation, RelationType } from '../model/types.js';
 
 const RELATION_TYPES: RelationType[] = [
   'uses',
@@ -32,15 +32,63 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
 
   const relations = parseRelations(raw.relations, filePath);
   const mapping = parseMapping(raw.mapping, filePath);
+  const aspects = parseStringArray(raw.aspects) ?? parseStringArray(raw.tags);
+  const aspectExceptions = parseAspectExceptions(raw.aspect_exceptions, aspects, filePath);
 
   return {
     name: (raw.name as string).trim(),
     type: (raw.type as string).trim(),
-    aspects: parseStringArray(raw.aspects) ?? parseStringArray(raw.tags),
+    aspects,
+    aspect_exceptions: aspectExceptions,
     blackbox: (raw.blackbox as boolean) ?? false,
     relations: relations.length > 0 ? relations : undefined,
     mapping,
   };
+}
+
+function parseAspectExceptions(
+  raw: unknown,
+  aspects: string[] | undefined,
+  filePath: string,
+): AspectException[] | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw)) {
+    throw new Error(`node.yaml at ${filePath}: 'aspect_exceptions' must be an array`);
+  }
+  if (raw.length === 0) return undefined;
+
+  const aspectSet = new Set(aspects ?? []);
+  const result: AspectException[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
+    if (typeof item !== 'object' || item === null) {
+      throw new Error(`node.yaml at ${filePath}: aspect_exceptions[${i}] must be an object`);
+    }
+    const obj = item as Record<string, unknown>;
+
+    if (typeof obj.aspect !== 'string' || obj.aspect.trim() === '') {
+      throw new Error(
+        `node.yaml at ${filePath}: aspect_exceptions[${i}].aspect must be a non-empty string`,
+      );
+    }
+    if (typeof obj.note !== 'string' || obj.note.trim() === '') {
+      throw new Error(
+        `node.yaml at ${filePath}: aspect_exceptions[${i}].note must be a non-empty string`,
+      );
+    }
+
+    const aspectId = obj.aspect.trim();
+    if (!aspectSet.has(aspectId)) {
+      throw new Error(
+        `node.yaml at ${filePath}: aspect_exceptions[${i}].aspect "${aspectId}" is not in this node's aspects list`,
+      );
+    }
+
+    result.push({ aspect: aspectId, note: obj.note.trim() });
+  }
+
+  return result.length > 0 ? result : undefined;
 }
 
 function parseStringArray(val: unknown): string[] | undefined {
