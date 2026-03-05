@@ -5,7 +5,7 @@ title: Configuration
 Everything here is optional except the fields required by the schema.
 Yggdrasil works out of the box with sensible defaults.
 
-Config file: `.yggdrasil/config.yaml`
+Config file: `.yggdrasil/yg-config.yaml`
 
 ---
 
@@ -103,5 +103,5 @@ quality:
 
 ## Notes
 
-- Artifact name `node.yaml` is reserved.
-- `config.yaml: quality.context_budget.error` must be >= `context_budget.warning`.
+- Artifact name `yg-node.yaml` is reserved.
+- `yg-config.yaml: quality.context_budget.error` must be >= `context_budget.warning`.

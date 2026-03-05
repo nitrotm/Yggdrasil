@@ -16,14 +16,14 @@ Semantic memory lives under `.yggdrasil/`.
 
 ```text
 .yggdrasil/
-  config.yaml
+  yg-config.yaml
   model/
   aspects/
   flows/
   schemas/
 ```
 
-- `config.yaml` — configuration and schema for the graph.
+- `yg-config.yaml` — configuration and schema for the graph.
 - `model/` — semantic model of the system: components and their relationships.
 - `aspects/` — cross-cutting requirements.
 - `flows/` — end-to-end flows spanning multiple nodes.
@@ -37,7 +37,7 @@ Context assembly, validation, drift detection, and journal mechanics are defined
 
 ```text
 .yggdrasil/
-  config.yaml        # reserved
+  yg-config.yaml     # reserved
   model/             # reserved
   aspects/           # reserved
   flows/             # reserved
@@ -66,7 +66,7 @@ enforce.
 name: my-project
 ```
 
-Technology stack and coding standards are described in node artifacts at the appropriate hierarchy level — not in config.yaml.
+Technology stack and coding standards are described in node artifacts at the appropriate hierarchy level — not in yg-config.yaml.
 
 ### Node types
 
@@ -112,7 +112,7 @@ artifacts:
 ```
 
 Artifact types are content files that nodes may contain. Each artifact key is the **full filename**
-of a file placed next to `node.yaml`. Configuration defines:
+of a file placed next to `yg-node.yaml`. Configuration defines:
 
 - **Key** — full filename (e.g. `responsibility.md`, `api.txt`). Any extension; content must be
   encodable as UTF-8 text for context assembly.
@@ -180,25 +180,25 @@ always the same.
 
 ## Component Model
 
-Every directory inside `model/` that contains a `node.yaml` file is a **node**. Nesting creates
+Every directory inside `model/` that contains a `yg-node.yaml` file is a **node**. Nesting creates
 hierarchy. Hierarchy carries meaning: a child node inherits the domain context of its parent
 during context assembly.
 
 ```text
 model/
   auth/                     # module node (parent)
-    node.yaml
+    yg-node.yaml
     responsibility.md
 
     login-service/          # service node (child of auth)
-      node.yaml
+      yg-node.yaml
       responsibility.md
 
   orders/                   # module node
-    node.yaml
+    yg-node.yaml
 
     order-service/          # service node (child of orders)
-      node.yaml
+      yg-node.yaml
       responsibility.md
 ```
 
@@ -206,9 +206,9 @@ A module node provides **domain context** — business domain, high-level rules 
 children inherit. A child node can never be fully understood without its parent — the
 context assembly algorithm guarantees this.
 
-### Node metadata (`node.yaml`)
+### Node metadata (`yg-node.yaml`)
 
-`node.yaml` defines the node's identity and all its outgoing connections:
+`yg-node.yaml` defines the node's identity and all its outgoing connections:
 
 ```yaml
 name: OrderService
@@ -276,7 +276,7 @@ is coarse.
 
 ### Content artifacts
 
-Content artifacts are text files placed next to `node.yaml`. Which artifacts exist and
+Content artifacts are text files placed next to `yg-node.yaml`. Which artifacts exist and
 when they are required is defined by configuration. Each config key is the full filename
 (e.g. `responsibility.md`, `api.txt`). Content must be UTF-8 encodable for context assembly.
 
@@ -365,21 +365,21 @@ An **aspect** is a requirement that applies to every node carrying a given aspec
 Each aspect is a directory under `aspects/`. The **aspect identifier equals the relative directory
 path** under `aspects/` — e.g. `aspects/requires-audit/` has identifier `requires-audit`;
 `aspects/observability/logging/` has identifier `observability/logging`. Each aspect directory
-contains `aspect.yaml` and content files.
+contains `yg-aspect.yaml` and content files.
 
 ```text
 aspects/
   requires-audit/
-    aspect.yaml
+    yg-aspect.yaml
     content.md
   observability/
     logging/
-      aspect.yaml
+      yg-aspect.yaml
       requirements.md
 ```
 
 ```yaml
-# aspects/requires-audit/aspect.yaml
+# aspects/requires-audit/yg-aspect.yaml
 name: Audit logging
 description: "Short description for discovery via yg aspects"  # optional
 # implies: [requires-logging]   # optional: other aspect identifiers to include automatically
@@ -392,14 +392,14 @@ Nested directories under `aspects/` are organizational — they allow grouping r
 (e.g. `observability/logging`, `observability/tracing`). However, nesting does **not** create
 automatic parent-child relationships. The `implies` field is always explicit — if
 `observability/logging` should imply `observability/tracing`, it must declare so in its
-`aspect.yaml`.
+`yg-aspect.yaml`.
 
 An aspect may declare `implies` — a list of identifiers of other aspects to include
 automatically. This enables composition: a bundle aspect (e.g. `hipaa`) can include several
 sub-aspects.
 
 ```yaml
-# aspects/hipaa/aspect.yaml
+# aspects/hipaa/yg-aspect.yaml
 name: HIPAA Compliance
 implies:
   - requires-audit
@@ -426,7 +426,7 @@ Audit events are published to the event bus, never written directly to the appli
 
 Binding happens through the directory path: `aspects/<id>/` defines the aspect for that
 identifier. Tools resolve which nodes carry that aspect and attach all content files (except
-`aspect.yaml`) to those nodes' context packages. Run `yg aspects` to list valid aspect
+`yg-aspect.yaml`) to those nodes' context packages. Run `yg aspects` to list valid aspect
 identifiers.
 
 Aspects encode requirements that cut **horizontally** across the system: security, audit,
@@ -438,7 +438,7 @@ Each aspect is bound to a single identifier. Aspects impose **obligations** and 
 **need identifiers** like `requires-audit`, `requires-auth`.
 
 When a node follows an aspect's general pattern but has specific deviations, these are recorded
-as `exceptions` within the aspect entry in `node.yaml`. Each exception is a string explaining
+as `exceptions` within the aspect entry in `yg-node.yaml`. Each exception is a string explaining
 the deviation. Exceptions appear in context packages alongside the aspect content,
 preventing aspect-level abstractions from masking implementation details. See the Node metadata
 section above for the YAML format.
@@ -452,18 +452,18 @@ across many unrelated identifiers.
 ## Flows: End-to-End Processes
 
 A **flow** describes a process spanning multiple nodes. Each flow is a directory containing
-`flow.yaml` and content artifacts.
+`yg-flow.yaml` and content artifacts.
 
 ```text
 flows/
   checkout/
-    flow.yaml
+    yg-flow.yaml
     description.md
     sequence.md
 ```
 
 ```yaml
-# flows/checkout/flow.yaml
+# flows/checkout/yg-flow.yaml
 name: Checkout flow
 
 nodes:
@@ -501,7 +501,7 @@ Every flow's `description.md` must include these sections:
 - `## Business context` — why this process exists
 - `## Trigger` — what initiates the process
 - `## Goal` — what success looks like
-- `## Participants` — nodes involved (align with `flow.yaml` nodes)
+- `## Participants` — nodes involved (align with `yg-flow.yaml` nodes)
 - `## Paths` — **required**; must contain at least `### Happy path`; each other business path (cancellation, payment failure, timeout, partial fulfillment) gets its own `### [name]` subsection
 - `## Invariants across all paths` — business rules and technical conditions that hold regardless of path
 
@@ -514,11 +514,11 @@ Example variant names: `### Payment failed`, `### User cancellation`, `### Timeo
 Every reference in the graph uses short, relative paths. Tools know the base directory for each
 reference type.
 
-| Location                       | Relative to        | Example value              |
-| ------------------------------ | ------------------ | -------------------------- |
-| `node.yaml` `relations.target` | `model/`           | `payments/payment-service` |
-| `flow.yaml` `nodes`            | `model/`           | `orders/order-service`     |
-| Aspect identifier             | Relative path under `aspects/` | `requires-audit`           |
+| Location                           | Relative to                    | Example value              |
+| ---------------------------------- | ------------------------------ | -------------------------- |
+| `yg-node.yaml` `relations.target`  | `model/`                       | `payments/payment-service` |
+| `yg-flow.yaml` `nodes`             | `model/`                       | `orders/order-service`     |
+| Aspect identifier                  | Relative path under `aspects/` | `requires-audit`           |
 
 No ambiguity. No absolute paths. No guessing which directory a reference points to.
 
@@ -526,7 +526,7 @@ No ambiguity. No absolute paths. No guessing which directory a reference points 
 
 ## Mapping: Graph to Source
 
-Nodes in the graph can be mapped to source files via declarations in `node.yaml`. Mapping enables
+Nodes in the graph can be mapped to source files via declarations in `yg-node.yaml`. Mapping enables
 two things:
 
 - Ownership lookup — which node owns a given file.
@@ -597,15 +597,15 @@ The `schemas/` directory contains schema files — one per graph layer. Each fil
 expected structure of its element type. The agent reads the appropriate schema before creating
 or editing that element.
 
-| File          | Element type | Purpose                                                |
-| ------------- | ------------ | ------------------------------------------------------ |
-| `node.yaml`   | Nodes        | Structure of `node.yaml` in model directories           |
-| `aspect.yaml` | Aspects      | Structure of `aspect.yaml` in aspects directories       |
-| `flow.yaml`   | Flows        | Structure of `flow.yaml` in flows directories           |
+| File              | Element type | Purpose                                                    |
+| ----------------- | ------------ | ---------------------------------------------------------- |
+| `yg-node.yaml`   | Nodes        | Structure of `yg-node.yaml` in model directories            |
+| `yg-aspect.yaml` | Aspects      | Structure of `yg-aspect.yaml` in aspects directories        |
+| `yg-flow.yaml`   | Flows        | Structure of `yg-flow.yaml` in flows directories            |
 
 These are generalized schemas, not type-specific examples. The agent consults the schema for the
 element type it is creating or editing. Artifact requirements and structure come from
-`config.yaml`; the schema shows the YAML shape.
+`yg-config.yaml`; the schema shows the YAML shape.
 
 ---
 

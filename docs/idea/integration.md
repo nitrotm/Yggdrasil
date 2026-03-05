@@ -75,8 +75,8 @@ A user who never uses an explicit trigger still benefits from ambient integratio
 
 ## The agent writes the graph directly
 
-The agent creates and edits graph files — both YAML metadata (`node.yaml`, `flow.yaml`,
-`aspect.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`, `internals.md`,
+The agent creates and edits graph files — both YAML metadata (`yg-node.yaml`, `yg-flow.yaml`,
+`yg-aspect.yaml`) and Markdown artifacts (`responsibility.md`, `interface.md`, `internals.md`,
 `content.md`, etc.). Tools have no write operations to the graph — they are readers and validators of semantic content. Tools do write operational metadata (`.drift-state`, `.journal.yaml`) for drift tracking and session buffering; see the [Engine](engine) document.
 
 ### Condition: the agent knows how
@@ -85,7 +85,7 @@ The agent can write graph files correctly because it has five sources of knowled
 format and conventions (described in detail in the Learning mechanisms section below):
 
 1. The rules file tells it **when** to act
-2. The configuration (`config.yaml`) tells it **what** is allowed
+2. The configuration (`yg-config.yaml`) tells it **what** is allowed
 3. The schemas (`schemas/`) show **how** files look — schemas for each graph layer (node, aspect, flow)
 4. The existing graph shows **how** it looks in this project
 5. Tool validation tells it **what** is wrong
@@ -96,7 +96,7 @@ The agent does not need to know the format perfectly. It writes something, runs 
 gets concrete feedback, fixes it. This cycle is natural and agents handle it well:
 
 ```text
-Agent: creates node.yaml with a relation to "payment/svc"
+Agent: creates yg-node.yaml with a relation to "payment/svc"
   → validation: "relation target 'payment/svc' does not resolve —
     did you mean 'payments/payment-service'?"
   → Agent: fixes the path
@@ -111,11 +111,11 @@ prior knowledge of conventions.
 
 | Element                                                             | Created by                |
 | ------------------------------------------------------------------- | ------------------------- |
-| `.yggdrasil/` structure, `config.yaml`                              | Initialization (one time) |
-| Node directories in `model/` + `node.yaml`                          | Agent                     |
+| `.yggdrasil/` structure, `yg-config.yaml`                           | Initialization (one time) |
+| Node directories in `model/` + `yg-node.yaml`                       | Agent                     |
 | Node Markdown artifacts                                             | Agent                     |
-| Aspect directories in `aspects/` + `aspect.yaml`                    | Agent                     |
-| Flow directories in `flows/` + `flow.yaml`                          | Agent                     |
+| Aspect directories in `aspects/` + `yg-aspect.yaml`                 | Agent                     |
+| Flow directories in `flows/` + `yg-flow.yaml`                       | Agent                     |
 | Schemas in `schemas/` (node, aspect, flow)                         | Initialization (copied)  |
 | Platform rules file                                                 | Initialization (one time) |
 
@@ -181,7 +181,7 @@ The directives say **when** to act, not how graph files are structured. Schema a
 
 ### 2) Configuration → WHAT is allowed
 
-`config.yaml` is both tool configuration and a self-documenting schema for the agent.
+`yg-config.yaml` is both tool configuration and a self-documenting schema for the agent.
 By reading it, the agent immediately knows:
 
 - Which node types exist (service, repository, controller, …)
@@ -195,8 +195,8 @@ know what is allowed.
 
 ### 3) Schemas → HOW files look
 
-Schemas in `.yggdrasil/schemas/` define the structure of each graph layer: `node.yaml` for
-nodes, `aspect.yaml` for aspects, `flow.yaml` for flows.
+Schemas in `.yggdrasil/schemas/` define the structure of each graph layer: `yg-node.yaml` for
+nodes, `yg-aspect.yaml` for aspects, `yg-flow.yaml` for flows.
 The agent reads the schema for the element type it is creating or editing.
 
 ### 4) Existing graph → HOW it looks in this project
@@ -391,13 +391,13 @@ not through agent-to-agent communication.
 
 A new repository goes through initialization. What next?
 
-Initialization creates `.yggdrasil/config.yaml` with sensible defaults and configures integration
+Initialization creates `.yggdrasil/yg-config.yaml` with sensible defaults and configures integration
 with the agent platform. From that moment the agent has a “graph instinct” — it knows the repository
 uses Yggdrasil and follows behavioral directives.
 
 The graph is empty, but the agent starts building it during normal work. The user asks for a change
 in the orders module — the agent notices missing coverage, proposes creating a node, the user agrees,
-the agent creates `model/orders/order-service/node.yaml` + `responsibility.md`. Next time work touches
+the agent creates `model/orders/order-service/yg-node.yaml` + `responsibility.md`. Next time work touches
 that module, the agent loads the context package and writes better code.
 
 Value appears from the first node — not from a complete graph.
@@ -407,7 +407,7 @@ Value appears from the first node — not from a complete graph.
 The first session with Yggdrasil looks different from the hundredth. But even the first provides a
 measurable difference:
 
-- The agent has `config.yaml` with project configuration and initial node artifacts with technology context
+- The agent has `yg-config.yaml` with project configuration and initial node artifacts with technology context
 - The first nodes provide semantic context for the most painful areas
 - Validation gives the agent feedback on graph quality, starting the self-calibration loop
 
@@ -489,7 +489,7 @@ conflict resolution) apply.
 
 ### Merge conflicts
 
-Two branches may modify the same `node.yaml` — e.g., one adds a relation, another changes an aspect.
+Two branches may modify the same `yg-node.yaml` — e.g., one adds a relation, another changes an aspect.
 The resulting merge conflict is a YAML conflict that git reports normally.
 
 Tools do not resolve conflicts — that requires human or agent judgment. But validation after merge
