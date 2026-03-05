@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Renamed `structural_context` → `included_in_relations`** in artifact configuration. Clearer name
   for the flag controlling whether an artifact is included in dependency context packages.
+- **Changed `node_types` from array to object** in config. Keys are type names, values have
+  required `description` (agent guidance) and optional `required_aspects`. Symmetric with `artifacts`.
 
 ### Added
 
@@ -22,11 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`aspect_exceptions` in node.yaml schema:** Documents per-node deviations from aspect patterns.
 - **`anchors` in node.yaml schema:** Documents code anchor assertions for aspect staleness detection.
 - **`stability` in aspect.yaml schema:** Documents the stability tier field.
+- **Node type descriptions:** `config.yaml` node types now have a required `description` field
+  providing agent guidance. Replaces hardcoded descriptions in rules.
+- **Subagent delegation rule in agent rules:** Subagents must read `.yggdrasil/agent-rules.md`
+  as their first action before any other work.
 
 ### Removed
 
 - **Legacy `tags`/`required_tags` fallbacks:** Removed backward-compatibility parsing of `tags`
   (use `aspects`) and `required_tags` (use `required_aspects`).
+- **Legacy `node_types` string array format:** Removed support for `node_types: [module, service]`.
+  Use object format with descriptions.
 
 ### Fixed
 
