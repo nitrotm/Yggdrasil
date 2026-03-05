@@ -244,28 +244,6 @@ aspects:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('backward compat: parses tags field as aspects', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-tags');
-    await mkdir(tmpDir, { recursive: true });
-    const nodePath = path.join(tmpDir, 'node.yaml');
-    await writeFile(
-      nodePath,
-      `
-name: TaggedNode
-type: service
-tags:
-  - requires-auth
-  - public-api
-`,
-      'utf-8',
-    );
-
-    const meta = await parseNodeYaml(nodePath);
-    expect(meta.aspects).toEqual(['requires-auth', 'public-api']);
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
   it('returns undefined mapping when mapping is empty object', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-no-path');
     await mkdir(tmpDir, { recursive: true });

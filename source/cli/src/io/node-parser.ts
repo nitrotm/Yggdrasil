@@ -32,7 +32,7 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
 
   const relations = parseRelations(raw.relations, filePath);
   const mapping = parseMapping(raw.mapping, filePath);
-  const aspects = parseStringArray(raw.aspects) ?? parseStringArray(raw.tags);
+  const aspects = parseStringArray(raw.aspects);
   const aspectExceptions = parseAspectExceptions(raw.aspect_exceptions, aspects, filePath);
   const anchors = parseAnchors(raw.anchors, filePath);
 

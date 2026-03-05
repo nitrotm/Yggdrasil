@@ -39,12 +39,10 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
       'name' in item &&
       typeof (item as { name: unknown }).name === 'string'
     ) {
-      const obj = item as { name: string; required_aspects?: unknown; required_tags?: unknown };
+      const obj = item as { name: string; required_aspects?: unknown };
       const requiredAspects = Array.isArray(obj.required_aspects)
         ? (obj.required_aspects as unknown[]).filter((t): t is string => typeof t === 'string')
-        : Array.isArray(obj.required_tags)
-          ? (obj.required_tags as unknown[]).filter((t): t is string => typeof t === 'string')
-          : undefined;
+        : undefined;
       return {
         name: obj.name,
         required_aspects: requiredAspects && requiredAspects.length > 0 ? requiredAspects : undefined,

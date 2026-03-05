@@ -289,31 +289,6 @@ artifacts:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('backward compat: parses required_tags as required_aspects', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types-compat');
-    await mkdir(tmpDir, { recursive: true });
-    const configPath = path.join(tmpDir, 'config.yaml');
-    await writeFile(
-      configPath,
-      `
-name: T
-node_types:
-  - name: module
-  - name: service
-    required_tags: [requires-audit]
-artifacts:
-  responsibility.md:
-    required: always
-    description: x
-`,
-      'utf-8',
-    );
-    const cfg = await parseConfig(configPath);
-    expect(cfg.node_types).toHaveLength(2);
-    expect(cfg.node_types[1]).toEqual({ name: 'service', required_aspects: ['requires-audit'] });
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
   it('accepts legacy node_types as string array', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-legacy-types');
     await mkdir(tmpDir, { recursive: true });
