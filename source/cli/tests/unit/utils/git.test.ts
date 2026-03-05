@@ -19,7 +19,7 @@ describe('git', () => {
   describe('getLastCommitTimestamp', () => {
     it('returns timestamp when git log succeeds with valid output', () => {
       vi.mocked(execSync).mockReturnValue('1730000000\n' as unknown as Buffer);
-      const result = getLastCommitTimestamp(FIXTURE_ROOT, '.yggdrasil/config.yaml');
+      const result = getLastCommitTimestamp(FIXTURE_ROOT, '.yggdrasil/yg-config.yaml');
       expect(result).toBe(1730000000);
       expect(execSync).toHaveBeenCalledWith(
         expect.stringContaining('git log -1 --format=%ct'),

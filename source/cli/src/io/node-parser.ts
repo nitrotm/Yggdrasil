@@ -20,14 +20,14 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
   const raw = parseYaml(content) as Record<string, unknown>;
 
   if (!raw || typeof raw !== 'object') {
-    throw new Error(`node.yaml at ${filePath}: file is empty or not a valid YAML mapping`);
+    throw new Error(`yg-node.yaml at ${filePath}: file is empty or not a valid YAML mapping`);
   }
 
   if (!raw.name || typeof raw.name !== 'string' || raw.name.trim() === '') {
-    throw new Error(`node.yaml at ${filePath}: missing or empty 'name'`);
+    throw new Error(`yg-node.yaml at ${filePath}: missing or empty 'name'`);
   }
   if (!raw.type || typeof raw.type !== 'string' || raw.type.trim() === '') {
-    throw new Error(`node.yaml at ${filePath}: missing or empty 'type'`);
+    throw new Error(`yg-node.yaml at ${filePath}: missing or empty 'type'`);
   }
 
   const relations = parseRelations(raw.relations, filePath);
@@ -47,7 +47,7 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
 function parseAspects(raw: unknown, filePath: string): NodeAspectEntry[] | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (!Array.isArray(raw)) {
-    throw new Error(`node.yaml at ${filePath}: 'aspects' must be an array`);
+    throw new Error(`yg-node.yaml at ${filePath}: 'aspects' must be an array`);
   }
   if (raw.length === 0) return undefined;
 
@@ -57,20 +57,20 @@ function parseAspects(raw: unknown, filePath: string): NodeAspectEntry[] | undef
   for (let i = 0; i < raw.length; i++) {
     const item = raw[i];
     if (typeof item !== 'object' || item === null) {
-      throw new Error(`node.yaml at ${filePath}: aspects[${i}] must be an object with 'aspect' key`);
+      throw new Error(`yg-node.yaml at ${filePath}: aspects[${i}] must be an object with 'aspect' key`);
     }
     const obj = item as Record<string, unknown>;
 
     if (typeof obj.aspect !== 'string' || obj.aspect.trim() === '') {
       throw new Error(
-        `node.yaml at ${filePath}: aspects[${i}].aspect must be a non-empty string`,
+        `yg-node.yaml at ${filePath}: aspects[${i}].aspect must be a non-empty string`,
       );
     }
 
     const aspectId = obj.aspect.trim();
     if (seenAspects.has(aspectId)) {
       throw new Error(
-        `node.yaml at ${filePath}: duplicate aspect '${aspectId}' in aspects list`,
+        `yg-node.yaml at ${filePath}: duplicate aspect '${aspectId}' in aspects list`,
       );
     }
     seenAspects.add(aspectId);
@@ -81,7 +81,7 @@ function parseAspects(raw: unknown, filePath: string): NodeAspectEntry[] | undef
     if (obj.exceptions !== undefined && obj.exceptions !== null) {
       if (!Array.isArray(obj.exceptions)) {
         throw new Error(
-          `node.yaml at ${filePath}: aspects[${i}].exceptions must be an array of strings`,
+          `yg-node.yaml at ${filePath}: aspects[${i}].exceptions must be an array of strings`,
         );
       }
       const exceptions = obj.exceptions.filter((e): e is string => typeof e === 'string' && e.trim() !== '');
@@ -94,7 +94,7 @@ function parseAspects(raw: unknown, filePath: string): NodeAspectEntry[] | undef
     if (obj.anchors !== undefined && obj.anchors !== null) {
       if (!Array.isArray(obj.anchors)) {
         throw new Error(
-          `node.yaml at ${filePath}: aspects[${i}].anchors must be an array of strings`,
+          `yg-node.yaml at ${filePath}: aspects[${i}].anchors must be an array of strings`,
         );
       }
       const anchors = obj.anchors.filter((a): a is string => typeof a === 'string' && a.trim() !== '');
@@ -112,14 +112,14 @@ function parseAspects(raw: unknown, filePath: string): NodeAspectEntry[] | undef
 function parseRelations(raw: unknown, filePath: string): Relation[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
-    throw new Error(`node.yaml at ${filePath}: 'relations' must be an array`);
+    throw new Error(`yg-node.yaml at ${filePath}: 'relations' must be an array`);
   }
 
   const result: Relation[] = [];
   for (let index = 0; index < raw.length; index++) {
     const r = raw[index];
     if (typeof r !== 'object' || r === null) {
-      throw new Error(`node.yaml at ${filePath}: relations[${index}] must be an object`);
+      throw new Error(`yg-node.yaml at ${filePath}: relations[${index}] must be an object`);
     }
     const obj = r as Record<string, unknown>;
     const target = obj.target;
@@ -127,11 +127,11 @@ function parseRelations(raw: unknown, filePath: string): Relation[] {
 
     if (typeof target !== 'string' || target.trim() === '') {
       throw new Error(
-        `node.yaml at ${filePath}: relations[${index}].target must be a non-empty string`,
+        `yg-node.yaml at ${filePath}: relations[${index}].target must be a non-empty string`,
       );
     }
     if (!isValidRelationType(type)) {
-      throw new Error(`node.yaml at ${filePath}: relations[${index}].type is invalid`);
+      throw new Error(`yg-node.yaml at ${filePath}: relations[${index}].type is invalid`);
     }
 
     const rel: Relation = {
@@ -155,10 +155,10 @@ function parseRelations(raw: unknown, filePath: string): Relation[] {
 function validateRelativePath(pathValue: string, filePath: string, fieldName: string): string {
   const normalized = pathValue.trim();
   if (normalized === '') {
-    throw new Error(`node.yaml at ${filePath}: '${fieldName}' must be non-empty`);
+    throw new Error(`yg-node.yaml at ${filePath}: '${fieldName}' must be non-empty`);
   }
   if (normalized.startsWith('/')) {
-    throw new Error(`node.yaml at ${filePath}: '${fieldName}' must be relative to repository root`);
+    throw new Error(`yg-node.yaml at ${filePath}: '${fieldName}' must be relative to repository root`);
   }
   return normalized;
 }
@@ -174,14 +174,14 @@ function parseMapping(rawMapping: unknown, filePath: string): NodeMapping | unde
       .filter((p): p is string => typeof p === 'string')
       .map((p) => validateRelativePath(p, filePath, 'mapping.paths[]'));
     if (paths.length === 0) {
-      throw new Error(`node.yaml at ${filePath}: mapping.paths must be a non-empty array`);
+      throw new Error(`yg-node.yaml at ${filePath}: mapping.paths must be a non-empty array`);
     }
     return { paths };
   }
 
   if (obj.paths !== undefined || obj.type !== undefined || obj.path !== undefined) {
     throw new Error(
-      `node.yaml at ${filePath}: mapping must have paths (array of file/directory paths)`,
+      `yg-node.yaml at ${filePath}: mapping must have paths (array of file/directory paths)`,
     );
   }
 

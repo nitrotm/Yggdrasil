@@ -42,8 +42,8 @@ export function collectTrackedFiles(node: GraphNode, graph: Graph): TrackedFile[
   }
 
   function addNodeFiles(n: GraphNode): void {
-    // node.yaml
-    addFile(graphPath('model', n.path, 'node.yaml'), 'graph');
+    // yg-node.yaml
+    addFile(graphPath('model', n.path, 'yg-node.yaml'), 'graph');
     // artifacts filtered by config
     for (const art of n.artifacts) {
       if (configArtifactKeys.has(art.filename)) {
@@ -52,7 +52,7 @@ export function collectTrackedFiles(node: GraphNode, graph: Graph): TrackedFile[
     }
   }
 
-  // 1. OWN — node.yaml + config-filtered artifacts
+  // 1. OWN — yg-node.yaml + config-filtered artifacts
   addNodeFiles(node);
 
   // 2. HIERARCHICAL — ancestors from root to parent
@@ -87,7 +87,7 @@ export function collectTrackedFiles(node: GraphNode, graph: Graph): TrackedFile[
   // Resolve with recursive implies
   const resolvedAspects = resolveAspects(allAspectIds, graph.aspects);
   for (const aspect of resolvedAspects) {
-    addFile(graphPath('aspects', aspect.id, 'aspect.yaml'), 'graph');
+    addFile(graphPath('aspects', aspect.id, 'yg-aspect.yaml'), 'graph');
     for (const art of aspect.artifacts) {
       addFile(graphPath('aspects', aspect.id, art.filename), 'graph');
     }
@@ -124,9 +124,9 @@ export function collectTrackedFiles(node: GraphNode, graph: Graph): TrackedFile[
     }
   }
 
-  // 5. RELATIONAL-FLOWS — flow.yaml + flow artifacts for participating flows
+  // 5. RELATIONAL-FLOWS — yg-flow.yaml + flow artifacts for participating flows
   for (const flow of participatingFlows) {
-    addFile(graphPath('flows', flow.path, 'flow.yaml'), 'graph');
+    addFile(graphPath('flows', flow.path, 'yg-flow.yaml'), 'graph');
     for (const art of flow.artifacts) {
       addFile(graphPath('flows', flow.path, art.filename), 'graph');
     }

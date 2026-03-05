@@ -8,8 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = path.join(__dirname, '../../fixtures/sample-project/.yggdrasil');
 
 describe('config-parser', () => {
-  it('parses valid config.yaml correctly (v2.2)', async () => {
-    const config = await parseConfig(path.join(FIXTURE_DIR, 'config.yaml'));
+  it('parses valid yg-config.yaml correctly (v2.2)', async () => {
+    const config = await parseConfig(path.join(FIXTURE_DIR, 'yg-config.yaml'));
 
     expect(config.name).toBe('Sample E-Commerce System');
     expect(config.quality?.context_budget.warning).toBe(8000);
@@ -20,7 +20,7 @@ describe('config-parser', () => {
   it('throws on empty YAML file', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-empty');
     await mkdir(tmpDir, { recursive: true });
-    const badConfigPath = path.join(tmpDir, 'config.yaml');
+    const badConfigPath = path.join(tmpDir, 'yg-config.yaml');
     await writeFile(badConfigPath, '', 'utf-8');
 
     await expect(parseConfig(badConfigPath)).rejects.toThrow(
@@ -33,7 +33,7 @@ describe('config-parser', () => {
   it('throws when name is missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config');
     await mkdir(tmpDir, { recursive: true });
-    const badConfigPath = path.join(tmpDir, 'config.yaml');
+    const badConfigPath = path.join(tmpDir, 'yg-config.yaml');
     await writeFile(
       badConfigPath,
       `
@@ -49,7 +49,7 @@ artifacts:
     );
 
     await expect(parseConfig(badConfigPath)).rejects.toThrow(
-      "config.yaml: missing or invalid 'name' field",
+      "yg-config.yaml: missing or invalid 'name' field",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -58,7 +58,7 @@ artifacts:
   it('parses minimal config without tags field', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-minimal');
     await mkdir(tmpDir, { recursive: true });
-    const minimalConfigPath = path.join(tmpDir, 'config.yaml');
+    const minimalConfigPath = path.join(tmpDir, 'yg-config.yaml');
     await writeFile(
       minimalConfigPath,
       `
@@ -84,7 +84,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-structural');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Structural"
 node_types:
@@ -102,7 +102,7 @@ artifacts:
       'utf-8',
     );
 
-    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
+    const config = await parseConfig(path.join(tmpDir, 'yg-config.yaml'));
     expect(config.artifacts.interface.included_in_relations).toBe(true);
     expect(config.artifacts.responsibility.included_in_relations).toBe(false);
 
@@ -110,23 +110,23 @@ artifacts:
   });
 
   it('parses quality.context_budget when present', async () => {
-    const config = await parseConfig(path.join(FIXTURE_DIR, 'config.yaml'));
+    const config = await parseConfig(path.join(FIXTURE_DIR, 'yg-config.yaml'));
     expect(config.quality?.context_budget.warning).toBe(8000);
     expect(config.quality?.context_budget.error).toBe(16000);
   });
 
-  it('throws when artifact name is node.yaml (reserved)', async () => {
+  it('throws when artifact name is yg-node.yaml (reserved)', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Reserved"
 node_types:
   service:
     description: x
 artifacts:
-  node.yaml:
+  yg-node.yaml:
     required: always
     description: "x"
   responsibility:
@@ -136,8 +136,8 @@ artifacts:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "artifact name 'node.yaml' is reserved",
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
+      "artifact name 'yg-node.yaml' is reserved",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -147,7 +147,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-invalid-required');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Invalid"
 node_types:
@@ -161,7 +161,7 @@ artifacts:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       "invalid 'required' field",
     );
 
@@ -172,7 +172,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-invalid-when');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "InvalidWhen"
 node_types:
@@ -187,7 +187,7 @@ artifacts:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       "invalid 'required.when'",
     );
 
@@ -198,7 +198,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-budget');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Budget"
 node_types:
@@ -216,7 +216,7 @@ quality:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       'must be >= warning',
     );
 
@@ -227,7 +227,7 @@ quality:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-types-not-object');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Bad"
 node_types: "not-object"
@@ -239,7 +239,7 @@ artifacts:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       "'node_types' must be a non-empty object",
     );
 
@@ -250,7 +250,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-empty-types');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Bad"
 node_types: {}
@@ -262,7 +262,7 @@ artifacts:
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       "'node_types' must be a non-empty object",
     );
 
@@ -272,7 +272,7 @@ artifacts:
   it('parses node_types with description and required_aspects', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types');
     await mkdir(tmpDir, { recursive: true });
-    const configPath = path.join(tmpDir, 'config.yaml');
+    const configPath = path.join(tmpDir, 'yg-config.yaml');
     await writeFile(
       configPath,
       `
@@ -300,7 +300,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-artifacts-array');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "Bad"
 node_types:
@@ -311,7 +311,7 @@ artifacts: []
       'utf-8',
     );
 
-    await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
+    await expect(parseConfig(path.join(tmpDir, 'yg-config.yaml'))).rejects.toThrow(
       "'artifacts' must be a non-empty object",
     );
 
@@ -322,7 +322,7 @@ artifacts: []
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-artifact-no-desc');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "NoDesc"
 node_types:
@@ -335,7 +335,7 @@ artifacts:
       'utf-8',
     );
 
-    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
+    const config = await parseConfig(path.join(tmpDir, 'yg-config.yaml'));
     expect(config.artifacts.responsibility.description).toBe('');
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -345,7 +345,7 @@ artifacts:
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-has-aspect');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
-      path.join(tmpDir, 'config.yaml'),
+      path.join(tmpDir, 'yg-config.yaml'),
       `
 name: "HasAspect"
 node_types:
@@ -363,7 +363,7 @@ artifacts:
       'utf-8',
     );
 
-    const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
+    const config = await parseConfig(path.join(tmpDir, 'yg-config.yaml'));
     expect(config.artifacts.compliance.required).toEqual({ when: 'has_aspect:regulated' });
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -372,7 +372,7 @@ artifacts:
   it('throws when node_types entry has missing description', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-bad-type-entry');
     await mkdir(tmpDir, { recursive: true });
-    const configPath = path.join(tmpDir, 'config.yaml');
+    const configPath = path.join(tmpDir, 'yg-config.yaml');
     await writeFile(
       configPath,
       `

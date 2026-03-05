@@ -412,7 +412,7 @@ describe.skipIf(!distExists)('CLI E2E', () => {
       const { status, stdout } = run(['init'], tmpDir);
       expect(status).toBe(0);
       expect(stdout).toContain('Yggdrasil initialized');
-      expect(existsSync(path.join(tmpDir, '.yggdrasil', 'config.yaml'))).toBe(true);
+      expect(existsSync(path.join(tmpDir, '.yggdrasil', 'yg-config.yaml'))).toBe(true);
       expect(existsSync(path.join(tmpDir, '.yggdrasil', 'aspects'))).toBe(true);
       expect(existsSync(path.join(tmpDir, '.yggdrasil', 'flows'))).toBe(true);
       expect(existsSync(path.join(tmpDir, '.yggdrasil', 'model'))).toBe(true);

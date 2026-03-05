@@ -85,22 +85,22 @@ export function registerInitCommand(program: Command): void {
         );
       }
 
-      await writeFile(path.join(yggRoot, 'config.yaml'), DEFAULT_CONFIG, 'utf-8');
+      await writeFile(path.join(yggRoot, 'yg-config.yaml'), DEFAULT_CONFIG, 'utf-8');
       await writeFile(path.join(yggRoot, '.gitignore'), GITIGNORE_CONTENT, 'utf-8');
 
       const rulesPath = await installRulesForPlatform(projectRoot, platform);
 
       process.stdout.write('✓ Yggdrasil initialized.\n\n');
       process.stdout.write('Created:\n');
-      process.stdout.write('  .yggdrasil/config.yaml\n');
+      process.stdout.write('  .yggdrasil/yg-config.yaml\n');
       process.stdout.write('  .yggdrasil/.gitignore\n');
       process.stdout.write('  .yggdrasil/model/\n');
       process.stdout.write('  .yggdrasil/aspects/\n');
       process.stdout.write('  .yggdrasil/flows/\n');
-      process.stdout.write('  .yggdrasil/schemas/ (config, node, aspect, flow)\n');
+      process.stdout.write('  .yggdrasil/schemas/ (yg-config, yg-node, yg-aspect, yg-flow)\n');
       process.stdout.write(`  ${path.relative(projectRoot, rulesPath)} (rules)\n\n`);
       process.stdout.write('Next steps:\n');
-      process.stdout.write('  1. Edit .yggdrasil/config.yaml — set name and configure node types\n');
+      process.stdout.write('  1. Edit .yggdrasil/yg-config.yaml — set name and configure node types\n');
       process.stdout.write('  2. Create nodes under .yggdrasil/model/\n');
       process.stdout.write('  3. Run: yg validate\n');
     });

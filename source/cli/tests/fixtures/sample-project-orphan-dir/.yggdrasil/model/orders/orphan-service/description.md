@@ -1,1 +1,1 @@
-# Orphan service - no node.yaml
+# Orphan service - no yg-node.yaml

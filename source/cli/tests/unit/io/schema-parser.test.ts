@@ -10,9 +10,9 @@ describe('schema-parser', () => {
   it('infers schemaType from filename', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-schema-type');
     await mkdir(tmpDir, { recursive: true });
-    await writeFile(path.join(tmpDir, 'node.yaml'), 'name: Foo\ntype: service\n', 'utf-8');
+    await writeFile(path.join(tmpDir, 'yg-node.yaml'), 'name: Foo\ntype: service\n', 'utf-8');
 
-    const s = await parseSchema(path.join(tmpDir, 'node.yaml'));
+    const s = await parseSchema(path.join(tmpDir, 'yg-node.yaml'));
 
     expect(s.schemaType).toBe('node');
 
@@ -22,9 +22,9 @@ describe('schema-parser', () => {
   it('infers schemaType for aspect', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-schema-aspect');
     await mkdir(tmpDir, { recursive: true });
-    await writeFile(path.join(tmpDir, 'aspect.yaml'), 'name: X\ntag: requires-x\n', 'utf-8');
+    await writeFile(path.join(tmpDir, 'yg-aspect.yaml'), 'name: X\ntag: requires-x\n', 'utf-8');
 
-    const s = await parseSchema(path.join(tmpDir, 'aspect.yaml'));
+    const s = await parseSchema(path.join(tmpDir, 'yg-aspect.yaml'));
 
     expect(s.schemaType).toBe('aspect');
 
@@ -34,9 +34,9 @@ describe('schema-parser', () => {
   it('throws when file contains invalid YAML', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-schema-invalid');
     await mkdir(tmpDir, { recursive: true });
-    await writeFile(path.join(tmpDir, 'node.yaml'), ': invalid: yaml: [\n', 'utf-8');
+    await writeFile(path.join(tmpDir, 'yg-node.yaml'), ': invalid: yaml: [\n', 'utf-8');
 
-    await expect(parseSchema(path.join(tmpDir, 'node.yaml'))).rejects.toThrow();
+    await expect(parseSchema(path.join(tmpDir, 'yg-node.yaml'))).rejects.toThrow();
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -44,9 +44,9 @@ describe('schema-parser', () => {
   it('infers schemaType from .yml extension', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-schema-yml');
     await mkdir(tmpDir, { recursive: true });
-    await writeFile(path.join(tmpDir, 'flow.yml'), 'name: F\nnodes: []\n', 'utf-8');
+    await writeFile(path.join(tmpDir, 'yg-flow.yml'), 'name: F\nnodes: []\n', 'utf-8');
 
-    const s = await parseSchema(path.join(tmpDir, 'flow.yml'));
+    const s = await parseSchema(path.join(tmpDir, 'yg-flow.yml'));
 
     expect(s.schemaType).toBe('flow');
 

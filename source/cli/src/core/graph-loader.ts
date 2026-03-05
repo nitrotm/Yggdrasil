@@ -34,7 +34,7 @@ export async function loadGraph(
   let configError: string | undefined;
   let config = FALLBACK_CONFIG;
   try {
-    config = await parseConfig(path.join(yggRoot, 'config.yaml'));
+    config = await parseConfig(path.join(yggRoot, 'yg-config.yaml'));
   } catch (error) {
     if (!options.tolerateInvalidConfig) {
       throw error;
@@ -82,7 +82,7 @@ async function scanModelDirectory(
   artifactFilenames: string[],
 ): Promise<void> {
   const entries = await readdir(dirPath, { withFileTypes: true });
-  const hasNodeYaml = entries.some((e) => e.isFile() && e.name === 'node.yaml');
+  const hasNodeYaml = entries.some((e) => e.isFile() && e.name === 'yg-node.yaml');
 
   if (!hasNodeYaml && dirPath !== modelDir) {
     return;
@@ -90,7 +90,7 @@ async function scanModelDirectory(
 
   if (hasNodeYaml) {
     const graphPath = toModelPath(dirPath, modelDir);
-    const nodeYamlPath = path.join(dirPath, 'node.yaml');
+    const nodeYamlPath = path.join(dirPath, 'yg-node.yaml');
     let meta;
     let nodeYamlRaw: string | undefined;
     try {
@@ -103,7 +103,7 @@ async function scanModelDirectory(
       });
       return;
     }
-    const artifacts = await readArtifacts(dirPath, ['node.yaml'], artifactFilenames);
+    const artifacts = await readArtifacts(dirPath, ['yg-node.yaml'], artifactFilenames);
 
     const node: GraphNode = {
       path: graphPath,
@@ -165,11 +165,11 @@ async function scanAspectsDirectory(
   aspects: AspectDef[],
 ): Promise<void> {
   const entries = await readdir(dirPath, { withFileTypes: true });
-  const hasAspectYaml = entries.some((e) => e.isFile() && e.name === 'aspect.yaml');
+  const hasAspectYaml = entries.some((e) => e.isFile() && e.name === 'yg-aspect.yaml');
 
   if (hasAspectYaml) {
     const id = path.relative(aspectsRoot, dirPath).split(path.sep).join('/');
-    const aspectYamlPath = path.join(dirPath, 'aspect.yaml');
+    const aspectYamlPath = path.join(dirPath, 'yg-aspect.yaml');
     const aspect = await parseAspect(dirPath, aspectYamlPath, id);
     aspects.push(aspect);
   }
@@ -187,7 +187,7 @@ async function loadFlows(flowsDir: string): Promise<FlowDef[]> {
     const flows: FlowDef[] = [];
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const flowYamlPath = path.join(flowsDir, entry.name, 'flow.yaml');
+      const flowYamlPath = path.join(flowsDir, entry.name, 'yg-flow.yaml');
       const flow = await parseFlow(path.join(flowsDir, entry.name), flowYamlPath);
       flows.push(flow);
     }

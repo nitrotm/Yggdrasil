@@ -157,10 +157,10 @@ describe('validator', () => {
 
     await mkdir(badNodeDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
+      path.join(yggRoot, 'yg-config.yaml'),
       'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(badNodeDir, 'node.yaml'), 'type: service\n# missing name');
+    await writeFile(path.join(badNodeDir, 'yg-node.yaml'), 'type: service\n# missing name');
 
     try {
       const graph = await loadGraph(tmpDir);
@@ -180,7 +180,7 @@ describe('validator', () => {
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-node-yaml');
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toContain('no node.yaml');
+    expect(issues[0].message).toContain('no yg-node.yaml');
     expect(issues[0].nodePath).toBe('orders/orphan-service');
     expect(issues[0].code).toBe('E015');
   });
@@ -195,10 +195,10 @@ describe('validator', () => {
     await mkdir(orphanDir, { recursive: true });
     await mkdir(serviceDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
+      path.join(yggRoot, 'yg-config.yaml'),
       'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(serviceDir, 'node.yaml'), 'name: Svc\ntype: service\n');
+    await writeFile(path.join(serviceDir, 'yg-node.yaml'), 'name: Svc\ntype: service\n');
     await writeFile(path.join(orphanDir, 'readme.md'), '# orphan content');
 
     try {
@@ -222,10 +222,10 @@ describe('validator', () => {
 
     await mkdir(childDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
+      path.join(yggRoot, 'yg-config.yaml'),
       'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(childDir, 'node.yaml'), 'name: Child\ntype: service\n');
+    await writeFile(path.join(childDir, 'yg-node.yaml'), 'name: Child\ntype: service\n');
     await writeFile(path.join(childDir, 'responsibility.md'), 'Child responsibility content here — enough to pass.');
 
     try {
@@ -1011,7 +1011,7 @@ describe('validator', () => {
   it('scoped validate returns parse error instead of "not found" for broken node', async () => {
     const graph = createGraph({
       nodeParseErrors: [
-        { nodePath: 'broken/node', message: 'node.yaml at broken/node/node.yaml: file is empty' },
+        { nodePath: 'broken/node', message: 'yg-node.yaml at broken/node/yg-node.yaml: file is empty' },
       ],
     });
     // The broken node is NOT in graph.nodes (it failed to parse)
@@ -1025,7 +1025,7 @@ describe('validator', () => {
   it('scoped validate returns parse error for child of broken node', async () => {
     const graph = createGraph({
       nodeParseErrors: [
-        { nodePath: 'broken', message: 'node.yaml at broken/node.yaml: file is empty' },
+        { nodePath: 'broken', message: 'yg-node.yaml at broken/yg-node.yaml: file is empty' },
       ],
     });
     const result = await validate(graph, 'broken/child');

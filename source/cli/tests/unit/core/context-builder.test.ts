@@ -711,13 +711,13 @@ describe('context-builder', () => {
       expect(eventLayer?.content).toContain('You listen');
     });
 
-    it('own layer includes node.yaml and artifacts', async () => {
+    it('own layer includes yg-node.yaml and artifacts', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const pkg = await buildContext(graph, 'orders/order-service');
 
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('name: OrderService');
       expect(ownLayer?.content).toContain('type: service');
       expect(ownLayer?.content).toContain('relations:');
@@ -769,7 +769,7 @@ describe('context-builder', () => {
       const pkg = await buildContext(graph, 'orders/order-service');
 
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('### description.md');
 
       const relationLayer = pkg.layers.find((l) => l.type === 'relational');
@@ -875,18 +875,18 @@ describe('context-builder', () => {
       expect(ownLayer?.content).not.toContain('(not found)');
     });
 
-    it('own layer includes raw node.yaml from fixture', async () => {
+    it('own layer includes raw yg-node.yaml from fixture', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const pkg = await buildContext(graph, 'auth');
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('name:');
       expect(ownLayer?.content).toContain('type:');
     });
 
     it('empty own artifacts produce own layer with empty content', async () => {
-      // Node with only node.yaml, no other artifacts
+      // Node with only yg-node.yaml, no other artifacts
       const node: GraphNode = {
         path: 'bare',
         meta: { name: 'Bare', type: 'module' },
@@ -910,7 +910,7 @@ describe('context-builder', () => {
       const pkg = await buildContext(graph, 'bare');
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
     });
   });
 
@@ -941,7 +941,7 @@ describe('context-builder', () => {
       expect(output).toContain('# Path: orders/order-service');
       expect(output).toContain('# Generated:');
       expect(output).toContain('## OwnArtifacts');
-      expect(output).toContain('### node.yaml');
+      expect(output).toContain('### yg-node.yaml');
     });
 
     it('contains Materialization Target when mapping exists', async () => {

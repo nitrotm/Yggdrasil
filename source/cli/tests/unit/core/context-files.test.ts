@@ -9,25 +9,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PROJECT = path.join(__dirname, '../../fixtures/sample-project');
 
 describe('collectTrackedFiles', () => {
-  it('includes own node.yaml and artifacts', async () => {
+  it('includes own yg-node.yaml and artifacts', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     const node = graph.nodes.get('orders/order-service')!;
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/model/orders/order-service/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/order-service/yg-node.yaml');
     // order-service has responsibility.md, description.md artifacts (config-allowed)
     expect(paths).toContain('.yggdrasil/model/orders/order-service/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/orders/order-service/description.md');
   });
 
-  it('includes parent node.yaml and artifacts', async () => {
+  it('includes parent yg-node.yaml and artifacts', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     const node = graph.nodes.get('orders/order-service')!;
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/model/orders/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/yg-node.yaml');
     expect(paths).toContain('.yggdrasil/model/orders/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/orders/description.md');
   });
@@ -39,7 +39,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // orders/order-service has requires-audit aspect
-    expect(paths).toContain('.yggdrasil/aspects/requires-audit/aspect.yaml');
+    expect(paths).toContain('.yggdrasil/aspects/requires-audit/yg-aspect.yaml');
     expect(paths).toContain('.yggdrasil/aspects/requires-audit/content.md');
   });
 
@@ -50,7 +50,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // orders/order-service participates in checkout-flow
-    expect(paths).toContain('.yggdrasil/flows/checkout-flow/flow.yaml');
+    expect(paths).toContain('.yggdrasil/flows/checkout-flow/yg-flow.yaml');
     expect(paths).toContain('.yggdrasil/flows/checkout-flow/description.md');
   });
 
@@ -106,9 +106,9 @@ describe('collectTrackedFiles', () => {
     expect(sourceFiles).toHaveLength(0);
     expect(graphFiles.length).toBeGreaterThan(0);
 
-    // Should still have its own node.yaml and artifacts
+    // Should still have its own yg-node.yaml and artifacts
     const paths = files.map((f) => f.path);
-    expect(paths).toContain('.yggdrasil/model/orders/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/yg-node.yaml');
   });
 
   it('includes relational dependency artifacts', async () => {
@@ -222,7 +222,7 @@ describe('collectTrackedFiles', () => {
     const files = collectTrackedFiles(child, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/flows/parent-flow/flow.yaml');
+    expect(paths).toContain('.yggdrasil/flows/parent-flow/yg-flow.yaml');
     expect(paths).toContain('.yggdrasil/flows/parent-flow/description.md');
   });
 
@@ -234,7 +234,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // Should still have node files
-    expect(paths).toContain('.yggdrasil/model/users/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/users/yg-node.yaml');
     // Should not have aspect files
     const aspectPaths = paths.filter((p) => p.includes('/aspects/'));
     expect(aspectPaths).toHaveLength(0);
@@ -248,7 +248,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // Should have own files but no dep artifacts from other nodes
-    expect(paths).toContain('.yggdrasil/model/users/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/users/yg-node.yaml');
     // Should not have auth or order node files (those are only via relations)
     const otherModelPaths = paths.filter(
       (p) => p.startsWith('.yggdrasil/model/') && !p.startsWith('.yggdrasil/model/users'),

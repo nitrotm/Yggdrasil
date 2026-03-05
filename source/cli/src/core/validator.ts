@@ -734,7 +734,7 @@ function checkSchemas(graph: Graph): ValidationIssue[] {
         severity: 'warning',
         code: 'W010',
         rule: 'missing-schema',
-        message: `Schema '${required}.yaml' missing from .yggdrasil/schemas/`,
+        message: `Schema 'yg-${required}.yaml' missing from .yggdrasil/schemas/`,
       });
     }
   }
@@ -742,7 +742,7 @@ function checkSchemas(graph: Graph): ValidationIssue[] {
   return issues;
 }
 
-// --- Directories have node.yaml ---
+// --- Directories have yg-node.yaml ---
 
 async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIssue[]> {
   const issues: ValidationIssue[] = [];
@@ -750,7 +750,7 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
 
   async function scanDir(dirPath: string, segments: string[]): Promise<void> {
     const entries = await readdir(dirPath, { withFileTypes: true });
-    const hasNodeYaml = entries.some((e) => e.isFile() && e.name === 'node.yaml');
+    const hasNodeYaml = entries.some((e) => e.isFile() && e.name === 'yg-node.yaml');
     const dirName = path.basename(dirPath);
 
     if (RESERVED_DIRS.has(dirName)) return;
@@ -765,7 +765,7 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
           severity: 'error',
           code: 'E015',
           rule: 'missing-node-yaml',
-          message: `Directory '${graphPath}' has files but no node.yaml`,
+          message: `Directory '${graphPath}' has files but no yg-node.yaml`,
           nodePath: graphPath,
         });
       } else if (hasSubdirs) {
@@ -773,7 +773,7 @@ async function checkDirectoriesHaveNodeYaml(graph: Graph): Promise<ValidationIss
           severity: 'warning',
           code: 'W013',
           rule: 'directory-without-node',
-          message: `Directory '${graphPath}' has subdirectories but no node.yaml — consider creating a node`,
+          message: `Directory '${graphPath}' has subdirectories but no yg-node.yaml — consider creating a node`,
           nodePath: graphPath,
         });
       }

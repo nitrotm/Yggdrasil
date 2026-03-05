@@ -56,8 +56,8 @@ export function findChangedNodes(graph: Graph, ref?: string): string[] {
   // Map changed file paths back to node paths
   const changedNodePaths = new Set<string>();
   for (const filePath of changedFiles) {
-    // filePath is like ".yggdrasil/auth/login-service/node.yaml"
-    // Strip the yggdrasil dir prefix to get "auth/login-service/node.yaml"
+    // filePath is like ".yggdrasil/auth/login-service/yg-node.yaml"
+    // Strip the yggdrasil dir prefix to get "auth/login-service/yg-node.yaml"
     const relative = filePath.startsWith(yggDirName + '/')
       ? filePath.slice(yggDirName.length + 1)
       : filePath;

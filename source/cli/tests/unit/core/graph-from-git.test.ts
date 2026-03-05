@@ -78,7 +78,7 @@ describe('graph-from-git', () => {
         if (extractDir) {
           const yggRoot = path.join(extractDir, '.yggdrasil');
           mkdirSync(path.join(yggRoot, 'model'), { recursive: true });
-          writeFileSync(path.join(yggRoot, 'config.yaml'), 'invalid: yaml: [[[');
+          writeFileSync(path.join(yggRoot, 'yg-config.yaml'), 'invalid: yaml: [[[');
         }
         return Buffer.from('');
       });
@@ -101,11 +101,11 @@ describe('graph-from-git', () => {
           const yggRoot = path.join(extractDir, '.yggdrasil');
           mkdirSync(path.join(yggRoot, 'model', 'svc'), { recursive: true });
           writeFileSync(
-            path.join(yggRoot, 'config.yaml'),
+            path.join(yggRoot, 'yg-config.yaml'),
             'name: T\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility:\n    required: always\n    description: x\ntags: []',
           );
           writeFileSync(
-            path.join(yggRoot, 'model', 'svc', 'node.yaml'),
+            path.join(yggRoot, 'model', 'svc', 'yg-node.yaml'),
             'name: S\ntype: service\n',
           );
         }

@@ -1,4 +1,4 @@
-# flow.yaml — Schema for end-to-end business flows
+# yg-flow.yaml — Schema for end-to-end business flows
 # Each flow is a directory under .yggdrasil/flows/ containing this file
 # plus description.md with required sections (see rules).
 

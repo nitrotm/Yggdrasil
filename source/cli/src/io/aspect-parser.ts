@@ -27,7 +27,7 @@ export async function parseAspect(
 
   const description = typeof raw.description === 'string' ? raw.description.trim() : undefined;
 
-  const artifacts = await readArtifacts(aspectDir, ['aspect.yaml']);
+  const artifacts = await readArtifacts(aspectDir, ['yg-aspect.yaml']);
 
   let implies: string[] | undefined;
   if (raw.implies !== undefined) {

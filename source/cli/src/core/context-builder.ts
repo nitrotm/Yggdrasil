@@ -34,7 +34,7 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
     layers.push(buildHierarchyLayer(ancestor, graph.config, graph));
   }
 
-  // 3. Own (node.yaml + configured artifacts)
+  // 3. Own (yg-node.yaml + configured artifacts)
   layers.push(await buildOwnLayer(node, graph.config, graph.rootPath, graph));
 
   // 4. Relational (structural + event, with consumes/failure)
@@ -190,14 +190,14 @@ export async function buildOwnLayer(
   const parts: string[] = [];
 
   if (node.nodeYamlRaw) {
-    parts.push(`### node.yaml\n${node.nodeYamlRaw.trim()}`);
+    parts.push(`### yg-node.yaml\n${node.nodeYamlRaw.trim()}`);
   } else {
-    const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'node.yaml');
+    const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'yg-node.yaml');
     try {
       const nodeYamlContent = await readFile(nodeYamlPath, 'utf-8');
-      parts.push(`### node.yaml\n${nodeYamlContent.trim()}`);
+      parts.push(`### yg-node.yaml\n${nodeYamlContent.trim()}`);
     } catch {
-      parts.push(`### node.yaml\n(not found)`);
+      parts.push(`### yg-node.yaml\n(not found)`);
     }
   }
 

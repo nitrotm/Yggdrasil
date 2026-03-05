@@ -18,11 +18,11 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
   const raw = parseYaml(content) as Record<string, unknown>;
 
   if (!raw || typeof raw !== 'object') {
-    throw new Error(`config.yaml: file is empty or not a valid YAML mapping`);
+    throw new Error(`yg-config.yaml: file is empty or not a valid YAML mapping`);
   }
 
   if (!raw.name || typeof raw.name !== 'string' || raw.name.trim() === '') {
-    throw new Error(`config.yaml: missing or invalid 'name' field`);
+    throw new Error(`yg-config.yaml: missing or invalid 'name' field`);
   }
 
   const nodeTypesRaw = raw.node_types;
@@ -32,7 +32,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     Array.isArray(nodeTypesRaw) ||
     Object.keys(nodeTypesRaw).length === 0
   ) {
-    throw new Error(`config.yaml: 'node_types' must be a non-empty object`);
+    throw new Error(`yg-config.yaml: 'node_types' must be a non-empty object`);
   }
 
   const nodeTypes: Record<string, NodeTypeConfig> = {};
@@ -40,7 +40,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     const entry = val as Record<string, unknown>;
     if (!entry || typeof entry !== 'object' || typeof entry.description !== 'string' || entry.description.trim() === '') {
       throw new Error(
-        `config.yaml: node_types.${typeName} must have a non-empty 'description' string`,
+        `yg-config.yaml: node_types.${typeName} must have a non-empty 'description' string`,
       );
     }
     const requiredAspects = Array.isArray(entry.required_aspects)
@@ -59,13 +59,13 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     Array.isArray(artifacts) ||
     Object.keys(artifacts).length === 0
   ) {
-    throw new Error(`config.yaml: 'artifacts' must be a non-empty object`);
+    throw new Error(`yg-config.yaml: 'artifacts' must be a non-empty object`);
   }
 
   const artifactsMap: Record<string, ArtifactConfig> = {};
   for (const [key, val] of Object.entries(artifacts)) {
-    if (key === 'node.yaml') {
-      throw new Error(`config.yaml: artifact name 'node.yaml' is reserved`);
+    if (key === 'yg-node.yaml') {
+      throw new Error(`yg-config.yaml: artifact name 'yg-node.yaml' is reserved`);
     }
     const a = val as Record<string, unknown>;
     const required = a.required;
@@ -74,7 +74,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
       required !== 'never' &&
       (typeof required !== 'object' || !required || !('when' in required))
     ) {
-      throw new Error(`config.yaml: artifact '${key}' has invalid 'required' field`);
+      throw new Error(`yg-config.yaml: artifact '${key}' has invalid 'required' field`);
     }
     if (typeof required === 'object' && required && 'when' in required) {
       const when = (required as { when: string }).when;
@@ -85,7 +85,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
           (when.startsWith('has_aspect:') || when.startsWith('has_tag:')));
       if (!validWhen) {
         throw new Error(
-          `config.yaml: artifact '${key}' has invalid 'required.when': must be has_incoming_relations, has_outgoing_relations, or has_aspect:<name>`,
+          `yg-config.yaml: artifact '${key}' has invalid 'required.when': must be has_incoming_relations, has_outgoing_relations, or has_aspect:<name>`,
         );
       }
     }
@@ -116,7 +116,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
 
   if (quality.context_budget.error < quality.context_budget.warning) {
     throw new Error(
-      `config.yaml: quality.context_budget.error (${quality.context_budget.error}) must be >= warning (${quality.context_budget.warning})`,
+      `yg-config.yaml: quality.context_budget.error (${quality.context_budget.error}) must be >= warning (${quality.context_budget.warning})`,
     );
   }
 

@@ -34,7 +34,7 @@ Order management module.
 
 ### Node: OrderService
 
-### node.yaml
+### yg-node.yaml
 name: OrderService
 type: service
 aspects:
@@ -114,7 +114,7 @@ Sequence: create order -> validate -> payment -> ship.
 
 ---
 
-Context size: 360 tokens
+Context size: 361 tokens
 Layers: global, hierarchy, own, relational, relational, flows, aspects, aspects
 "
 `;

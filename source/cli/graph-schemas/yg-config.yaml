@@ -1,5 +1,5 @@
-# config.yaml — Schema for the Yggdrasil project configuration
-# Located at .yggdrasil/config.yaml — one per project.
+# yg-config.yaml — Schema for the Yggdrasil project configuration
+# Located at .yggdrasil/yg-config.yaml — one per project.
 # Edit this after running yg init to describe your project.
 
 name: "My Project"               # required — project display name
@@ -14,7 +14,7 @@ stack:                            # required — technology stack (freeform keys
 standards: ""                     # optional — global coding conventions (free text)
 
 node_types:                       # required — non-empty object of node type definitions
-  module:                         #   key = type name used in node.yaml
+  module:                         #   key = type name used in yg-node.yaml
     description: "Business logic unit with clear domain responsibility"
     # required_aspects: []        #   optional — aspects every node of this type must have
   service:
