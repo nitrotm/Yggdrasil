@@ -32,7 +32,7 @@ Config file: `.yggdrasil/config.yaml`
   - `required`: `always` | `never` | `{ when: "<condition>" }`
     - Supported `when` conditions: `has_incoming_relations`, `has_outgoing_relations`, `has_aspect:<name>` (legacy `has_tag:<name>` also accepted)
   - `description`: string
-  - `structural_context`: boolean — When `true`, this artifact is included in the context package of dependent nodes (via structural relations like uses, calls, extends, implements). Default artifacts with this flag: `responsibility.md`, `interface.md`, `constraints.md`, `errors.md`.
+  - `included_in_relations`: boolean — When `true`, this artifact is included in the context package of dependent nodes (via structural relations like uses, calls, extends, implements). Default artifacts with this flag: `responsibility.md`, `interface.md`, `constraints.md`, `errors.md`.
 - **Quality thresholds** — When to warn about shallow memory or large context
 
 ---
@@ -69,24 +69,24 @@ artifacts:
   responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-    structural_context: true
+    included_in_relations: true
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts"
-    structural_context: true
+    included_in_relations: true
   logic.md:
     required: never
     description: "Algorithmic flow, control flow, branching logic, decision trees"
   constraints.md:
     required: never
     description: "Validation rules, business rules, invariants"
-    structural_context: true
+    included_in_relations: true
   errors.md:
     required:
       when: has_incoming_relations
     description: "Failure modes, edge cases, error conditions, recovery behavior"
-    structural_context: true
+    included_in_relations: true
   model.md:
     required: never
     description: "Data structures, schemas, entities, type definitions"

@@ -112,13 +112,13 @@ artifacts:
   responsibility.md:
     required: always
     description: What this node is responsible for, and what it is not
-    structural_context: true
+    included_in_relations: true
 
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
 
   internals.md:
     required: never
@@ -282,7 +282,7 @@ new project, code not yet written). For new code, create proper nodes from the s
   the graph.
 - They are **not** checked for context budget — they do not produce a package for generation.
 - They **do** participate in the relation graph — other nodes can depend on them and will
-  receive their artifacts (those with `structural_context: true`) in their own context packages.
+  receive their artifacts (those with `included_in_relations: true`) in their own context packages.
 - They are **excluded** from materialization ordering — their outputs (if mapped) are whatever
   they are; the graph does not control them.
 

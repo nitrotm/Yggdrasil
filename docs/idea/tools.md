@@ -49,13 +49,13 @@ artifacts: # map, required, non-empty — keys are full filenames (e.g. responsi
   responsibility.md:
     required: always # always | never | {when: <condition>}
     description: "What this node is responsible for, and what it is not"
-    structural_context: true # optional, default false — include in dependency context for structural relations
+    included_in_relations: true # optional, default false — include in dependency context for structural relations
 
   interface.md:
     required:
       when: has_incoming_relations # structural condition
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
 
   internals.md:
     required: never
@@ -416,12 +416,12 @@ artifacts:
   responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-    structural_context: true
+    included_in_relations: true
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
   internals.md:
     required: never
     description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
@@ -463,9 +463,9 @@ The 5-step algorithm defined in the [Engine](engine) document. Summary:
 4. **Aspects** — union of aspect identifiers from hierarchy blocks, own block, and flow blocks (each block
    declares its own; no inheritance). Expand implies recursively. Render content of each
    matching aspect. No source attribute on aspect output.
-5. **Relational** — for structural relations: artifacts with `structural_context: true`
+5. **Relational** — for structural relations: artifacts with `included_in_relations: true`
    (default: responsibility, interface) of the target with consumes
-   and failure annotations. If the target has no artifacts with `structural_context: true`,
+   and failure annotations. If the target has no artifacts with `included_in_relations: true`,
    all configured artifacts are included as fallback. For event relations: event name and
    type with consumes annotation. Flow artifacts for flows listing this node or any ancestor
    as a participant.

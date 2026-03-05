@@ -81,7 +81,7 @@ Each step is deterministic.
 
 5.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
-        - artifacts of target with structural_context (e.g. responsibility, interface)
+        - artifacts of target with included_in_relations (e.g. responsibility, interface)
         - consumes annotation from the relation field (if declared)
         - failure annotation from the relation field (if declared)
       for each event relation of N (emits, listens):
