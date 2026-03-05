@@ -66,7 +66,9 @@ Each step is deterministic.
 4.  ASPECTS       Each block (hierarchy, own, flow) declares its own aspects. No inheritance —
                   each block has an `aspects` field (comma-separated aspect identifiers; omit if empty).
                   Hierarchy block: each ancestor may have `aspects="id1,id2"` in its metadata.
-                  Own block: node.yaml has `aspects: [id1, id2]`.
+                  Own block: node.yaml has `aspects` as a list of entries, each with an `aspect`
+                  field identifying the aspect (e.g. `- aspect: requires-audit`). Entries may
+                  also include embedded `exceptions` and `anchors`.
                   Flow block: flow.yaml has `aspects: [id1, id2]` for flows where N or an
                   ancestor participates. Effective aspects = union of all identifiers from these blocks.
                   The `aspects` attribute on each block shows the resolved set (including implied
@@ -76,8 +78,8 @@ Each step is deterministic.
                   a cycle (A implies B implies A) is an error. No source attribute on aspect
                   output — aspects are rendered without provenance. Aspects section = union of
                   aspect identifiers from hierarchy + own + flow blocks, expand implies, render content.
-                  If the node declares `aspect_exceptions` for a given aspect, the exception note
-                  is appended to that aspect's layer as a warning.
+                  If an aspect entry declares `exceptions`, the exception notes are appended to
+                  that aspect's layer as warnings.
 
 5.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
@@ -177,7 +179,9 @@ metadata; content between tags is raw text (no CDATA, no escaping).
 ### node.yaml
 name: OrderService
 type: service
-aspects: [requires-audit, requires-auth]
+aspects:
+  - aspect: requires-audit
+  - aspect: requires-auth
 relations: ...
 ### responsibility.md
 <content>
@@ -254,7 +258,7 @@ a graph with errors cannot produce reliable context packages.
 - Every aspect identifier must correspond to a directory under `aspects/`.
 - Every identifier in an aspect's `implies` must have a corresponding aspect in `aspects/`.
 - The aspect implies graph must be acyclic (no A implies B implies A).
-- Every `aspect_exceptions[].aspect` identifier in a node must reference an aspect in that node's own `aspects` list.
+- Every aspect entry's `exceptions` field, if present, must be a list of non-empty strings.
 
 **Mapping uniqueness**: no two nodes may map to the same file or have overlapping directory
 mappings.
@@ -592,7 +596,8 @@ Given graph state:
 
 ```
 config.yaml
-model/orders/order-service/node.yaml aspects: [requires-audit]
+model/orders/order-service/node.yaml aspects:
+                                       - aspect: requires-audit
                                      relations: calls payments/payment-service
                                                         consumes: charge, refund
 

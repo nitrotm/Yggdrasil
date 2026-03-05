@@ -97,14 +97,12 @@ Node identity and all its outgoing connections.
 ```yaml
 name: OrderService # string, required
 type: service # string, required — from config.node_types
-aspects: [requires-audit, requires-auth] # list of strings, optional — aspect identifiers (directory paths under aspects/)
-aspect_exceptions: # list, optional — per-node deviations from aspect patterns
-  - aspect: requires-audit # string, required — must be in this node's aspects list
-    note: "Batch import skips per-record audit" # string, required — describes the deviation
-anchors: # map, optional — aspect id -> list of code patterns for staleness detection
-  requires-audit:
-    - auditLog
-    - createAuditEntry
+aspects: # list of objects, optional — unified aspect entries
+  - aspect: requires-audit # string, required — aspect identifier (directory path under aspects/)
+    exceptions: # list of strings, optional — per-node deviations from this aspect's pattern
+      - "Batch import skips per-record audit — emits single summary event instead"
+    anchors: [auditLog, createAuditEntry] # list of strings, optional — code patterns for staleness detection
+  - aspect: requires-auth # minimal entry — just the aspect identifier
 blackbox: false # bool, optional, default false
 
 relations: # list, optional
@@ -138,15 +136,13 @@ are hashed directly, directories are scanned recursively (respecting `.gitignore
 
 - `name` must be non-empty.
 - `type` must be a key in `config.node_types`.
-- Each aspect identifier must correspond to a directory under `aspects/`.
-- Each `aspect_exceptions[].aspect` must reference an aspect in this node's `aspects` list (E018).
+- Each aspect entry's `aspect` identifier must correspond to a directory under `aspects/`.
 - Each `relations[].target` must resolve to an existing node.
 - Each `relations[].type` must be from the table above.
 - Paths in `mapping.paths` must be relative to the repository root.
 - `mapping.paths` must be non-empty when `mapping` is present.
 - Mappings cannot overlap with mappings of other nodes.
-- `anchors`, if present, must be an object mapping aspect IDs (from this node's `aspects` list) to non-empty arrays of strings.
-- Each key in `anchors` must be present in the node's `aspects` list (E019).
+- `anchors` within an aspect entry, if present, must be a non-empty array of strings.
 - Anchor strings are validated against mapped source files: if an anchor is not found, a warning (W014) is emitted.
 
 ### aspect.yaml
@@ -929,7 +925,6 @@ Two levels of severity defined in the [Engine](engine) document.
 | `E015` | `missing-node-yaml`          | Directory in `model/` has files but no `node.yaml`     |
 | `E016` | `implied-aspect-missing`     | Identifier in aspect's `implies` has no corresponding aspect in `aspects/`           |
 | `E017` | `aspect-implies-cycle`       | Cycle in aspect implies graph (A implies B implies A)                                |
-| `E019` | `invalid-anchor-ref`         | Anchors key references aspect not in node's aspects list                             |
 
 **Warnings (completeness signals):**
 

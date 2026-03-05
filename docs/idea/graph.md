@@ -229,12 +229,11 @@ name: OrderService
 type: service
 
 aspects:
-  - requires-audit
-  - requires-auth
-
-aspect_exceptions:
   - aspect: requires-audit
-    note: "Batch import skips per-record audit — emits single summary event instead"
+    exceptions:
+      - "Batch import skips per-record audit — emits single summary event instead"
+    anchors: [auditLog, createAuditEntry]
+  - aspect: requires-auth
 
 relations:
   - target: payments/payment-service
@@ -255,8 +254,7 @@ mapping:
 | -------------------- | -------- | ------------------------------------------------------------ |
 | `name`               | Yes      | Display name                                                 |
 | `type`               | Yes      | Node type from `config.node_types`                           |
-| `aspects`            | No       | Aspect identifiers linking node to aspects                   |
-| `aspect_exceptions`  | No       | Per-node exceptions to aspect-level generalizations          |
+| `aspects`            | No       | Aspect entries with embedded exceptions and anchors          |
 | `relations`          | No       | Outgoing dependencies to other nodes                         |
 | `mapping`            | No       | Link to source files (see Mapping section)                   |
 | `blackbox`           | No       | If `true`, node describes something existing, not controlled |
@@ -454,8 +452,8 @@ Each aspect is bound to a single identifier. Aspects impose **obligations** and 
 **need identifiers** like `requires-audit`, `requires-auth`.
 
 When a node follows an aspect's general pattern but has specific deviations, these are recorded
-as `aspect_exceptions` in `node.yaml`. Each exception names the aspect and provides a note
-explaining the deviation. Exceptions appear in context packages alongside the aspect content,
+as `exceptions` within the aspect entry in `node.yaml`. Each exception is a string explaining
+the deviation. Exceptions appear in context packages alongside the aspect content,
 preventing aspect-level abstractions from masking implementation details. See the Node metadata
 section above for the YAML format.
 
