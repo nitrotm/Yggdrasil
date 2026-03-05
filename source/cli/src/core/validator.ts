@@ -1,8 +1,13 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import type { Graph, ValidationResult, ValidationIssue, ArtifactConfig } from '../model/types.js';
+import type { Graph, ValidationResult, ValidationIssue, ArtifactConfig, NodeAspectEntry } from '../model/types.js';
 import { buildContext, resolveAspects } from './context-builder.js';
 import { normalizeMappingPaths } from '../utils/paths.js';
+
+/** Extract flat aspect id list from unified aspect entries */
+function getAspectIds(aspects: NodeAspectEntry[] | undefined): string[] {
+  return (aspects ?? []).map(a => a.aspect);
+}
 
 /** Reserved directories that are NOT nodes (within model/) */
 const RESERVED_DIRS = new Set<string>();
@@ -37,7 +42,6 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
     issues.push(...checkImpliedAspectsExist(graph));
     issues.push(...checkImpliesNoCycles(graph));
     issues.push(...checkRequiredAspectsCoverage(graph));
-    issues.push(...checkAspectExceptions(graph));
     issues.push(...(await checkAnchorPresence(graph)));
     issues.push(...checkRequiredArtifacts(graph));
     issues.push(...checkInvalidArtifactConditions(graph));
@@ -175,7 +179,7 @@ function checkAspectsDefined(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const validAspectIds = new Set(graph.aspects.map((a) => a.id));
   for (const [nodePath, node] of graph.nodes) {
-    for (const aspectId of node.meta.aspects ?? []) {
+    for (const aspectId of getAspectIds(node.meta.aspects)) {
       if (!validAspectIds.has(aspectId)) {
         issues.push({
           severity: 'error',
@@ -303,10 +307,10 @@ function checkRequiredAspectsCoverage(graph: Graph): ValidationIssue[] {
     const requiredAspects = typeConfig.get(node.meta.type);
     if (!requiredAspects || requiredAspects.length === 0) continue;
 
-    const nodeAspects = node.meta.aspects ?? [];
+    const nodeAspectIds = getAspectIds(node.meta.aspects);
     let effectiveAspects;
     try {
-      effectiveAspects = resolveAspects(nodeAspects, graph.aspects);
+      effectiveAspects = resolveAspects(nodeAspectIds, graph.aspects);
     } catch {
       continue;
     }
@@ -319,27 +323,6 @@ function checkRequiredAspectsCoverage(graph: Graph): ValidationIssue[] {
           code: 'W011',
           rule: 'missing-required-aspect-coverage',
           message: `Node '${nodePath}' (type: ${node.meta.type}) missing required aspect coverage for '${required}'`,
-          nodePath,
-        });
-      }
-    }
-  }
-  return issues;
-}
-
-// --- Rule 3b: Aspect exceptions reference valid aspects ---
-
-function checkAspectExceptions(graph: Graph): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  for (const [nodePath, node] of graph.nodes) {
-    for (const exception of node.meta.aspect_exceptions ?? []) {
-      const nodeAspects = node.meta.aspects ?? [];
-      if (!nodeAspects.includes(exception.aspect)) {
-        issues.push({
-          severity: 'error',
-          code: 'E018',
-          rule: 'invalid-aspect-exception',
-          message: `aspect_exceptions references aspect '${exception.aspect}' which is not in this node's aspects list (${nodeAspects.join(', ') || 'none'})`,
           nodePath,
         });
       }
@@ -503,7 +486,7 @@ function artifactRequiredReason(
   graph: Graph,
   nodePath: string,
   node: {
-    meta: { relations?: Array<{ target: string }>; aspects?: string[]; blackbox?: boolean };
+    meta: { relations?: Array<{ target: string }>; aspects?: NodeAspectEntry[]; blackbox?: boolean };
     artifacts: Array<{ filename: string }>;
   },
   required: ArtifactConfig['required'],
@@ -526,7 +509,7 @@ function artifactRequiredReason(
   if (when.startsWith('has_aspect:') || when.startsWith('has_tag:')) {
     const prefix = when.startsWith('has_aspect:') ? 'has_aspect:' : 'has_tag:';
     const aspectId = when.slice(prefix.length);
-    return (node.meta.aspects ?? []).includes(aspectId) ? `node has aspect '${aspectId}'` : null;
+    return (node.meta.aspects ?? []).some(a => a.aspect === aspectId) ? `node has aspect '${aspectId}'` : null;
   }
   return null;
 }
@@ -856,23 +839,8 @@ async function checkAnchorPresence(graph: Graph): Promise<ValidationIssue[]> {
   const projectRoot = path.dirname(graph.rootPath);
 
   for (const [nodePath, node] of graph.nodes) {
-    const anchors = node.meta.anchors;
-    if (!anchors) continue;
-
-    const nodeAspects = new Set(node.meta.aspects ?? []);
-
-    // E019: anchor keys must reference aspects in this node's aspects list
-    for (const aspectId of Object.keys(anchors)) {
-      if (!nodeAspects.has(aspectId)) {
-        issues.push({
-          severity: 'error',
-          code: 'E019',
-          rule: 'invalid-anchor-ref',
-          message: `anchors references aspect '${aspectId}' which is not in this node's aspects list (${[...nodeAspects].join(', ') || 'none'})`,
-          nodePath,
-        });
-      }
-    }
+    const aspectsWithAnchors = (node.meta.aspects ?? []).filter(a => a.anchors && a.anchors.length > 0);
+    if (aspectsWithAnchors.length === 0) continue;
 
     // W014: check anchor strings exist in source files
     const mappingPaths = normalizeMappingPaths(node.meta.mapping);
@@ -881,27 +849,25 @@ async function checkAnchorPresence(graph: Graph): Promise<ValidationIssue[]> {
     const sourceFiles = await expandMappingToFiles(projectRoot, mappingPaths);
     if (sourceFiles.length === 0) continue;
 
-    // Read all source files once per node
     const fileContents: string[] = [];
     for (const filePath of sourceFiles) {
       try {
         const content = await readFile(filePath, 'utf-8');
         fileContents.push(content);
       } catch {
-        // Skip unreadable files (binary, encoding, permissions)
+        // Skip unreadable files
       }
     }
 
-    for (const [aspectId, anchorList] of Object.entries(anchors)) {
-      if (!nodeAspects.has(aspectId)) continue; // Already reported as E019
-      for (const anchor of anchorList) {
+    for (const entry of aspectsWithAnchors) {
+      for (const anchor of entry.anchors!) {
         const found = fileContents.some((content) => content.includes(anchor));
         if (!found) {
           issues.push({
             severity: 'warning',
             code: 'W014',
             rule: 'anchor-not-found',
-            message: `Anchor '${anchor}' for aspect '${aspectId}' not found in mapped source files`,
+            message: `Anchor '${anchor}' for aspect '${entry.aspect}' not found in mapped source files`,
             nodePath,
           });
         }
