@@ -84,7 +84,7 @@ artifacts:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('parses structural_context when present in artifact', async () => {
+  it('parses included_in_relations when present in artifact', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-structural');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
@@ -99,14 +99,14 @@ artifacts:
   interface:
     required: never
     description: "API"
-    structural_context: true
+    included_in_relations: true
 `,
       'utf-8',
     );
 
     const config = await parseConfig(path.join(tmpDir, 'config.yaml'));
-    expect(config.artifacts.interface.structural_context).toBe(true);
-    expect(config.artifacts.responsibility.structural_context).toBe(false);
+    expect(config.artifacts.interface.included_in_relations).toBe(true);
+    expect(config.artifacts.responsibility.included_in_relations).toBe(false);
 
     await rm(tmpDir, { recursive: true, force: true });
   });

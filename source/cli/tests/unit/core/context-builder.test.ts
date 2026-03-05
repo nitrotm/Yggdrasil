@@ -90,8 +90,8 @@ describe('context-builder', () => {
       node_types: [{ name: 'service' }],
       artifacts: {
         'responsibility.md': { required: 'always', description: 'x' },
-        'interface.md': { required: 'never', description: 'x', structural_context: true },
-        'errors.md': { required: 'never', description: 'x', structural_context: true },
+        'interface.md': { required: 'never', description: 'x', included_in_relations: true },
+        'errors.md': { required: 'never', description: 'x', included_in_relations: true },
         'description.md': { required: 'never', description: 'x' },
       },
     };
@@ -135,7 +135,7 @@ describe('context-builder', () => {
       expect(layer.content).toContain('### interface.md');
     });
 
-    it('uses structural_context artifacts when configured', () => {
+    it('uses included_in_relations artifacts when configured', () => {
       const configWithStructural = defaultConfig;
       const target: GraphNode = {
         path: 'dep/svc',
@@ -155,7 +155,7 @@ describe('context-builder', () => {
       expect(layer.content).toContain('E001');
     });
 
-    it('falls back to filterArtifactsByConfig when structural_context artifacts not in target', () => {
+    it('falls back to filterArtifactsByConfig when included_in_relations artifacts not in target', () => {
       const configWithStructural = {
         ...defaultConfig,
         artifacts: {
@@ -163,7 +163,7 @@ describe('context-builder', () => {
           'interface.md': {
             required: 'never' as const,
             description: 'x',
-            structural_context: true,
+            included_in_relations: true,
           },
         },
       };

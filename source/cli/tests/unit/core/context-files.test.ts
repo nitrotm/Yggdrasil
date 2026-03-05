@@ -118,14 +118,14 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // order-service uses auth/auth-api and users/user-repo
-    // Since the fixture config has no structural_context artifacts,
+    // Since the fixture config has no included_in_relations artifacts,
     // it falls back to all config-allowed artifacts on the target
     expect(paths).toContain('.yggdrasil/model/auth/auth-api/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/users/user-repo/responsibility.md');
   });
 
-  it('uses structural_context artifacts when configured', () => {
-    // Build a synthetic graph where config has structural_context
+  it('uses included_in_relations artifacts when configured', () => {
+    // Build a synthetic graph where config has included_in_relations
     const target: GraphNode = {
       path: 'dep/svc',
       meta: { name: 'DepSvc', type: 'service' },
@@ -156,7 +156,7 @@ describe('collectTrackedFiles', () => {
         node_types: [{ name: 'service' }],
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
-          'interface.md': { required: 'never', description: 'x', structural_context: true },
+          'interface.md': { required: 'never', description: 'x', included_in_relations: true },
           'description.md': { required: 'never', description: 'x' },
         },
       },
@@ -173,7 +173,7 @@ describe('collectTrackedFiles', () => {
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    // Should include only the structural_context artifact from dep
+    // Should include only the included_in_relations artifact from dep
     expect(paths).toContain('.yggdrasil/model/dep/svc/interface.md');
     // Should NOT include non-structural artifacts from the dep
     expect(paths).not.toContain('.yggdrasil/model/dep/svc/responsibility.md');

@@ -27,13 +27,13 @@ describe('default-config', () => {
     expect(names).toContain('library');
   });
 
-  it('DEFAULT_CONFIG responsibility and interface have structural_context, internals does not', () => {
+  it('DEFAULT_CONFIG responsibility and interface have included_in_relations, internals does not', () => {
     const parsed = parseYaml(DEFAULT_CONFIG) as {
-      artifacts: Record<string, { structural_context?: boolean }>;
+      artifacts: Record<string, { included_in_relations?: boolean }>;
     };
-    expect(parsed.artifacts['responsibility.md'].structural_context).toBe(true);
-    expect(parsed.artifacts['interface.md'].structural_context).toBe(true);
-    expect(parsed.artifacts['internals.md'].structural_context).toBeUndefined();
+    expect(parsed.artifacts['responsibility.md'].included_in_relations).toBe(true);
+    expect(parsed.artifacts['interface.md'].included_in_relations).toBe(true);
+    expect(parsed.artifacts['internals.md'].included_in_relations).toBeUndefined();
   });
 
   it('DEFAULT_CONFIG node_types includes infrastructure', () => {
