@@ -1,6 +1,8 @@
 
 name: "NoKC"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always

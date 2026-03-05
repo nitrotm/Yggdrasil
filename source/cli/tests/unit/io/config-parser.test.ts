@@ -21,7 +21,7 @@ describe('config-parser', () => {
     expect(typeof config.standards).toBe('string');
     expect(config.standards).toContain('ESLint');
     expect(config.quality?.context_budget.warning).toBe(8000);
-    expect(config.node_types.some((t) => t.name === 'service')).toBe(true);
+    expect(config.node_types['service']).toBeDefined();
     expect(config.artifacts['responsibility.md']).toBeDefined();
   });
 
@@ -45,7 +45,9 @@ describe('config-parser', () => {
     await writeFile(
       badConfigPath,
       `
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -69,7 +71,9 @@ artifacts:
       minimalConfigPath,
       `
 name: "Minimal Config"
-node_types: [module]
+node_types:
+  module:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -91,7 +95,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Structural"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -124,7 +130,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Reserved"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   node.yaml:
     required: always
@@ -150,7 +158,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Invalid"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: invalid_value
@@ -173,7 +183,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "InvalidWhen"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required:
@@ -197,7 +209,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Budget"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -217,14 +231,14 @@ quality:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('throws when node_types is not array', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-types-not-array');
+  it('throws when node_types is not an object', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-types-not-object');
     await mkdir(tmpDir, { recursive: true });
     await writeFile(
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Bad"
-node_types: "not-array"
+node_types: "not-object"
 artifacts:
   responsibility:
     required: always
@@ -234,7 +248,7 @@ artifacts:
     );
 
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "'node_types' must be a non-empty array",
+      "'node_types' must be a non-empty object",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -247,7 +261,7 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Bad"
-node_types: []
+node_types: {}
 artifacts:
   responsibility:
     required: always
@@ -257,13 +271,13 @@ artifacts:
     );
 
     await expect(parseConfig(path.join(tmpDir, 'config.yaml'))).rejects.toThrow(
-      "'node_types' must be a non-empty array",
+      "'node_types' must be a non-empty object",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('parses node_types with name and required_aspects', async () => {
+  it('parses node_types with description and required_aspects', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-node-types');
     await mkdir(tmpDir, { recursive: true });
     const configPath = path.join(tmpDir, 'config.yaml');
@@ -272,8 +286,10 @@ artifacts:
       `
 name: T
 node_types:
-  - name: module
-  - name: service
+  module:
+    description: business logic unit
+  service:
+    description: component providing functionality
     required_aspects: [requires-audit]
 artifacts:
   responsibility.md:
@@ -283,30 +299,8 @@ artifacts:
       'utf-8',
     );
     const cfg = await parseConfig(configPath);
-    expect(cfg.node_types).toHaveLength(2);
-    expect(cfg.node_types[0]).toEqual({ name: 'module' });
-    expect(cfg.node_types[1]).toEqual({ name: 'service', required_aspects: ['requires-audit'] });
-    await rm(tmpDir, { recursive: true, force: true });
-  });
-
-  it('accepts legacy node_types as string array', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-legacy-types');
-    await mkdir(tmpDir, { recursive: true });
-    const configPath = path.join(tmpDir, 'config.yaml');
-    await writeFile(
-      configPath,
-      `
-name: T
-node_types: [module, service]
-artifacts:
-  responsibility.md:
-    required: always
-    description: x
-`,
-      'utf-8',
-    );
-    const cfg = await parseConfig(configPath);
-    expect(cfg.node_types).toEqual([{ name: 'module' }, { name: 'service' }]);
+    expect(cfg.node_types['module']).toEqual({ description: 'business logic unit' });
+    expect(cfg.node_types['service']).toEqual({ description: 'component providing functionality', required_aspects: ['requires-audit'] });
     await rm(tmpDir, { recursive: true, force: true });
   });
 
@@ -317,7 +311,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "Bad"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts: []
 `,
       'utf-8',
@@ -337,7 +333,9 @@ artifacts: []
       path.join(tmpDir, 'config.yaml'),
       `
 name: "NoDesc"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -358,7 +356,9 @@ artifacts:
       path.join(tmpDir, 'config.yaml'),
       `
 name: "HasAspect"
-node_types: [service]
+node_types:
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always
@@ -377,7 +377,7 @@ artifacts:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('throws when node_types entry is neither string nor valid object', async () => {
+  it('throws when node_types entry has missing description', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-bad-type-entry');
     await mkdir(tmpDir, { recursive: true });
     const configPath = path.join(tmpDir, 'config.yaml');
@@ -386,7 +386,7 @@ artifacts:
       `
 name: "BadEntry"
 node_types:
-  - 42
+  service: {}
 artifacts:
   responsibility.md:
     required: always
@@ -396,7 +396,7 @@ artifacts:
     );
 
     await expect(parseConfig(configPath)).rejects.toThrow(
-      'node_types entry must be string or { name, required_aspects? }',
+      "node_types.service must have a non-empty 'description' string",
     );
 
     await rm(tmpDir, { recursive: true, force: true });
@@ -410,7 +410,9 @@ artifacts:
       configPath,
       `
 name: "Bare Config"
-node_types: [module]
+node_types:
+  module:
+    description: x
 artifacts:
   responsibility:
     required: always

@@ -12,7 +12,7 @@ function makeConfig(overrides?: Partial<YggConfig>): YggConfig {
     name: 'test',
     stack: {},
     standards: '',
-    node_types: [{ name: 'service' }],
+    node_types: { service: { description: 'x' } },
     artifacts: {},
     ...overrides,
   };

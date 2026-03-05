@@ -47,7 +47,7 @@ function createGraph(overrides: Partial<Graph> = {}): Graph {
       name: 'Test',
       stack: {},
       standards: '',
-      node_types: [{ name: 'service' }],
+      node_types: { service: { description: 'x' } },
       artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
     },
     nodes: new Map(),
@@ -173,7 +173,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }, { name: 'infrastructure' }],
+        node_types: { service: { description: 'x' }, infrastructure: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
@@ -193,7 +193,7 @@ describe('validator', () => {
     await mkdir(badNodeDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
     await writeFile(path.join(badNodeDir, 'node.yaml'), 'type: service\n# missing name');
 
@@ -231,7 +231,7 @@ describe('validator', () => {
     await mkdir(serviceDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
     await writeFile(path.join(serviceDir, 'node.yaml'), 'name: Svc\ntype: service\n');
     await writeFile(path.join(orphanDir, 'readme.md'), '# orphan content');
@@ -258,7 +258,7 @@ describe('validator', () => {
     await mkdir(childDir, { recursive: true });
     await writeFile(
       path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
     await writeFile(path.join(childDir, 'node.yaml'), 'name: Child\ntype: service\n');
     await writeFile(path.join(childDir, 'responsibility.md'), 'Child responsibility content here — enough to pass.');
@@ -296,7 +296,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: { required: 'never', description: '' },
@@ -400,7 +400,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
@@ -413,10 +413,10 @@ describe('validator', () => {
 
   it('non-regression: does not enforce node/relation vocabulary', async () => {
     const graph = createGraph();
-    graph.config.node_types = [
-      { name: 'totally-custom-type' },
-      { name: 'another-custom-type' },
-    ];
+    graph.config.node_types = {
+      'totally-custom-type': { description: 'x' },
+      'another-custom-type': { description: 'x' },
+    };
     graph.nodes.set(
       'strange/node',
       createNode('strange/node', {
@@ -438,7 +438,7 @@ describe('validator', () => {
 
   it('non-regression: does not require interface.yaml by node type', async () => {
     const graph = createGraph();
-    graph.config.node_types = [{ name: 'service' }, { name: 'api' }];
+    graph.config.node_types = { service: { description: 'x' }, api: { description: 'x' } };
     graph.nodes.set('api/no-interface', {
       ...createNode('api/no-interface', { type: 'api' }),
       artifacts: [{ filename: 'responsibility.md', content: 'x' }],
@@ -621,7 +621,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           interface: {
@@ -645,7 +645,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: {
@@ -758,7 +758,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -787,7 +787,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -817,7 +817,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -845,7 +845,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           interface: {
@@ -870,7 +870,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: {
@@ -894,7 +894,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -999,7 +999,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service', required_aspects: ['requires-audit'] }],
+        node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
@@ -1018,7 +1018,7 @@ describe('validator', () => {
         name: 'Test',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service', required_aspects: ['requires-audit'] }],
+        node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       aspects: [

@@ -3,8 +3,10 @@ stack:
   language: TypeScript
 standards: ''
 node_types:
-  - module
-  - service
+  module:
+    description: x
+  service:
+    description: x
 artifacts:
   responsibility:
     required: always

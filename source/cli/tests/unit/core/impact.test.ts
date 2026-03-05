@@ -24,7 +24,7 @@ function makeGraph(nodes: GraphNode[]): Graph {
       name: 'Test',
       stack: {},
       standards: '',
-      node_types: [{ name: 'service' }],
+      node_types: { service: { description: 'x' } },
       artifacts: {},
     },
     nodes: new Map(nodes.map((n) => [n.path, n])),

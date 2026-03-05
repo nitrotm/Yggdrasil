@@ -153,7 +153,7 @@ describe('collectTrackedFiles', () => {
         name: 'T',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': { required: 'never', description: 'x', included_in_relations: true },
@@ -202,7 +202,7 @@ describe('collectTrackedFiles', () => {
         name: 'T',
         stack: {},
         standards: '',
-        node_types: [{ name: 'module' }, { name: 'service' }],
+        node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([
@@ -284,7 +284,7 @@ describe('collectTrackedFiles', () => {
         name: 'T',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([
@@ -321,7 +321,7 @@ describe('collectTrackedFiles', () => {
         name: 'T',
         stack: {},
         standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([['my/svc', node]]),
@@ -358,7 +358,7 @@ describe('collectTrackedFiles', () => {
         name: 'T',
         stack: {},
         standards: '',
-        node_types: [{ name: 'module' }, { name: 'service' }],
+        node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([

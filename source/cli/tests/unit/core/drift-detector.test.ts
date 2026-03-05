@@ -81,7 +81,7 @@ async function createTmpProject(
   await writeFile(
     path.join(yggRoot, 'config.yaml'),
     opts.configYaml ??
-      'name: Test\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
+      'name: Test\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
   );
   await writeFile(path.join(yggRoot, '.drift-state'), '{}');
 
@@ -632,7 +632,7 @@ mapping:
       await mkdir(childNodeDir, { recursive: true });
       await writeFile(
         path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [module]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
+        'name: Test\nnode_types:\n  module:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
       );
       await writeFile(path.join(yggRoot, '.drift-state'), '{}');
       await writeFile(

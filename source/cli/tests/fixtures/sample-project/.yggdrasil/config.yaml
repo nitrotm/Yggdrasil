@@ -12,9 +12,12 @@ standards: |
   Jest as test framework. Test coverage target: 80%.
 
 node_types:
-  - module
-  - service
-  - repository
+  module:
+    description: x
+  service:
+    description: x
+  repository:
+    description: x
 
 artifacts:
   responsibility.md:
