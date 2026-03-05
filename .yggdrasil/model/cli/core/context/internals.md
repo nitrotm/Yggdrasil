@@ -11,7 +11,7 @@
 3. **Own** — node.yaml (read from disk) + filtered artifacts
 4. **Relational** — for each relation: structural (uses/calls/extends/implements) → buildStructuralRelationLayer (consumes, failure, included_in_relations artifacts); event (emits/listens) → buildEventRelationLayer
 5. **Flows** — flows where node or ancestor in flow.nodes; for each flow: flow artifacts
-6. **Aspects** — union of aspect ids from hierarchy + own + flow layers (expanded via implies); for each resolved aspect, check `node.meta.aspect_exceptions` for a matching entry and pass any exception note to `buildAspectLayer`
+6. **Aspects** — union of aspect ids from hierarchy + own + flow layers (expanded via implies); for each resolved aspect, look up the matching entry in `node.meta.aspects` and join its `exceptions` array (if any) to pass as exception note to `buildAspectLayer`
 
 Implementation note: steps 4–5 execute before step 6 internally so that flow-propagated aspect ids can be collected. buildSections reorders the output to match the spec: Global → Hierarchy → OwnArtifacts → Aspects → Relational (which merges structural deps, events, and flows).
 
@@ -31,9 +31,9 @@ Structural relations get interface/errors from target (included_in_relations). E
 
 ## Aspect Exceptions
 
-When building aspect layers, the builder checks `node.meta.aspect_exceptions` for each resolved aspect. If an exception entry matches the aspect id, the exception's `note` is passed to `buildAspectLayer`, which appends it to the aspect content as a warning block. This prevents aspect generalizations from masking node-specific deviations (e.g., a node that awaits a call where the aspect says fire-and-forget).
+When building aspect layers, the builder looks up each resolved aspect in `node.meta.aspects` by matching `entry.aspect === aspect.id`. If found and the entry has `exceptions`, they are joined with '; ' and passed to `buildAspectLayer` as the exception note, which appends it as a warning block. This prevents aspect generalizations from masking node-specific deviations.
 
-`buildAspectLayer` also includes aspect metadata in the output when present: stability tier (from `aspect.stability`) as a "Stability tier" line. This appears after the artifact content and before the exception note. Code anchors are no longer part of `AspectDef` — they live in `node.yaml` under `anchors` and are validated by `cli/core/validator` (E019, W014) rather than included in context output.
+`buildAspectLayer` also includes aspect metadata in the output when present: stability tier (from `aspect.stability`) as a "Stability tier" line. This appears after the artifact content and before the exception note. Code anchors live in `node.yaml` embedded in aspect entries (`anchors` field) and are validated by `cli/core/validator` (W014) rather than included in context output.
 
 ## Constraints
 
