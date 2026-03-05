@@ -53,11 +53,13 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "ignore": "^7.0.5",
+    "semver": "^7.7.4",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.0",
+    "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^10.0.1",
     "prettier": "^3.8.1",
