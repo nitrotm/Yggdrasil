@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-03-05
+
 ### Changed
 
 - **Renamed `structural_context` → `included_in_relations`** in artifact configuration. Clearer name
