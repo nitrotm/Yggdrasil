@@ -3,7 +3,7 @@
 // ============================================================
 
 export interface NodeTypeConfig {
-  name: string;
+  description: string;
   required_aspects?: string[];
 }
 
@@ -11,7 +11,7 @@ export interface YggConfig {
   name: string;
   stack: Record<string, string>;
   standards: string;
-  node_types: NodeTypeConfig[];
+  node_types: Record<string, NodeTypeConfig>;
   artifacts: Record<string, ArtifactConfig>;
   quality?: QualityConfig;
 }

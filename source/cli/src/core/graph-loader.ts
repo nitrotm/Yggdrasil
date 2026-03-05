@@ -24,7 +24,7 @@ const FALLBACK_CONFIG: YggConfig = {
   name: '',
   stack: {},
   standards: '',
-  node_types: [],
+  node_types: {},
   artifacts: {},
 };
 

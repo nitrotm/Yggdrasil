@@ -5,7 +5,7 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## config-parser.ts
 
 - `parseConfig(filePath: string): Promise<YggConfig>`
-  - Reads and parses config.yaml. Throws on missing name, invalid node_types, invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Returns parsed config with quality defaults.
+  - Reads and parses config.yaml. Throws on missing name, invalid node_types (must be non-empty object keyed by type name, each entry must have non-empty description string), invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Returns parsed config with quality defaults.
 
 ## node-parser.ts
 
@@ -51,7 +51,7 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 
 Parsers and stores throw `Error` on invalid input. No dedicated error codes — standard Error with descriptive message.
 
-**config-parser:** Missing name, invalid node_types, invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Propagates ENOENT, EACCES from readFile.
+**config-parser:** Missing name, invalid node_types (not a non-empty object, entries missing description), invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Propagates ENOENT, EACCES from readFile.
 
 **node-parser:** Missing name/type, invalid relations (non-array, invalid type, missing target), invalid mapping (paths must be relative, non-empty, no leading slash), invalid aspect_exceptions (non-array, entries without aspect/note, aspect id not in node's aspects list), invalid anchors (not an object, values not non-empty arrays of strings). Propagates ENOENT, EACCES from readFile.
 

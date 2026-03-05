@@ -93,7 +93,7 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
 
 function checkNodeTypes(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const allowedTypes = new Set((graph.config.node_types ?? []).map((t) => t.name));
+  const allowedTypes = new Set(Object.keys(graph.config.node_types ?? {}));
   for (const [nodePath, node] of graph.nodes) {
     if (!allowedTypes.has(node.meta.type)) {
       issues.push({
@@ -296,7 +296,7 @@ function checkImpliesNoCycles(graph: Graph): ValidationIssue[] {
 function checkRequiredAspectsCoverage(graph: Graph): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const typeConfig = new Map(
-    (graph.config.node_types ?? []).map((t) => [t.name, t.required_aspects ?? []]),
+    Object.entries(graph.config.node_types ?? {}).map(([name, cfg]) => [name, cfg.required_aspects ?? []]),
   );
   for (const [nodePath, node] of graph.nodes) {
     if (node.meta.blackbox) continue;

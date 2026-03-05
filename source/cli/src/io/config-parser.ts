@@ -26,32 +26,31 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
   }
 
   const nodeTypesRaw = raw.node_types;
-  if (!Array.isArray(nodeTypesRaw) || nodeTypesRaw.length === 0) {
-    throw new Error(`config.yaml: 'node_types' must be a non-empty array`);
+  if (
+    !nodeTypesRaw ||
+    typeof nodeTypesRaw !== 'object' ||
+    Array.isArray(nodeTypesRaw) ||
+    Object.keys(nodeTypesRaw).length === 0
+  ) {
+    throw new Error(`config.yaml: 'node_types' must be a non-empty object`);
   }
-  const nodeTypes: NodeTypeConfig[] = nodeTypesRaw.map((item) => {
-    if (typeof item === 'string') {
-      return { name: item };
+
+  const nodeTypes: Record<string, NodeTypeConfig> = {};
+  for (const [typeName, val] of Object.entries(nodeTypesRaw)) {
+    const entry = val as Record<string, unknown>;
+    if (!entry || typeof entry !== 'object' || typeof entry.description !== 'string' || entry.description.trim() === '') {
+      throw new Error(
+        `config.yaml: node_types.${typeName} must have a non-empty 'description' string`,
+      );
     }
-    if (
-      typeof item === 'object' &&
-      item !== null &&
-      'name' in item &&
-      typeof (item as { name: unknown }).name === 'string'
-    ) {
-      const obj = item as { name: string; required_aspects?: unknown };
-      const requiredAspects = Array.isArray(obj.required_aspects)
-        ? (obj.required_aspects as unknown[]).filter((t): t is string => typeof t === 'string')
-        : undefined;
-      return {
-        name: obj.name,
-        required_aspects: requiredAspects && requiredAspects.length > 0 ? requiredAspects : undefined,
-      };
-    }
-    throw new Error(
-      `config.yaml: node_types entry must be string or { name, required_aspects? }`,
-    );
-  });
+    const requiredAspects = Array.isArray(entry.required_aspects)
+      ? (entry.required_aspects as unknown[]).filter((t): t is string => typeof t === 'string')
+      : undefined;
+    nodeTypes[typeName] = {
+      description: entry.description as string,
+      required_aspects: requiredAspects && requiredAspects.length > 0 ? requiredAspects : undefined,
+    };
+  }
 
   const artifacts = raw.artifacts;
   if (
