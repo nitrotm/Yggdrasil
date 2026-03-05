@@ -20,4 +20,4 @@ try {
 
 ## Rationale
 
-A fresh or partially initialized `.yggdrasil/` directory is valid. The absence of optional directories signals "nothing configured yet", not corruption. This enables incremental adoption -- users can start with just `config.yaml` and `model/`.
+A fresh or partially initialized `.yggdrasil/` directory is valid. The absence of optional directories signals "nothing configured yet", not corruption. This enables incremental adoption -- users can start with just `yg-config.yaml` and `model/`.

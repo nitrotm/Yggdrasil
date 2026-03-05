@@ -26,7 +26,7 @@ Graph loads; validator runs all checks. Output: list of issues (errors first, th
 
 ### Config parse error
 
-`config.yaml` fails to parse. Loader sets `configError`; validator reports E012. Validation continues for other checks where possible. Exit 1.
+`yg-config.yaml` fails to parse. Loader sets `configError`; validator reports E012. Validation continues for other checks where possible. Exit 1.
 
 ### Scope node not found
 

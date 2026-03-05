@@ -48,7 +48,7 @@ Model is a TypeScript type library — it contains no executable code and does n
 - **Graph** — Root container: config, nodes (Map by path), aspects, flows, schemas, rootPath. Optional configError and nodeParseErrors.
 - **GraphNode** — A node in the model tree: path, meta (NodeMeta), nodeYamlRaw, artifacts, children, parent.
 - **NodeAspectEntry** — Unified aspect entry for a node: `{ aspect: string; exceptions?: string[]; anchors?: string[] }`. Each entry links a node to an aspect with optional per-node exceptions and code anchors.
-- **NodeMeta** — Parsed node.yaml: name, type, optional aspects (NodeAspectEntry[]), blackbox, relations, mapping.
+- **NodeMeta** — Parsed yg-node.yaml: name, type, optional aspects (NodeAspectEntry[]), blackbox, relations, mapping.
 - **Relation** — Typed edge: target path, RelationType, optional consumes, failure, event_name.
 - **RelationType** — Union: uses | calls | extends | implements | emits | listens.
 

@@ -1,4 +1,4 @@
-# yg-aspect.yaml — Schema for cross-cutting aspects
+# yg-yg-aspect.yaml — Schema for cross-cutting aspects
 # Each aspect is a directory under .yggdrasil/aspects/ containing this file
 # plus any number of .md content files (requirements, rationale, guidance).
 # Aspect identifier = relative path from aspects/ to the directory (e.g. observability/logging).

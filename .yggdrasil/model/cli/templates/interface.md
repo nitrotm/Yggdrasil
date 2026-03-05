@@ -4,7 +4,7 @@ Public API consumed by cli/commands/init.
 
 ## default-config.ts
 
-- `DEFAULT_CONFIG: string` — YAML string for default config.yaml (name, node_types with module/service/library/infrastructure, 3 artifacts: responsibility.md, interface.md, internals.md, quality thresholds)
+- `DEFAULT_CONFIG: string` — YAML string for default yg-config.yaml (name, node_types with module/service/library/infrastructure, 3 artifacts: responsibility.md, interface.md, internals.md, quality thresholds)
 
 ## platform.ts
 
@@ -21,7 +21,7 @@ Platform paths: Cursor (.cursor/rules/yggdrasil.mdc), Claude Code (CLAUDE.md + i
 
 ## graph-schemas/
 
-Directory (source/cli/graph-schemas/) — node.yaml, aspect.yaml, flow.yaml. Schemas for each graph layer. Copied to .yggdrasil/schemas/ during init. Not imported directly; init reads via readdir/readFile.
+Directory (source/cli/graph-schemas/) — yg-node.yaml, yg-aspect.yaml, yg-flow.yaml. Schemas for each graph layer. Copied to .yggdrasil/schemas/ during init. Not imported directly; init reads via readdir/readFile.
 
 ## Failure Modes
 

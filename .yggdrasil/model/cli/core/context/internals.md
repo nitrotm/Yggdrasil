@@ -6,9 +6,9 @@
 
 ## Sequence
 
-1. **Global** — config.yaml: project name
+1. **Global** — yg-config.yaml: project name
 2. **Hierarchy** — collectAncestors from node.parent up to root; for each ancestor, filter artifacts by config, build hierarchy layer
-3. **Own** — node.yaml (read from disk) + filtered artifacts
+3. **Own** — yg-node.yaml (read from disk) + filtered artifacts
 4. **Relational** — for each relation: structural (uses/calls/extends/implements) → buildStructuralRelationLayer (consumes, failure, included_in_relations artifacts); event (emits/listens) → buildEventRelationLayer
 5. **Flows** — flows where node or ancestor in flow.nodes; for each flow: flow artifacts
 6. **Aspects** — union of aspect ids from hierarchy + own + flow layers (expanded via implies); for each resolved aspect, look up the matching entry in `node.meta.aspects` and join its `exceptions` array (if any) to pass as exception note to `buildAspectLayer`
@@ -33,7 +33,7 @@ Structural relations get interface/errors from target (included_in_relations). E
 
 When building aspect layers, the builder looks up each resolved aspect in `node.meta.aspects` by matching `entry.aspect === aspect.id`. If found and the entry has `exceptions`, they are joined with '; ' and passed to `buildAspectLayer` as the exception note, which appends it as a warning block. This prevents aspect generalizations from masking node-specific deviations.
 
-`buildAspectLayer` also includes aspect metadata in the output when present: stability tier (from `aspect.stability`) as a "Stability tier" line. This appears after the artifact content and before the exception note. Code anchors live in `node.yaml` embedded in aspect entries (`anchors` field) and are validated by `cli/core/validator` (W014) rather than included in context output.
+`buildAspectLayer` also includes aspect metadata in the output when present: stability tier (from `aspect.stability`) as a "Stability tier" line. This appears after the artifact content and before the exception note. Code anchors live in `yg-node.yaml` embedded in aspect entries (`anchors` field) and are validated by `cli/core/validator` (W014) rather than included in context output.
 
 ## Constraints
 
@@ -51,4 +51,4 @@ When building aspect layers, the builder looks up each resolved aspect in `node.
 
 **Five layers in that specific order:** The assembly proceeds from most general (global config: project name) to most specific (relational context for direct dependencies). Each layer adds precision without repeating the previous. Global sets the project frame, hierarchy provides domain context, own artifacts define the node itself, relational context describes integration points, and aspects add cross-cutting requirements.
 
-**included_in_relations flag gates relational inclusion:** Without this flag, every dependency would include all its artifacts in the consuming node's context, causing excessive token usage. The flag allows config.yaml to declare which artifacts (e.g., interface.md, errors.md) carry the integration-relevant information. Only those are included for structural relations. If no structural artifacts exist on the target, all configured artifacts are included as fallback.
+**included_in_relations flag gates relational inclusion:** Without this flag, every dependency would include all its artifacts in the consuming node's context, causing excessive token usage. The flag allows yg-config.yaml to declare which artifacts (e.g., interface.md, errors.md) carry the integration-relevant information. Only those are included for structural relations. If no structural artifacts exist on the target, all configured artifacts are included as fallback.

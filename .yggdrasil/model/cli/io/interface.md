@@ -5,7 +5,7 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## config-parser.ts
 
 - `parseConfig(filePath: string): Promise<YggConfig>`
-  - Reads and parses config.yaml. Throws on missing name, invalid node_types (must be non-empty object keyed by type name, each entry must have non-empty description string), invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Returns parsed config with quality defaults.
+  - Reads and parses yg-config.yaml. Throws on missing name, invalid node_types (must be non-empty object keyed by type name, each entry must have non-empty description string), invalid artifacts (reserved name `node`, invalid required.when), invalid quality (context_budget.error < warning). Returns parsed config with quality defaults.
 
 ## node-parser.ts
 
@@ -16,22 +16,22 @@ Library used by cli/core (loader, drift-detector) and cli/commands (journal). Al
 ## aspect-parser.ts
 
 - `parseAspect(aspectDir: string, aspectYamlPath: string, id: string): Promise<AspectDef>`
-  - Throws on missing name or empty id. Parses optional `stability` (must be one of: schema, protocol, implementation). Reads artifacts from aspectDir excluding aspect.yaml.
+  - Throws on missing name or empty id. Parses optional `stability` (must be one of: schema, protocol, implementation). Reads artifacts from aspectDir excluding yg-aspect.yaml.
 
 ## flow-parser.ts
 
 - `parseFlow(flowDir: string, flowYamlPath: string): Promise<FlowDef>`
-  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
+  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding yg-flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
 
 ## schema-parser.ts
 
 - `parseSchema(filePath: string): Promise<SchemaDef>`
-  - Validates file is parseable YAML. Infers `schemaType` from filename stem (e.g. `node.yaml` → `'node'`). Used by `loadSchemas` in cli/core/loader.
+  - Validates file is parseable YAML. Infers `schemaType` from filename stem (e.g. `yg-node.yaml` → `'node'`). Used by `loadSchemas` in cli/core/loader.
 
 ## artifact-reader.ts
 
 - `readArtifacts(dirPath: string, excludeFiles?: string[], includeFiles?: string[]): Promise<Artifact[]>`
-  - excludeFiles default: `['node.yaml']`. If includeFiles provided, only those files included. Returns sorted by filename. Skips non-files.
+  - excludeFiles default: `['yg-node.yaml']`. If includeFiles provided, only those files included. Returns sorted by filename. Skips non-files.
 
 ## drift-state-store.ts
 
