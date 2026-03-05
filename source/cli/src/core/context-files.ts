@@ -101,16 +101,16 @@ export function collectTrackedFiles(node: GraphNode, graph: Graph): TrackedFile[
 
     // Determine which artifacts to include from the target
     const structuralFilenames = Object.entries(graph.config.artifacts ?? {})
-      .filter(([, c]) => c.structural_context)
+      .filter(([, c]) => c.included_in_relations)
       .map(([filename]) => filename);
 
-    // Check if the target actually has any of the structural_context artifacts
+    // Check if the target actually has any of the included_in_relations artifacts
     const structuralArts = structuralFilenames.filter((filename) =>
       target.artifacts.some((a) => a.filename === filename),
     );
 
     if (structuralArts.length > 0) {
-      // Use only structural_context artifacts that exist on target
+      // Use only included_in_relations artifacts that exist on target
       for (const filename of structuralArts) {
         addFile(graphPath('model', target.path, filename), 'graph');
       }

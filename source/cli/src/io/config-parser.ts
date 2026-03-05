@@ -95,7 +95,7 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
     artifactsMap[key] = {
       required: required as ArtifactConfig['required'],
       description: (a.description as string) ?? '',
-      structural_context: (a.structural_context as boolean) ?? false,
+      included_in_relations: (a.included_in_relations as boolean) ?? false,
     };
   }
 

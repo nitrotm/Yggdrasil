@@ -20,7 +20,7 @@ export interface ArtifactConfig {
   required: 'always' | 'never' | { when: string };
   description: string;
   /** When true, include this artifact when building dependency context for structural relations */
-  structural_context?: boolean;
+  included_in_relations?: boolean;
 }
 
 export interface QualityConfig {

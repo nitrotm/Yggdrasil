@@ -237,7 +237,7 @@ export function buildStructuralRelationLayer(
   }
 
   const structuralArtifactFilenames = Object.entries(config.artifacts ?? {})
-    .filter(([, c]) => c.structural_context)
+    .filter(([, c]) => c.included_in_relations)
     .map(([filename]) => filename);
 
   const structuralArts = structuralArtifactFilenames
