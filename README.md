@@ -14,7 +14,7 @@ Your AI agent forgets everything between sessions. Yggdrasil makes it remember.
 
 ---
 
-## The problem
+## The problem you already know
 
 Your AI agent works great on day one. Then the project grows and the agent starts breaking things. It doesn't know about rules that live in files it never read. It forgets decisions you explained last session. It duplicates code that already exists.
 
