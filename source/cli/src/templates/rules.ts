@@ -200,7 +200,7 @@ Per area checklist:
 - [ ] 4. Analyze source — for each artifact type in \`config.artifacts\`: extract content, do not invent
 - [ ] 5. Identify relations — add to \`node.yaml\`
 - [ ] 6. Identify cross-cutting requirements — add matching aspects, create if needed
-- [ ] 6b. For each aspect on the node: identify 2-5 code anchors (function names, constants) that evidence the pattern → add to \`node.yaml\` \`anchors\` field
+- [ ] 6b. For each aspect on the node: identify 2-5 code anchors (function names, constants) that evidence the pattern → add as \`anchors\` in the aspect entry in \`node.yaml\`
 - [ ] 7. Identify business process participation — add to flow, ask user if process unclear
 - [ ] 8. \`yg validate\` — fix errors
 - [ ] 9. \`yg drift-sync --node <path>\`
@@ -250,7 +250,7 @@ When reviewing graph quality (triggered by user or quality improvement):
 - [ ] 1. \`yg build-context --node <path>\`
 - [ ] 2. Read mapped source files
 - [ ] 3. For each claim in graph: verify against source code
-- [ ] 4. For each aspect: verify the pattern holds in THIS node. If it deviates, add \`aspect_exceptions\` in \`node.yaml\`
+- [ ] 4. For each aspect: verify the pattern holds in THIS node. If it deviates, add \`exceptions\` to the aspect entry in \`node.yaml\`
 - [ ] 5. Report inconsistencies
 
 **Step 2 — Completeness** (catches MISSING information):
@@ -335,7 +335,7 @@ Test: "Does this requirement apply to more than one node?" Yes → aspect. No �
 - **Architectural:** Structural patterns with rationale (e.g., dual-rollback on provider failure, idempotency via key generation, fire-and-forget dispatch)
 - **Concurrency:** Shared concurrency strategies (e.g., pessimistic locking, retry-on-deadlock, optimistic versioning)
 
-When a node follows an aspect's pattern with exceptions, record exceptions in \`node.yaml\` under \`aspect_exceptions\`. Example: aspect says "fire-and-forget" but this node awaits the publish call. The exception appears in the context package next to the aspect content, preventing abstractions from masking implementation details.
+When a node follows an aspect's pattern with exceptions, record them in the \`exceptions\` field of the aspect entry in \`node.yaml\`. Example: aspect says "fire-and-forget" but this node awaits the publish call — add \`exceptions: ["awaits publish call instead of fire-and-forget because..."]\`. Exceptions appear in the context package next to the aspect content, preventing abstractions from masking implementation details.
 
 **Aspect lifecycle warning.** Aspects decay CATASTROPHICALLY — a pattern either exists or it doesn't. When a pattern changes, ALL aspect claims become wrong at once. This differs from other artifacts: \`interface.md\` and \`responsibility.md\` are most stable (~9-year half-life); \`internals.md\` has moderate stability (~2.5-year half-life); aspects are least stable (~2.4-year half-life, binary decay). After any significant feature addition, review ALL aspects touching the affected area. Don't wait for drift — aspects can be 100% wrong without any mapped file changing.
 
@@ -345,7 +345,7 @@ When a node follows an aspect's pattern with exceptions, record exceptions in \`
 - \`protocol\` — contractual pattern; review when contracts or interfaces change
 - \`implementation\` — specific mechanism; review after ANY significant code change (least stable)
 
-When code anchors (\`anchors\` field in \`node.yaml\`) are present for an aspect, they list code patterns (function names, constants, SQL fragments) evidencing the aspect's implementation in this node. \`yg validate\` checks that each anchor exists in the node's mapped source files — a missing anchor (W014) signals the aspect may be stale for this node.
+When code anchors (\`anchors\` in an aspect entry in \`node.yaml\`) are present, they list code patterns (function names, constants, SQL fragments) evidencing the aspect's implementation in this node. \`yg validate\` checks that each anchor exists in the node's mapped source files — a missing anchor (W014) signals the aspect may be stale for this node.
 
 ### Creating Flows
 
