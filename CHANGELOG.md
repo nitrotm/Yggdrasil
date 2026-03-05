@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING:** All Yggdrasil YAML files renamed to `yg-*` prefix to avoid VS Code SchemaStore
+  collisions: `config.yaml` → `yg-config.yaml`, `node.yaml` → `yg-node.yaml`,
+  `aspect.yaml` → `yg-aspect.yaml`, `flow.yaml` → `yg-flow.yaml`
 - **Renamed `structural_context` → `included_in_relations`** in artifact configuration. Clearer name
   for the flag controlling whether an artifact is included in dependency context packages.
 - **Changed `node_types` from array to object** in config. Keys are type names, values have
