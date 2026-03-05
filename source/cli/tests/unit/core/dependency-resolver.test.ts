@@ -40,7 +40,7 @@ function createGraph(nodes: GraphNode[], rootPath = '/tmp/.yggdrasil'): Graph {
     nodeMap.set(n.path, n);
   }
   return {
-    config: { name: 'Test', stack: {}, standards: {} },
+    config: { name: 'Test', node_types: {}, artifacts: {} },
     nodes: nodeMap,
     aspects: [],
     flows: [],

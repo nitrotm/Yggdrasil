@@ -150,12 +150,7 @@ export const expandAspectsForTags = resolveAspects;
 // --- Layer builders (exported for testing) ---
 
 export function buildGlobalLayer(config: YggConfig): ContextLayer {
-  let content = `**Project:** ${config.name}\n\n`;
-  content += `**Stack:**\n`;
-  for (const [key, value] of Object.entries(config.stack)) {
-    content += `- ${key}: ${value}\n`;
-  }
-  content += `\n**Standards:**\n${config.standards || '(none)'}\n`;
+  const content = `**Project:** ${config.name}\n`;
   return { type: 'global', label: 'Global Context', content };
 }
 

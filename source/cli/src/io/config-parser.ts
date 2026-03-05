@@ -122,8 +122,6 @@ export async function parseConfig(filePath: string): Promise<YggConfig> {
 
   return {
     name: (raw.name as string).trim(),
-    stack: (raw.stack as Record<string, string>) ?? {},
-    standards: typeof raw.standards === 'string' ? raw.standards : '',
     node_types: nodeTypes,
     artifacts: artifactsMap,
     quality,

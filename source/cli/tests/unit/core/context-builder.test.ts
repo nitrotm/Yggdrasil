@@ -28,8 +28,6 @@ describe('context-builder', () => {
     it('produces correct markdown from config', () => {
       const config: YggConfig = {
         name: 'Test Project',
-        stack: { language: 'TypeScript', runtime: 'Node 22' },
-        standards: 'ESLint + Jest',
         node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       };
@@ -38,12 +36,8 @@ describe('context-builder', () => {
       expect(layer.type).toBe('global');
       expect(layer.label).toBe('Global Context');
       expect(layer.content).toContain('**Project:** Test Project');
-      expect(layer.content).toContain('**Stack:**');
-      expect(layer.content).toContain('- language: TypeScript');
-      expect(layer.content).toContain('- runtime: Node 22');
-      expect(layer.content).toContain('**Standards:**');
-      expect(layer.content).toContain('ESLint');
-      expect(layer.content).toContain('Jest');
+      expect(layer.content).not.toContain('Stack');
+      expect(layer.content).not.toContain('Standards');
     });
   });
 
@@ -85,8 +79,6 @@ describe('context-builder', () => {
   describe('buildStructuralRelationLayer', () => {
     const defaultConfig: YggConfig = {
       name: '',
-      stack: {},
-      standards: '',
       node_types: { service: { description: 'x' } },
       artifacts: {
         'responsibility.md': { required: 'always', description: 'x' },
@@ -289,8 +281,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -329,8 +319,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -473,8 +461,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -523,8 +509,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -563,8 +547,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -617,8 +599,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -667,8 +647,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -712,8 +690,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -759,8 +735,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -841,8 +815,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'MultiAspect',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -888,8 +860,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -927,8 +897,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -1042,8 +1010,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
@@ -1093,8 +1059,6 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
           node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },

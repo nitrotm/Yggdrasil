@@ -12,14 +12,6 @@ describe('config-parser', () => {
     const config = await parseConfig(path.join(FIXTURE_DIR, 'config.yaml'));
 
     expect(config.name).toBe('Sample E-Commerce System');
-    expect(config.stack).toEqual({
-      language: 'TypeScript',
-      runtime: 'Node 22',
-      framework: 'NestJS',
-      database: 'PostgreSQL',
-    });
-    expect(typeof config.standards).toBe('string');
-    expect(config.standards).toContain('ESLint');
     expect(config.quality?.context_budget.warning).toBe(8000);
     expect(config.node_types['service']).toBeDefined();
     expect(config.artifacts['responsibility.md']).toBeDefined();
@@ -402,29 +394,4 @@ artifacts:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('defaults stack to empty object', async () => {
-    const tmpDir = path.join(__dirname, '../../fixtures/tmp-config-bare');
-    await mkdir(tmpDir, { recursive: true });
-    const configPath = path.join(tmpDir, 'config.yaml');
-    await writeFile(
-      configPath,
-      `
-name: "Bare Config"
-node_types:
-  module:
-    description: x
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-`,
-      'utf-8',
-    );
-
-    const config = await parseConfig(configPath);
-    expect(config.stack).toEqual({});
-    expect(config.standards).toBe('');
-
-    await rm(tmpDir, { recursive: true, force: true });
-  });
 });

@@ -151,8 +151,6 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
@@ -200,8 +198,6 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
         node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -282,8 +278,6 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -319,8 +313,6 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -356,8 +348,6 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
         node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },

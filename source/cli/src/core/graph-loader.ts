@@ -22,8 +22,6 @@ function toModelPath(absolutePath: string, modelDir: string): string {
 
 const FALLBACK_CONFIG: YggConfig = {
   name: '',
-  stack: {},
-  standards: '',
   node_types: {},
   artifacts: {},
 };

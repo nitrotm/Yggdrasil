@@ -25,15 +25,15 @@ describe('context-pipeline', () => {
     expect(output).toContain('src/orders/order.service.ts');
   });
 
-  it('global context has stack info', async () => {
+  it('global context has project name', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     const pkg = await buildContext(graph, 'orders/order-service');
 
     const globalLayer = pkg.layers.find((l) => l.type === 'global');
     expect(globalLayer).toBeDefined();
-    expect(globalLayer?.content).toContain('TypeScript');
-    expect(globalLayer?.content).toContain('NestJS');
-    expect(globalLayer?.content).toContain('PostgreSQL');
+    expect(globalLayer?.content).toContain('**Project:** Sample E-Commerce System');
+    expect(globalLayer?.content).not.toContain('Stack');
+    expect(globalLayer?.content).not.toContain('Standards');
   });
 
   it('hierarchy includes orders/ configured artifacts only', async () => {

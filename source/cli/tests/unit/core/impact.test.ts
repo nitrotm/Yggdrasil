@@ -22,8 +22,6 @@ function makeGraph(nodes: GraphNode[]): Graph {
   return {
     config: {
       name: 'Test',
-      stack: {},
-      standards: '',
       node_types: { service: { description: 'x' } },
       artifacts: {},
     },

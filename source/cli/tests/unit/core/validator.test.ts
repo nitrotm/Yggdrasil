@@ -45,8 +45,6 @@ function createGraph(overrides: Partial<Graph> = {}): Graph {
   return {
     config: {
       name: 'Test',
-      stack: {},
-      standards: '',
       node_types: { service: { description: 'x' } },
       artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
     },
@@ -140,8 +138,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' }, infrastructure: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -263,8 +259,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
@@ -367,8 +361,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -588,8 +580,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
@@ -612,8 +602,6 @@ describe('validator', () => {
       aspects: [{ name: 'Special', id: 'special', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
@@ -725,8 +713,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
@@ -754,8 +740,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
@@ -784,8 +768,6 @@ describe('validator', () => {
       aspects: [{ name: 'PublicAPI', id: 'public-api', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
@@ -812,8 +794,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
@@ -837,8 +817,6 @@ describe('validator', () => {
       aspects: [{ name: 'Special', id: 'special', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
@@ -861,8 +839,6 @@ describe('validator', () => {
       aspects: [{ name: 'PublicAPI', id: 'public-api', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
@@ -966,8 +942,6 @@ describe('validator', () => {
       aspects: [{ name: 'Audit', id: 'requires-audit', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
@@ -985,8 +959,6 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
         node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },

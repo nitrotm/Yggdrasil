@@ -10,8 +10,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function makeConfig(overrides?: Partial<YggConfig>): YggConfig {
   return {
     name: 'test',
-    stack: {},
-    standards: '',
     node_types: { service: { description: 'x' } },
     artifacts: {},
     ...overrides,
