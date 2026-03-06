@@ -34,7 +34,7 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
     layers.push(buildHierarchyLayer(ancestor, graph.config, graph));
   }
 
-  // 3. Own (node.yaml + configured artifacts)
+  // 3. Own (yg-node.yaml + configured artifacts)
   layers.push(await buildOwnLayer(node, graph.config, graph.rootPath, graph));
 
   // 4. Relational (structural + event, with consumes/failure)
@@ -70,8 +70,9 @@ export async function buildContext(graph: Graph, nodePath: string): Promise<Cont
   }
   const aspectsToInclude = resolveAspects(allAspectIds, graph.aspects);
   for (const aspect of aspectsToInclude) {
-    const exception = node.meta.aspect_exceptions?.find((e) => e.aspect === aspect.id);
-    layers.push(buildAspectLayer(aspect, exception?.note));
+    const entry = node.meta.aspects?.find(a => a.aspect === aspect.id);
+    const exceptionNote = entry?.exceptions?.join('; ');
+    layers.push(buildAspectLayer(aspect, exceptionNote));
   }
 
   const fullText = layers.map((l) => l.content).join('\n\n');
@@ -149,12 +150,7 @@ export const expandAspectsForTags = resolveAspects;
 // --- Layer builders (exported for testing) ---
 
 export function buildGlobalLayer(config: YggConfig): ContextLayer {
-  let content = `**Project:** ${config.name}\n\n`;
-  content += `**Stack:**\n`;
-  for (const [key, value] of Object.entries(config.stack)) {
-    content += `- ${key}: ${value}\n`;
-  }
-  content += `\n**Standards:**\n${config.standards || '(none)'}\n`;
+  const content = `**Project:** ${config.name}\n`;
   return { type: 'global', label: 'Global Context', content };
 }
 
@@ -173,7 +169,7 @@ export function buildHierarchyLayer(
 ): ContextLayer {
   const filtered = filterArtifactsByConfig(ancestor.artifacts, config);
   const content = filtered.map((a) => `### ${a.filename}\n${a.content}`).join('\n\n');
-  const nodeAspects = ancestor.meta.aspects ?? [];
+  const nodeAspects = (ancestor.meta.aspects ?? []).map(a => a.aspect);
   const expanded = expandAspects(nodeAspects, graph.aspects);
   const attrs: Record<string, string> | undefined =
     expanded.length > 0 ? { aspects: expanded.join(',') } : undefined;
@@ -194,14 +190,14 @@ export async function buildOwnLayer(
   const parts: string[] = [];
 
   if (node.nodeYamlRaw) {
-    parts.push(`### node.yaml\n${node.nodeYamlRaw.trim()}`);
+    parts.push(`### yg-node.yaml\n${node.nodeYamlRaw.trim()}`);
   } else {
-    const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'node.yaml');
+    const nodeYamlPath = path.join(graphRootPath, 'model', node.path, 'yg-node.yaml');
     try {
       const nodeYamlContent = await readFile(nodeYamlPath, 'utf-8');
-      parts.push(`### node.yaml\n${nodeYamlContent.trim()}`);
+      parts.push(`### yg-node.yaml\n${nodeYamlContent.trim()}`);
     } catch {
-      parts.push(`### node.yaml\n(not found)`);
+      parts.push(`### yg-node.yaml\n(not found)`);
     }
   }
 
@@ -211,7 +207,7 @@ export async function buildOwnLayer(
   }
 
   const content = parts.join('\n\n');
-  const nodeAspects = node.meta.aspects ?? [];
+  const nodeAspects = (node.meta.aspects ?? []).map(a => a.aspect);
   const expanded = expandAspects(nodeAspects, graph.aspects);
   const attrs: Record<string, string> | undefined =
     expanded.length > 0 ? { aspects: expanded.join(',') } : undefined;
@@ -237,7 +233,7 @@ export function buildStructuralRelationLayer(
   }
 
   const structuralArtifactFilenames = Object.entries(config.artifacts ?? {})
-    .filter(([, c]) => c.structural_context)
+    .filter(([, c]) => c.included_in_relations)
     .map(([filename]) => filename);
 
   const structuralArts = structuralArtifactFilenames
@@ -364,12 +360,12 @@ export function collectEffectiveAspectIds(graph: Graph, nodePath: string): Set<s
   const node = graph.nodes.get(nodePath);
   if (!node) return new Set();
 
-  const raw = new Set<string>(node.meta.aspects ?? []);
+  const raw = new Set<string>((node.meta.aspects ?? []).map(a => a.aspect));
 
   // Hierarchy aspects
   let ancestor = node.parent;
   while (ancestor) {
-    for (const id of ancestor.meta.aspects ?? []) raw.add(id);
+    for (const entry of ancestor.meta.aspects ?? []) raw.add(entry.aspect);
     ancestor = ancestor.parent;
   }
 

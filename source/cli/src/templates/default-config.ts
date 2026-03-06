@@ -1,27 +1,27 @@
-export const DEFAULT_CONFIG = `name: ""
+export const DEFAULT_CONFIG = `version: "2.0.0"
 
-stack:
-  language: ""
-  runtime: ""
-
-standards: ""
+name: ""
 
 node_types:
-  - name: module
-  - name: service
-  - name: library
-  - name: infrastructure
+  module:
+    description: "Business logic unit with clear domain responsibility"
+  service:
+    description: "Component providing functionality to other nodes"
+  library:
+    description: "Shared utility code with no domain knowledge"
+  infrastructure:
+    description: "Guards, middleware, interceptors — invisible in call graphs but affect blast radius"
 
 artifacts:
   responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-    structural_context: true
+    included_in_relations: true
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
   internals.md:
     required: never
     description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"

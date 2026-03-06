@@ -1,0 +1,13 @@
+name: DependencyResolver
+type: library
+aspects:
+  - aspect: deterministic
+
+relations:
+  - target: cli/model
+    type: uses
+    consumes: [Graph, Stage]
+
+mapping:
+  paths:
+    - source/cli/src/core/dependency-resolver.ts

@@ -4,7 +4,7 @@ Type library — exports TypeScript interfaces and types only. No runtime functi
 
 **Config:** YggConfig, ArtifactConfig, QualityConfig
 
-**Node:** Graph, GraphNode, NodeMeta, Relation, RelationType, NodeMapping, Artifact, AspectException
+**Node:** Graph, GraphNode, NodeMeta, NodeAspectEntry, Relation, RelationType, NodeMapping, Artifact
 
 **Graph elements:** AspectDef, AspectStability, FlowDef (includes `path` — directory name under flows/), SchemaDef
 
@@ -38,17 +38,17 @@ Model is a TypeScript type library — it contains no executable code and does n
 
 ## Config types
 
-- **YggConfig** — Top-level config: name, stack, standards, node_types, artifacts, optional quality thresholds.
-- **NodeTypeConfig** — Node type definition with name and optional required_aspects.
-- **ArtifactConfig** — Per-artifact config: required condition (always/never/when), description, optional structural_context flag.
+- **YggConfig** — Top-level config: name, node_types (Record keyed by type name), artifacts, optional quality thresholds.
+- **NodeTypeConfig** — Node type definition with description (required) and optional required_aspects. Key in the Record is the type name.
+- **ArtifactConfig** — Per-artifact config: required condition (always/never/when), description, optional included_in_relations flag.
 - **QualityConfig** — Thresholds: min_artifact_length, max_direct_relations, context_budget (warning + error).
 
 ## Graph types
 
 - **Graph** — Root container: config, nodes (Map by path), aspects, flows, schemas, rootPath. Optional configError and nodeParseErrors.
 - **GraphNode** — A node in the model tree: path, meta (NodeMeta), nodeYamlRaw, artifacts, children, parent.
-- **AspectException** — Exception to an aspect for a specific node: `{ aspect: string; note: string }`. Referenced by `NodeMeta.aspect_exceptions`.
-- **NodeMeta** — Parsed node.yaml: name, type, optional aspects, aspect_exceptions, blackbox, relations, mapping, optional anchors (Record mapping aspect id to list of code pattern strings).
+- **NodeAspectEntry** — Unified aspect entry for a node: `{ aspect: string; exceptions?: string[]; anchors?: string[] }`. Each entry links a node to an aspect with optional per-node exceptions and code anchors.
+- **NodeMeta** — Parsed yg-node.yaml: name, type, optional aspects (NodeAspectEntry[]), blackbox, relations, mapping.
 - **Relation** — Typed edge: target path, RelationType, optional consumes, failure, event_name.
 - **RelationType** — Union: uses | calls | extends | implements | emits | listens.
 

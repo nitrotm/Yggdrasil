@@ -1,0 +1,13 @@
+name: Formatters
+type: library
+aspects:
+  - aspect: deterministic
+
+relations:
+  - target: cli/model
+    type: uses
+    consumes: [ContextPackage]
+
+mapping:
+  paths:
+    - source/cli/src/formatters/

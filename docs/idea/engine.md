@@ -20,7 +20,7 @@ layer carries a different level of abstraction — from most general to most spe
 
 ```
 WORLD IDENTITY           (changes least often)
-  You are an e-commerce system. TypeScript, NestJS, PostgreSQL.
+  You are an e-commerce system.
 
 LONG-TERM MEMORY         (changes rarely)
   Never connect to another service's database.
@@ -41,7 +41,7 @@ SURROUNDINGS             (changes on neighbor evolution)
 
 Layers operate simultaneously — the agent needs all of them at once, but with different
 intensity. When implementing a method, it focuses on **Surroundings** (dependency interface)
-and **Unit Identity** (own contract), while **World Identity** (stack, standards) and
+and **Unit Identity** (own contract), while **World Identity** (project name) and
 **Long-term Memory** (patterns, decisions) inform _how_ to implement, not _what_.
 
 Layer size is inversely proportional to its generality. World identity is a few sentences.
@@ -54,20 +54,22 @@ For node `N` at path `P` with aspects `A`, context assembly executes the followi
 Each step is deterministic.
 
 ```
-1.  GLOBAL        config.yaml: stack, standards
+1.  GLOBAL        yg-config.yaml: project name
 
 2.  HIERARCHICAL  for each ancestor from model/ root down to N's parent:
                   include all configured artifacts of that ancestor (every artifact type from config
                   that exists in the ancestor's directory)
 
-3.  OWN           N's node.yaml (raw) and N's content artifacts (all files matching configured
+3.  OWN           N's yg-node.yaml (raw) and N's content artifacts (all files matching configured
                   artifact filenames)
 
 4.  ASPECTS       Each block (hierarchy, own, flow) declares its own aspects. No inheritance —
                   each block has an `aspects` field (comma-separated aspect identifiers; omit if empty).
                   Hierarchy block: each ancestor may have `aspects="id1,id2"` in its metadata.
-                  Own block: node.yaml has `aspects: [id1, id2]`.
-                  Flow block: flow.yaml has `aspects: [id1, id2]` for flows where N or an
+                  Own block: yg-node.yaml has `aspects` as a list of entries, each with an `aspect`
+                  field identifying the aspect (e.g. `- aspect: requires-audit`). Entries may
+                  also include embedded `exceptions` and `anchors`.
+                  Flow block: yg-flow.yaml has `aspects: [id1, id2]` for flows where N or an
                   ancestor participates. Effective aspects = union of all identifiers from these blocks.
                   The `aspects` attribute on each block shows the resolved set (including implied
                   aspects), not just the raw declared identifiers.
@@ -76,12 +78,12 @@ Each step is deterministic.
                   a cycle (A implies B implies A) is an error. No source attribute on aspect
                   output — aspects are rendered without provenance. Aspects section = union of
                   aspect identifiers from hierarchy + own + flow blocks, expand implies, render content.
-                  If the node declares `aspect_exceptions` for a given aspect, the exception note
-                  is appended to that aspect's layer as a warning.
+                  If an aspect entry declares `exceptions`, the exception notes are appended to
+                  that aspect's layer as warnings.
 
 5.  RELATIONAL
       for each structural relation of N (uses, calls, extends, implements):
-        - artifacts of target with structural_context (e.g. responsibility, interface)
+        - artifacts of target with included_in_relations (e.g. responsibility, interface)
         - consumes annotation from the relation field (if declared)
         - failure annotation from the relation field (if declared)
       for each event relation of N (emits, listens):
@@ -107,7 +109,7 @@ Aspects, Relational). The table below maps these to conceptual layers for unders
 | ---------------- | --------------------------------------- | ---------------- |
 | World Identity   | Step 1 (global config)                  | Global           |
 | Domain Context   | Step 2 (hierarchical ancestors)         | Hierarchy        |
-| Unit Identity    | Step 3 (node.yaml + own artifacts)     | OwnArtifacts     |
+| Unit Identity    | Step 3 (yg-node.yaml + own artifacts)   | OwnArtifacts     |
 | Cross-cutting    | Step 4 (aspects from all blocks)        | Aspects          |
 | Surroundings     | Step 5 (relations, events, flows)       | Relational       |
 
@@ -164,8 +166,6 @@ metadata; content between tags is raw text (no CDATA, no escaping).
 
 <global>
 **Project:** my-project
-**Stack:** language: typescript, runtime: node, framework: nestjs
-**Standards:** Strict TypeScript, JSDoc on public functions
 </global>
 
 <hierarchy path="orders/">
@@ -174,10 +174,12 @@ metadata; content between tags is raw text (no CDATA, no escaping).
 </hierarchy>
 
 <own-artifacts>
-### node.yaml
+### yg-node.yaml
 name: OrderService
 type: service
-aspects: [requires-audit, requires-auth]
+aspects:
+  - aspect: requires-audit
+  - aspect: requires-auth
 relations: ...
 ### responsibility.md
 <content>
@@ -244,8 +246,8 @@ Validation has two severity levels with distinct consequences.
 Errors represent broken references or invalid structure. They block context assembly —
 a graph with errors cannot produce reliable context packages.
 
-**Node structure**: every directory in `model/` with `node.yaml` must have required fields
-(`name`, `type`). Type must be from the configured `node_types` list.
+**Node structure**: every directory in `model/` with `yg-node.yaml` must have required fields
+(`name`, `type`). Type must be a key in the configured `node_types` object.
 
 **Referential integrity**:
 
@@ -254,7 +256,7 @@ a graph with errors cannot produce reliable context packages.
 - Every aspect identifier must correspond to a directory under `aspects/`.
 - Every identifier in an aspect's `implies` must have a corresponding aspect in `aspects/`.
 - The aspect implies graph must be acyclic (no A implies B implies A).
-- Every `aspect_exceptions[].aspect` identifier in a node must reference an aspect in that node's own `aspects` list.
+- Every aspect entry's `exceptions` field, if present, must be a list of non-empty strings.
 
 **Mapping uniqueness**: no two nodes may map to the same file or have overlapping directory
 mappings.
@@ -307,7 +309,7 @@ before merge, ensuring structural integrity of the semantic memory base is maint
 ## Bidirectional Drift Detection
 
 Drift is divergence between graph and outputs. Drift detection is **bidirectional** — it
-tracks both source files (code mapped via `node.yaml` mappings) and graph artifacts
+tracks both source files (code mapped via `yg-node.yaml` mappings) and graph artifacts
 (`.yggdrasil/` files that participate in a node's context package). A change on either side
 is drift; a change on both sides is full drift.
 
@@ -328,13 +330,13 @@ The set of tracked files for a node mirrors the traversal of context assembly
 (`build-context`) but returns file paths instead of rendered content. Six layers are
 collected:
 
-1. **Own** — `node.yaml` and config-filtered artifacts of the node itself.
-2. **Hierarchical** — `node.yaml` and artifacts of all ancestor nodes from root to parent.
-3. **Aspects** — `aspect.yaml` and content files for all resolved aspects (own + ancestor +
+1. **Own** — `yg-node.yaml` and config-filtered artifacts of the node itself.
+2. **Hierarchical** — `yg-node.yaml` and artifacts of all ancestor nodes from root to parent.
+3. **Aspects** — `yg-aspect.yaml` and content files for all resolved aspects (own + ancestor +
    flow-propagated, with recursive `implies` expansion).
 4. **Relational dependencies** — structural-context artifacts of structural relation targets
    (`uses`, `calls`, `extends`, `implements`).
-5. **Relational flows** — `flow.yaml` and content artifacts of all flows listing this node or
+5. **Relational flows** — `yg-flow.yaml` and content artifacts of all flows listing this node or
    an ancestor as a participant.
 6. **Source** — files from the node's `mapping.paths`.
 
@@ -402,7 +404,7 @@ after window fill), interruptible (the user ends the session at any point), and 
 
 Any semantic knowledge living only in conversation is at risk of loss.
 
-A full graph update — creating a Markdown artifact, expanding `node.yaml`, adding an aspect
+A full graph update — creating a Markdown artifact, expanding `yg-node.yaml`, adding an aspect
 or flow — requires focus and interrupts the creative flow. The agent faces a trade-off: save
 to graph immediately (risk of interrupting flow) or defer until later (risk of loss on context
 compression or session interruption).
@@ -565,7 +567,7 @@ tools handle file format, timestamps, and file operations.
 | Initialize | Create `.yggdrasil/` structure with default config and platform agent integration file |
 
 Initialization is the only operation that creates files in the graph structure — and it does
-so only once. It creates the `.yggdrasil/` directory with a default `config.yaml` and
+so only once. It creates the `.yggdrasil/` directory with a default `yg-config.yaml` and
 configures integration with the agent platform.
 
 ### Responsibility Boundary
@@ -576,7 +578,7 @@ write artifacts, or manage aspects and flows. That is creative work belonging to
 Tools maintain only operational metadata:
 
 - Drift state (`.drift-state`) — for tracking synchronization.
-- The agent creates directories, writes `node.yaml`, writes Markdown artifacts. Tools validate
+- The agent creates directories, writes `yg-node.yaml`, writes Markdown artifacts. Tools validate
   the result and give feedback.
 
 This model is analogous to the programmer–compiler relationship: the programmer writes code,
@@ -591,21 +593,22 @@ the work of the agent or human — tools only read.
 Given graph state:
 
 ```
-config.yaml
-model/orders/order-service/node.yaml aspects: [requires-audit]
-                                     relations: calls payments/payment-service
-                                                        consumes: charge, refund
+yg-config.yaml
+model/orders/order-service/yg-node.yaml aspects:
+                                          - aspect: requires-audit
+                                        relations: calls payments/payment-service
+                                                           consumes: charge, refund
 
-aspects/requires-audit/              aspect id = directory path
-  aspect.yaml                        name, optional description, optional implies
+aspects/requires-audit/                 aspect id = directory path
+  yg-aspect.yaml                        name, optional description, optional implies
 
-flows/checkout/flow.yaml             lists orders/order-service as participant
+flows/checkout/yg-flow.yaml             lists orders/order-service as participant
 ```
 
 Context package for `orders/order-service` contains:
 
 ```
-Step 1.  config.yaml: standards and stack
+Step 1.  yg-config.yaml: project name
 Step 2.  Domain context of orders/ module artifacts
 Step 3.  Own artifacts of OrderService: responsibility, interface, internals
 Step 4.  Aspect: Audit logging  [aspect requires-audit]

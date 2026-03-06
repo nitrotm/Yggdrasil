@@ -16,7 +16,7 @@ return. Two sides of the same system: schemas are data, operations are functions
 
 ## File schemas
 
-### config.yaml
+### yg-config.yaml
 
 The configuration file in the graph root directory. The single source of truth for what
 tools expect and enforce.
@@ -24,38 +24,28 @@ tools expect and enforce.
 ```yaml
 name: my-project # string, required
 
-stack: # map, optional
-  language: typescript # string, optional
-  runtime: node # string, optional
-  framework: nestjs # string, optional
-  database: postgresql # string, optional
-  testing: jest # string, optional
-  # extensible — any string -> string keys
-
-standards: | # string, optional, multiline
-  Strict TypeScript. All public functions have JSDoc.
-  Errors in RFC 7807 format. Dates in ISO 8601 UTC.
-
-node_types: # list of {name, required_aspects?}, required, non-empty
-  - name: module
-  - name: service
-  - name: library
-  - name: infrastructure
-  # With required_aspects per type:
-  # - name: service
-  #   required_aspects: [requires-audit]
+node_types: # object, required, non-empty — keys are type names
+  module:
+    description: "Business logic unit with clear domain responsibility"
+  service:
+    description: "Component providing functionality to other nodes"
+  library:
+    description: "Shared utility code with no domain knowledge"
+  infrastructure:
+    description: "Guards, middleware, interceptors — invisible in call graphs but affect blast radius"
+    # required_aspects: [requires-audit]  # optional — aspects every node of this type must have
 
 artifacts: # map, required, non-empty — keys are full filenames (e.g. responsibility.md, api.txt)
   responsibility.md:
     required: always # always | never | {when: <condition>}
     description: "What this node is responsible for, and what it is not"
-    structural_context: true # optional, default false — include in dependency context for structural relations
+    included_in_relations: true # optional, default false — include in dependency context for structural relations
 
   interface.md:
     required:
       when: has_incoming_relations # structural condition
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
 
   internals.md:
     required: never
@@ -79,30 +69,28 @@ quality: # map, optional (has default values) — all keys snake_case
 | `when: has_outgoing_relations` | Required when this node has relations to others                 |
 | `when: has_aspect:<name>`      | Required when the node carries the specified aspect             |
 
-**Validation rules for config.yaml:**
+**Validation rules for yg-config.yaml:**
 
 - `name` must be non-empty.
-- `node_types` must contain at least one element. Format: list of `{ name, required_aspects? }`. Legacy format (list of plain strings) is also accepted. Node `type` must match a `name` (or the string itself in legacy format).
+- `node_types` must be a non-empty object. Each entry must have a `description` string. Optional `required_aspects` list. Node `type` must match a key in `node_types`.
 - `artifacts` must contain at least one element.
-- Artifact filenames cannot be `node.yaml` (reserved in every node directory).
-- `has_aspect:<name>` conditions must refer to aspect directory names (exist under `aspects/<name>/`). Legacy `has_tag:<name>` is accepted for backward compatibility.
+- Artifact filenames cannot be `yg-node.yaml` (reserved in every node directory).
+- `has_aspect:<name>` conditions must refer to aspect directory names (exist under `aspects/<name>/`).
 - `quality.context_budget.error` must be ≥ `quality.context_budget.warning`.
 
-### node.yaml
+### yg-node.yaml
 
 Node identity and all its outgoing connections.
 
 ```yaml
 name: OrderService # string, required
 type: service # string, required — from config.node_types
-aspects: [requires-audit, requires-auth] # list of strings, optional — aspect identifiers (directory paths under aspects/)
-aspect_exceptions: # list, optional — per-node deviations from aspect patterns
-  - aspect: requires-audit # string, required — must be in this node's aspects list
-    note: "Batch import skips per-record audit" # string, required — describes the deviation
-anchors: # map, optional — aspect id -> list of code patterns for staleness detection
-  requires-audit:
-    - auditLog
-    - createAuditEntry
+aspects: # list of objects, optional — unified aspect entries
+  - aspect: requires-audit # string, required — aspect identifier (directory path under aspects/)
+    exceptions: # list of strings, optional — per-node deviations from this aspect's pattern
+      - "Batch import skips per-record audit — emits single summary event instead"
+    anchors: [auditLog, createAuditEntry] # list of strings, optional — code patterns for staleness detection
+  - aspect: requires-auth # minimal entry — just the aspect identifier
 blackbox: false # bool, optional, default false
 
 relations: # list, optional
@@ -132,22 +120,20 @@ mapping: # map, optional
 directories are auto-detected at runtime. Each path in the list is hashed individually — files
 are hashed directly, directories are scanned recursively (respecting `.gitignore`).
 
-**Validation rules for node.yaml:**
+**Validation rules for yg-node.yaml:**
 
 - `name` must be non-empty.
-- `type` must be from the `config.node_types` list.
-- Each aspect identifier must correspond to a directory under `aspects/`.
-- Each `aspect_exceptions[].aspect` must reference an aspect in this node's `aspects` list (E018).
+- `type` must be a key in `config.node_types`.
+- Each aspect entry's `aspect` identifier must correspond to a directory under `aspects/`.
 - Each `relations[].target` must resolve to an existing node.
 - Each `relations[].type` must be from the table above.
 - Paths in `mapping.paths` must be relative to the repository root.
 - `mapping.paths` must be non-empty when `mapping` is present.
 - Mappings cannot overlap with mappings of other nodes.
-- `anchors`, if present, must be an object mapping aspect IDs (from this node's `aspects` list) to non-empty arrays of strings.
-- Each key in `anchors` must be present in the node's `aspects` list (E019).
+- `anchors` within an aspect entry, if present, must be a non-empty array of strings.
 - Anchor strings are validated against mapped source files: if an anchor is not found, a warning (W014) is emitted.
 
-### aspect.yaml
+### yg-aspect.yaml
 
 Aspect metadata — a cross-cutting requirement. The aspect identifier is the relative directory
 path under `aspects/` (e.g. `aspects/requires-audit/` has identifier `requires-audit`;
@@ -163,7 +149,7 @@ stability: protocol # string, optional — schema | protocol | implementation
 Nested directories under `aspects/` are organizational groupings. There is no automatic
 parent-child relationship from nesting — `implies` is always explicit.
 
-All files in the aspect directory except `aspect.yaml` are content attached to the context
+All files in the aspect directory except `yg-aspect.yaml` are content attached to the context
 packages of nodes carrying the specified aspect. When `implies` is present, the aspect's content
 plus all implied aspects' content is attached. Tools resolve implications recursively and detect cycles.
 
@@ -182,7 +168,7 @@ plus all implied aspects' content is attached. Tools resolve implications recurs
 - The aspect implies graph must be acyclic (no A implies B implies A).
 - `stability`, if present, must be one of: `schema`, `protocol`, `implementation`.
 
-### flow.yaml
+### yg-flow.yaml
 
 End-to-end flow metadata.
 
@@ -196,7 +182,7 @@ aspects: # list of strings, optional — aspect ids propagated to all participan
   - requires-idempotency
 ```
 
-All files in the flow directory except `flow.yaml` are content attached to the context
+All files in the flow directory except `yg-flow.yaml` are content attached to the context
 packages of the listed nodes and their descendants (flows propagate down the hierarchy).
 Aspects declared in `aspects` propagate to all participants.
 
@@ -216,7 +202,7 @@ Primary flow content artifact — describes the business process. Required for e
 - `## Business context` — why this process exists
 - `## Trigger` — what initiates the process
 - `## Goal` — what success looks like
-- `## Participants` — nodes involved (align with `flow.yaml` nodes)
+- `## Participants` — nodes involved (align with `yg-flow.yaml` nodes)
 - `## Paths` — must contain at least `### Happy path`; each additional business path (exception, cancellation, timeout) gets `### [name]`
 - `## Invariants across all paths` — business rules and technical conditions holding across all paths
 
@@ -227,15 +213,15 @@ One flow directory = one business process with all its paths (happy path, except
 ### schemas/
 
 The `schemas/` directory contains schema files — one per graph layer. Initialization copies
-`node.yaml`, `aspect.yaml`, and `flow.yaml` from the CLI package. Each file
+`yg-node.yaml`, `yg-aspect.yaml`, and `yg-flow.yaml` from the CLI package. Each file
 shows the expected YAML structure for its element type. The agent reads the schema before
 creating or editing that element (see the [Graph](graph) document, Schemas section).
 
-| File          | Element type | Describes structure of              |
-| ------------- | ------------ | ----------------------------------- |
-| `node.yaml`   | Nodes        | `node.yaml` in model directories    |
-| `aspect.yaml` | Aspects      | `aspect.yaml` in aspects directories|
-| `flow.yaml`   | Flows        | `flow.yaml` in flows directories    |
+| File              | Element type | Describes structure of                    |
+| ----------------- | ------------ | ----------------------------------------- |
+| `yg-node.yaml`   | Nodes        | `yg-node.yaml` in model directories        |
+| `yg-aspect.yaml` | Aspects      | `yg-aspect.yaml` in aspects directories    |
+| `yg-flow.yaml`   | Flows        | `yg-flow.yaml` in flows directories        |
 
 ### .drift-state
 
@@ -251,14 +237,14 @@ orders/order-service:
   files:
     "src/modules/orders/order.service.ts": "1111..."
     "src/modules/orders/order.repository.ts": "2222..."
-    ".yggdrasil/model/orders/order-service/node.yaml": "3333..."
+    ".yggdrasil/model/orders/order-service/yg-node.yaml": "3333..."
     ".yggdrasil/model/orders/order-service/responsibility.md": "4444..."
-    ".yggdrasil/aspects/requires-audit/aspect.yaml": "5555..."
+    ".yggdrasil/aspects/requires-audit/yg-aspect.yaml": "5555..."
 payments/payment-service:
   hash: "deadbeef..."
   files:
     "src/modules/payments/payment.service.ts": "6666..."
-    ".yggdrasil/model/payments/payment-service/node.yaml": "7777..."
+    ".yggdrasil/model/payments/payment-service/yg-node.yaml": "7777..."
 ```
 
 **Format:** map `node-path -> entry`. The key is a path relative to `model/`. Each entry is
@@ -362,12 +348,12 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
 
 **Behavior:**
 
-1. Check if `.yggdrasil/` exists. If it exists and `upgrade` is `false` — error. If it exists and `upgrade` is `true` — go to step 5 (only rules file).
+1. Check if `.yggdrasil/` exists. If it exists and `upgrade` is `false` — error. If it exists and `upgrade` is `true` — go to step 5.
 2. Create directory structure:
 
    ```text
    .yggdrasil/
-   ├── config.yaml
+   ├── yg-config.yaml
    ├── .gitignore
    ├── model/
    ├── aspects/
@@ -375,7 +361,7 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
    └── schemas/
    ```
 
-3. Write `config.yaml` with default content (see Default configuration below).
+3. Write `yg-config.yaml` with default content (see Default configuration below).
 4. Write `.yggdrasil/.gitignore`:
 
    ```text
@@ -383,45 +369,59 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
    journals-archive/
    ```
 
-5. Generate the platform rules file in the location appropriate for the `platform` parameter
+5. Run migrations (upgrade mode only):
+
+   a. Read `version` from `yg-config.yaml`. If absent, treat as `1.0.0`.
+
+   b. If project version equals CLI version — skip migrations, proceed to step 6.
+
+   c. If project version is newer than CLI version — print a warning and exit without
+      modifying any files.
+
+   d. For each applicable migration (project version < migration version ≤ CLI version),
+      run in order. Each action prints with a `✓` prefix on success or a `⚠` prefix on
+      warning/skip.
+
+   e. After all migrations complete, write the updated `version` to `yg-config.yaml`.
+
+6. Generate the platform rules file in the location appropriate for the `platform` parameter
    (see Platform rules file section).
 
 **Result:**
 
 - Full initialization: list of created files and directories.
-- Upgrade mode: path of the refreshed rules file.
+- Upgrade mode: path of the refreshed rules file and list of migration actions applied.
 
 **Errors:**
 
 - `.yggdrasil/` already exists and `upgrade` was not provided — full init is a one-time operation.
+- Project version is newer than CLI version — user must upgrade the CLI before running `--upgrade`.
 
 **Default configuration:**
 
 ```yaml
 name: ""
 
-stack:
-  language: ""
-  runtime: ""
-
-standards: ""
-
 node_types:
-  - name: module
-  - name: service
-  - name: library
-  - name: infrastructure
+  module:
+    description: "Business logic unit with clear domain responsibility"
+  service:
+    description: "Component providing functionality to other nodes"
+  library:
+    description: "Shared utility code with no domain knowledge"
+  infrastructure:
+    description: "Guards, middleware, interceptors — invisible in call graphs but affect blast radius"
 
 artifacts:
   responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-    structural_context: true
+    included_in_relations: true
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts, failure modes, exposed data structures"
-    structural_context: true
+    included_in_relations: true
   internals.md:
     required: never
     description: "How the node works and why — algorithms, business rules, state machines, design decisions with rejected alternatives"
@@ -434,11 +434,11 @@ quality:
     error: 20000
 ```
 
-The agent fills in `name`, `stack`, and `standards` after initialization.
-The tool does not guess these values.
+The agent fills in `name` after initialization.
+The tool does not guess this value.
 
 **Note:** Until `name` is set (non-empty), most commands that load the graph will fail
-with a config parse error. The user should edit `config.yaml` before running
+with a config parse error. The user should edit `yg-config.yaml` before running
 `yg validate`, `yg status`, `yg drift`, or other operations.
 
 ---
@@ -457,15 +457,15 @@ Assemble a context package for the specified node. The main operation of the sys
 
 The 5-step algorithm defined in the [Engine](engine) document. Summary:
 
-1. **Global** — `config.yaml` (stack, standards).
+1. **Global** — `yg-config.yaml` (project name).
 2. **Hierarchical** — ancestor artifacts (from `model/` root down to the node's parent).
-3. **Own** — the node's `node.yaml` (raw) and content artifacts.
+3. **Own** — the node's `yg-node.yaml` (raw) and content artifacts.
 4. **Aspects** — union of aspect identifiers from hierarchy blocks, own block, and flow blocks (each block
    declares its own; no inheritance). Expand implies recursively. Render content of each
    matching aspect. No source attribute on aspect output.
-5. **Relational** — for structural relations: artifacts with `structural_context: true`
+5. **Relational** — for structural relations: artifacts with `included_in_relations: true`
    (default: responsibility, interface) of the target with consumes
-   and failure annotations. If the target has no artifacts with `structural_context: true`,
+   and failure annotations. If the target has no artifacts with `included_in_relations: true`,
    all configured artifacts are included as fallback. For event relations: event name and
    type with consumes annotation. Flow artifacts for flows listing this node or any ancestor
    as a participant.
@@ -499,7 +499,7 @@ Displays the graph structure as a tree with node metadata.
 **Behavior:**
 
 1. Traverse the directory tree from the root.
-2. For each directory with a `node.yaml` — read metadata.
+2. For each directory with a `yg-node.yaml` — read metadata.
 3. Build a tree representation.
 
 **Result:**
@@ -526,7 +526,7 @@ Format: path, type in brackets, aspects (if any), blackbox flag (if true), numbe
 ### Aspects
 
 Lists aspects with metadata in YAML format. Use to discover valid aspect identifiers for
-`node.yaml` and `flow.yaml`.
+`yg-node.yaml` and `yg-flow.yaml`.
 
 **Parameters:** none.
 
@@ -626,7 +626,7 @@ Quality:
 **Errors:**
 
 - No `.yggdrasil/` — repository is not initialized.
-- Invalid `config.yaml` — configuration cannot be parsed.
+- Invalid `yg-config.yaml` — configuration cannot be parsed.
 
 ---
 
@@ -909,7 +909,7 @@ Two levels of severity defined in the [Engine](engine) document.
 
 | Code   | Message                      | Description                                            |
 | ------ | ---------------------------- | ------------------------------------------------------ |
-| `E001` | `invalid-node-yaml`          | `node.yaml` fails to parse or lacks required fields    |
+| `E001` | `invalid-node-yaml`          | `yg-node.yaml` fails to parse or lacks required fields |
 | `E002` | `unknown-node-type`          | Node type is not in `config.node_types`                |
 | `E003` | `unknown-aspect`             | Aspect identifier does not correspond to an aspect directory |
 | `E004` | `broken-relation`            | Relation target does not resolve to an existing node   |
@@ -917,13 +917,12 @@ Two levels of severity defined in the [Engine](engine) document.
 | `E007` | `broken-aspect-ref`          | Aspect reference does not resolve                      |
 | `E009` | `overlapping-mapping`        | Overlapping mappings between unrelated nodes           |
 | `E010` | `structural-cycle`           | Cycle in structural relations (cycles involving blackbox are tolerated) |
-| `E012` | `invalid-config`             | `config.yaml` fails to parse or is invalid             |
+| `E012` | `invalid-config`             | `yg-config.yaml` fails to parse or is invalid          |
 | `E013` | `invalid-artifact-condition` | Condition `has_aspect:<name>` refers to an undefined aspect  |
 | `E014` | `duplicate-aspect-binding`   | Aspect identifier is bound to multiple aspect directories |
-| `E015` | `missing-node-yaml`          | Directory in `model/` has files but no `node.yaml`     |
+| `E015` | `missing-node-yaml`          | Directory in `model/` has files but no `yg-node.yaml`  |
 | `E016` | `implied-aspect-missing`     | Identifier in aspect's `implies` has no corresponding aspect in `aspects/`           |
 | `E017` | `aspect-implies-cycle`       | Cycle in aspect implies graph (A implies B implies A)                                |
-| `E019` | `invalid-anchor-ref`         | Anchors key references aspect not in node's aspects list                             |
 
 **Warnings (completeness signals):**
 
@@ -937,8 +936,8 @@ Two levels of severity defined in the [Engine](engine) document.
 | `W009` | `unpaired-event`        | Event relation without complement on the other side                                 |
 | `W010` | `missing-schema`        | Required schema (node, aspect, flow) missing from `.yggdrasil/schemas/`            |
 | `W011` | `missing-required-aspect-coverage` | Node of type with `required_aspects` lacks coverage (direct aspect or via implies) for one or more |
-| `W012` | `mapping-path-missing`             | Mapping path in `node.yaml` does not exist on disk — catches typos and stale mappings             |
-| `W013` | `directory-without-node`           | Directory in `model/` has only subdirectories but no `node.yaml` — bare intermediate directory    |
+| `W012` | `mapping-path-missing`             | Mapping path in `yg-node.yaml` does not exist on disk — catches typos and stale mappings             |
+| `W013` | `directory-without-node`           | Directory in `model/` has only subdirectories but no `yg-node.yaml` — bare intermediate directory    |
 | `W014` | `anchor-not-found`                 | Anchor string for aspect not found in node's mapped source files                                  |
 
 **Message format:**
@@ -969,7 +968,7 @@ Summary at the end: X errors, Y warnings.
 **Operation errors:**
 
 - The specified node in `scope` does not exist.
-- `config.yaml` fails to parse (reported as E012, not as an operation error — validation
+- `yg-config.yaml` fails to parse (reported as E012, not as an operation error — validation
   continues as much as it can).
 
 ---
@@ -1231,5 +1230,5 @@ documents the behavioral contract; the implementation provides the canonical tex
 - **Execution checklists:** Code-first (read spec → modify code → sync artifacts → baseline hash) and graph-first
   (read schema → edit graph → verify source → validate → baseline hash). Agent must output and execute before finishing.
 
-The agent learns **how** from five sources: (1) rules file, (2) config.yaml, (3) schemas/,
+The agent learns **how** from five sources: (1) rules file, (2) yg-config.yaml, (3) schemas/,
 (4) existing graph nodes, (5) validation feedback. See the [Integration](integration) document.

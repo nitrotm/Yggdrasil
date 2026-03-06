@@ -13,18 +13,6 @@ exports[`context-builder > formatContextMarkdown > produces correct markdown str
 
 **Project:** Sample E-Commerce System
 
-**Stack:**
-- language: TypeScript
-- runtime: Node 22
-- framework: NestJS
-- database: PostgreSQL
-
-**Standards:**
-ESLint + Prettier configuration.
-Clean Architecture pattern.
-Jest as test framework. Test coverage target: 80%.
-
-
 
 ---
 
@@ -46,11 +34,11 @@ Order management module.
 
 ### Node: OrderService
 
-### node.yaml
+### yg-node.yaml
 name: OrderService
 type: service
 aspects:
-  - requires-audit
+  - aspect: requires-audit
 relations:
   - target: auth/auth-api
     type: uses
@@ -126,7 +114,7 @@ Sequence: create order -> validate -> payment -> ship.
 
 ---
 
-Context size: 415 tokens
+Context size: 361 tokens
 Layers: global, hierarchy, own, relational, relational, flows, aspects, aspects
 "
 `;

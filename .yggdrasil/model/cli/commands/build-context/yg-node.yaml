@@ -1,0 +1,23 @@
+name: BuildContextCommand
+type: library
+aspects:
+  - aspect: deterministic
+  - aspect: cli-command-contract
+
+relations:
+  - target: cli/core/loader
+    type: uses
+    consumes: [loadGraph]
+  - target: cli/core/context
+    type: uses
+    consumes: [buildContext]
+  - target: cli/core/validator
+    type: uses
+    consumes: [validate]
+  - target: cli/formatters
+    type: uses
+    consumes: [formatContextText]
+
+mapping:
+  paths:
+    - source/cli/src/cli/build-context.ts

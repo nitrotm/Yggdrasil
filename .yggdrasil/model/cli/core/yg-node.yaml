@@ -1,0 +1,6 @@
+name: Core
+type: module
+aspects:
+  - aspect: deterministic
+
+relations: []

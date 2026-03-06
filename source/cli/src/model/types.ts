@@ -3,15 +3,14 @@
 // ============================================================
 
 export interface NodeTypeConfig {
-  name: string;
+  description: string;
   required_aspects?: string[];
 }
 
 export interface YggConfig {
+  version?: string;
   name: string;
-  stack: Record<string, string>;
-  standards: string;
-  node_types: NodeTypeConfig[];
+  node_types: Record<string, NodeTypeConfig>;
   artifacts: Record<string, ArtifactConfig>;
   quality?: QualityConfig;
 }
@@ -20,7 +19,7 @@ export interface ArtifactConfig {
   required: 'always' | 'never' | { when: string };
   description: string;
   /** When true, include this artifact when building dependency context for structural relations */
-  structural_context?: boolean;
+  included_in_relations?: boolean;
 }
 
 export interface QualityConfig {
@@ -35,23 +34,19 @@ export interface QualityConfig {
 
 export type RelationType = 'uses' | 'calls' | 'extends' | 'implements' | 'emits' | 'listens';
 
-export interface AspectException {
+export interface NodeAspectEntry {
   aspect: string;
-  note: string;
+  exceptions?: string[];
+  anchors?: string[];
 }
 
 export interface NodeMeta {
   name: string;
   type: string;
-  aspects?: string[];
-  aspect_exceptions?: AspectException[];
+  aspects?: NodeAspectEntry[];
   blackbox?: boolean;
   relations?: Relation[];
   mapping?: NodeMapping;
-  /** Code anchors per aspect — maps aspect id to list of code patterns
-   *  (function names, constants, SQL fragments) that evidence the aspect's
-   *  implementation in this node's source files. */
-  anchors?: Record<string, string[]>;
 }
 
 export interface Relation {
@@ -71,13 +66,13 @@ export interface NodeMapping {
 export interface GraphNode {
   /** Path relative to model/, e.g. "orders/order-service" */
   path: string;
-  /** Parsed node.yaml content */
+  /** Parsed yg-node.yaml content */
   meta: NodeMeta;
-  /** Raw node.yaml file content (for context assembly without disk access) */
+  /** Raw yg-node.yaml file content (for context assembly without disk access) */
   nodeYamlRaw?: string;
   /** All artifact files in the node's directory */
   artifacts: Artifact[];
-  /** Child nodes (subdirectories with node.yaml) */
+  /** Child nodes (subdirectories with yg-node.yaml) */
   children: GraphNode[];
   /** Parent node (null for top-level nodes) */
   parent: GraphNode | null;
@@ -149,9 +144,9 @@ export interface JournalEntry {
 
 export interface Graph {
   config: YggConfig;
-  /** Present when config.yaml could not be parsed and loader used fallback config */
+  /** Present when yg-config.yaml could not be parsed and loader used fallback config */
   configError?: string;
-  /** Parse errors for node.yaml files (path -> message); reported as E001 */
+  /** Parse errors for yg-node.yaml files (path -> message); reported as E001 */
   nodeParseErrors?: Array<{ nodePath: string; message: string }>;
   /** All nodes indexed by their path (e.g. "orders/order-service") */
   nodes: Map<string, GraphNode>;

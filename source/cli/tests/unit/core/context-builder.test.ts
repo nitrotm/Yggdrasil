@@ -28,9 +28,7 @@ describe('context-builder', () => {
     it('produces correct markdown from config', () => {
       const config: YggConfig = {
         name: 'Test Project',
-        stack: { language: 'TypeScript', runtime: 'Node 22' },
-        standards: 'ESLint + Jest',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       };
       const layer = buildGlobalLayer(config);
@@ -38,12 +36,8 @@ describe('context-builder', () => {
       expect(layer.type).toBe('global');
       expect(layer.label).toBe('Global Context');
       expect(layer.content).toContain('**Project:** Test Project');
-      expect(layer.content).toContain('**Stack:**');
-      expect(layer.content).toContain('- language: TypeScript');
-      expect(layer.content).toContain('- runtime: Node 22');
-      expect(layer.content).toContain('**Standards:**');
-      expect(layer.content).toContain('ESLint');
-      expect(layer.content).toContain('Jest');
+      expect(layer.content).not.toContain('Stack');
+      expect(layer.content).not.toContain('Standards');
     });
   });
 
@@ -85,13 +79,11 @@ describe('context-builder', () => {
   describe('buildStructuralRelationLayer', () => {
     const defaultConfig: YggConfig = {
       name: '',
-      stack: {},
-      standards: '',
-      node_types: [{ name: 'service' }],
+      node_types: { service: { description: 'x' } },
       artifacts: {
         'responsibility.md': { required: 'always', description: 'x' },
-        'interface.md': { required: 'never', description: 'x', structural_context: true },
-        'errors.md': { required: 'never', description: 'x', structural_context: true },
+        'interface.md': { required: 'never', description: 'x', included_in_relations: true },
+        'errors.md': { required: 'never', description: 'x', included_in_relations: true },
         'description.md': { required: 'never', description: 'x' },
       },
     };
@@ -135,7 +127,7 @@ describe('context-builder', () => {
       expect(layer.content).toContain('### interface.md');
     });
 
-    it('uses structural_context artifacts when configured', () => {
+    it('uses included_in_relations artifacts when configured', () => {
       const configWithStructural = defaultConfig;
       const target: GraphNode = {
         path: 'dep/svc',
@@ -155,7 +147,7 @@ describe('context-builder', () => {
       expect(layer.content).toContain('E001');
     });
 
-    it('falls back to filterArtifactsByConfig when structural_context artifacts not in target', () => {
+    it('falls back to filterArtifactsByConfig when included_in_relations artifacts not in target', () => {
       const configWithStructural = {
         ...defaultConfig,
         artifacts: {
@@ -163,7 +155,7 @@ describe('context-builder', () => {
           'interface.md': {
             required: 'never' as const,
             description: 'x',
-            structural_context: true,
+            included_in_relations: true,
           },
         },
       };
@@ -281,7 +273,7 @@ describe('context-builder', () => {
       };
       const node: GraphNode = {
         path: 'test/node',
-        meta: { name: 'TestNode', type: 'service', aspects: ['requires-hipaa'] },
+        meta: { name: 'TestNode', type: 'service', aspects: [{ aspect: 'requires-hipaa' }] },
         artifacts: [{ filename: 'responsibility.md', content: 'x' }],
         children: [],
         parent: null,
@@ -289,9 +281,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['test/node', node]]),
@@ -321,7 +311,7 @@ describe('context-builder', () => {
       };
       const node: GraphNode = {
         path: 'test/node',
-        meta: { name: 'TestNode', type: 'service', aspects: ['tag-a'] },
+        meta: { name: 'TestNode', type: 'service', aspects: [{ aspect: 'tag-a' }] },
         artifacts: [{ filename: 'responsibility.md', content: 'x' }],
         children: [],
         parent: null,
@@ -329,9 +319,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['test/node', node]]),
@@ -348,7 +336,7 @@ describe('context-builder', () => {
     it('node with own aspects includes aspects in context', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const orderService = graph.nodes.get('orders/order-service')!;
-      expect(orderService.meta.aspects).toContain('requires-audit');
+      expect(orderService.meta.aspects).toContainEqual({ aspect: 'requires-audit' });
 
       const pkg = await buildContext(graph, 'orders/order-service');
       const aspectLayer = pkg.layers.find((l) => l.type === 'aspects');
@@ -456,7 +444,7 @@ describe('context-builder', () => {
     it('hierarchy aspects: child without own aspects inherits from ancestor (aspects on hierarchy layer)', async () => {
       const parent: GraphNode = {
         path: 'orders',
-        meta: { name: 'Orders', type: 'module', aspects: ['requires-audit'] },
+        meta: { name: 'Orders', type: 'module', aspects: [{ aspect: 'requires-audit' }] },
         artifacts: [],
         children: [],
         parent: null,
@@ -473,9 +461,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }, { name: 'service' }],
+          node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -506,14 +492,14 @@ describe('context-builder', () => {
     it('hierarchy aspects: node own aspects declared on own layer (aspects on own-artifacts)', async () => {
       const parent: GraphNode = {
         path: 'orders',
-        meta: { name: 'Orders', type: 'module', aspects: ['requires-audit'] },
+        meta: { name: 'Orders', type: 'module', aspects: [{ aspect: 'requires-audit' }] },
         artifacts: [],
         children: [],
         parent: null,
       };
       const child: GraphNode = {
         path: 'orders/order-service',
-        meta: { name: 'OrderService', type: 'service', aspects: ['requires-audit'] },
+        meta: { name: 'OrderService', type: 'service', aspects: [{ aspect: 'requires-audit' }] },
         artifacts: [{ filename: 'responsibility.md', content: 'x' }],
         children: [],
         parent,
@@ -523,9 +509,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }, { name: 'service' }],
+          node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -563,9 +547,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['orders/order-service', node]]),
@@ -617,9 +599,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }, { name: 'service' }],
+          node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -667,9 +647,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -712,9 +690,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -735,13 +711,13 @@ describe('context-builder', () => {
       expect(eventLayer?.content).toContain('You listen');
     });
 
-    it('own layer includes node.yaml and artifacts', async () => {
+    it('own layer includes yg-node.yaml and artifacts', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const pkg = await buildContext(graph, 'orders/order-service');
 
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('name: OrderService');
       expect(ownLayer?.content).toContain('type: service');
       expect(ownLayer?.content).toContain('relations:');
@@ -759,9 +735,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['svc', node]]),
@@ -795,7 +769,7 @@ describe('context-builder', () => {
       const pkg = await buildContext(graph, 'orders/order-service');
 
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('### description.md');
 
       const relationLayer = pkg.layers.find((l) => l.type === 'relational');
@@ -824,14 +798,14 @@ describe('context-builder', () => {
       // Manually build a graph with 2 aspects on 2 different ids
       const parent: GraphNode = {
         path: 'mod',
-        meta: { name: 'Mod', type: 'module', aspects: ['tag-a'] },
+        meta: { name: 'Mod', type: 'module', aspects: [{ aspect: 'tag-a' }] },
         artifacts: [],
         children: [],
         parent: null,
       };
       const child: GraphNode = {
         path: 'mod/svc',
-        meta: { name: 'Svc', type: 'service', aspects: ['tag-a', 'tag-b'] },
+        meta: { name: 'Svc', type: 'service', aspects: [{ aspect: 'tag-a' }, { aspect: 'tag-b' }] },
         artifacts: [{ filename: 'desc.md', content: 'service desc' }],
         children: [],
         parent,
@@ -841,9 +815,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'MultiAspect',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }, { name: 'service' }],
+          node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([
@@ -888,9 +860,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['test/node', node]]),
@@ -905,18 +875,18 @@ describe('context-builder', () => {
       expect(ownLayer?.content).not.toContain('(not found)');
     });
 
-    it('own layer includes raw node.yaml from fixture', async () => {
+    it('own layer includes raw yg-node.yaml from fixture', async () => {
       const graph = await loadGraph(FIXTURE_PROJECT);
       const pkg = await buildContext(graph, 'auth');
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
       expect(ownLayer?.content).toContain('name:');
       expect(ownLayer?.content).toContain('type:');
     });
 
     it('empty own artifacts produce own layer with empty content', async () => {
-      // Node with only node.yaml, no other artifacts
+      // Node with only yg-node.yaml, no other artifacts
       const node: GraphNode = {
         path: 'bare',
         meta: { name: 'Bare', type: 'module' },
@@ -927,9 +897,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }],
+          node_types: { module: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['bare', node]]),
@@ -942,7 +910,7 @@ describe('context-builder', () => {
       const pkg = await buildContext(graph, 'bare');
       const ownLayer = pkg.layers.find((l) => l.type === 'own');
       expect(ownLayer).toBeDefined();
-      expect(ownLayer?.content).toContain('### node.yaml');
+      expect(ownLayer?.content).toContain('### yg-node.yaml');
     });
   });
 
@@ -973,7 +941,7 @@ describe('context-builder', () => {
       expect(output).toContain('# Path: orders/order-service');
       expect(output).toContain('# Generated:');
       expect(output).toContain('## OwnArtifacts');
-      expect(output).toContain('### node.yaml');
+      expect(output).toContain('### yg-node.yaml');
     });
 
     it('contains Materialization Target when mapping exists', async () => {
@@ -1042,9 +1010,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'service' }],
+          node_types: { service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([['orders/order-service', node]]),
@@ -1076,7 +1042,7 @@ describe('context-builder', () => {
     it('formatContextText includes aspects on hierarchy for ancestor aspects', async () => {
       const parent: GraphNode = {
         path: 'orders',
-        meta: { name: 'Orders', type: 'module', aspects: ['requires-audit'] },
+        meta: { name: 'Orders', type: 'module', aspects: [{ aspect: 'requires-audit' }] },
         artifacts: [],
         children: [],
         parent: null,
@@ -1093,9 +1059,7 @@ describe('context-builder', () => {
       const graph: Graph = {
         config: {
           name: 'T',
-          stack: {},
-          standards: '',
-          node_types: [{ name: 'module' }, { name: 'service' }],
+          node_types: { module: { description: 'x' }, service: { description: 'x' } },
           artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
         },
         nodes: new Map([

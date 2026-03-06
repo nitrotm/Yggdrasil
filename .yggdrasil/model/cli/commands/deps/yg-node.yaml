@@ -1,0 +1,17 @@
+name: DepsCommand
+type: library
+aspects:
+  - aspect: deterministic
+  - aspect: cli-command-contract
+
+relations:
+  - target: cli/core/loader
+    type: uses
+    consumes: [loadGraph]
+  - target: cli/core/dependency-resolver
+    type: uses
+    consumes: [formatDependencyTree]
+
+mapping:
+  paths:
+    - source/cli/src/cli/deps.ts

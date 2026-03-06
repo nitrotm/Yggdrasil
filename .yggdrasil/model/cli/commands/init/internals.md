@@ -15,7 +15,7 @@
 5. **Full init**:
    - mkdir model, aspects, flows, schemas
    - Copy graph-schemas/*.yaml to schemas/
-   - Write config.yaml (DEFAULT_CONFIG)
+   - Write yg-config.yaml (DEFAULT_CONFIG)
    - Write .gitignore (.journal.yaml, journals-archive/)
    - installRulesForPlatform(projectRoot, platform)
 

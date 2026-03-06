@@ -1,7 +1,0 @@
-name: "Dup"
-node_types: [service]
-artifacts:
-  responsibility:
-    required: always
-    description: "x"
-

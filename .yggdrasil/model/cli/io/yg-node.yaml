@@ -1,0 +1,31 @@
+name: IO
+type: library
+aspects:
+  - aspect: deterministic
+  - aspect: posix-paths
+  - aspect: yaml-parser-contract
+  - aspect: silent-missing-files
+
+relations:
+  - target: cli/model
+    type: uses
+    consumes:
+      - YggConfig
+      - ArtifactConfig
+      - QualityConfig
+      - NodeMeta
+      - NodeAspectEntry
+      - NodeMapping
+      - Relation
+      - RelationType
+      - Artifact
+      - FlowDef
+      - AspectDef
+      - SchemaDef
+      - DriftState
+      - DriftNodeState
+      - JournalEntry
+
+mapping:
+  paths:
+    - source/cli/src/io/

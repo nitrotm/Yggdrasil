@@ -1,0 +1,11 @@
+name: Templates
+type: library
+aspects:
+  - aspect: deterministic
+
+relations: []
+
+mapping:
+  paths:
+    - source/cli/src/templates/
+    - source/cli/graph-schemas/

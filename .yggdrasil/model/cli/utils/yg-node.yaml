@@ -1,0 +1,13 @@
+name: Utils
+type: library
+aspects:
+  - aspect: posix-paths
+
+relations:
+  - target: cli/model
+    type: uses
+    consumes: [NodeMapping]
+
+mapping:
+  paths:
+    - source/cli/src/utils/

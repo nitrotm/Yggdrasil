@@ -16,11 +16,11 @@ describe('artifact-reader', () => {
     expect(artifacts.some((a) => a.filename.endsWith('.md'))).toBe(true);
   });
 
-  it('excludes node.yaml by default', async () => {
+  it('excludes yg-node.yaml by default', async () => {
     const dir = path.join(FIXTURE_BASE, 'orders');
     const artifacts = await readArtifacts(dir);
 
-    expect(artifacts.every((a) => a.filename !== 'node.yaml')).toBe(true);
+    expect(artifacts.every((a) => a.filename !== 'yg-node.yaml')).toBe(true);
   });
 
   it('excludes specified files when passed', async () => {
@@ -28,9 +28,9 @@ describe('artifact-reader', () => {
       __dirname,
       '../../fixtures/sample-project/.yggdrasil/flows/checkout-flow',
     );
-    const artifacts = await readArtifacts(dir, ['flow.yaml']);
+    const artifacts = await readArtifacts(dir, ['yg-flow.yaml']);
 
-    expect(artifacts.every((a) => a.filename !== 'flow.yaml')).toBe(true);
+    expect(artifacts.every((a) => a.filename !== 'yg-flow.yaml')).toBe(true);
     expect(artifacts.some((a) => a.filename === 'sequence.md')).toBe(true);
   });
 

@@ -5,7 +5,7 @@ title: Configuration
 Everything here is optional except the fields required by the schema.
 Yggdrasil works out of the box with sensible defaults.
 
-Config file: `.yggdrasil/config.yaml`
+Config file: `.yggdrasil/yg-config.yaml`
 
 ---
 
@@ -14,25 +14,25 @@ Config file: `.yggdrasil/config.yaml`
 ### Required fields
 
 - **name** — Project identity (non-empty string)
-- **node_types** — Non-empty array of node types. Each element is a string (e.g. `module`, `service`) or an object `{ name, required_aspects? }`. `required_aspects` lists aspects that nodes of this type must have coverage for (directly or via aspect `implies`).
+- **node_types** — Non-empty object of node type definitions. Each key is a type name, value is `{ description, required_aspects? }`. `description` is required agent guidance. `required_aspects` lists aspects that nodes of this type must have coverage for (directly or via aspect `implies`).
 - **artifacts** — Non-empty object defining artifact types and their requirements
 
 ### Optional fields
 
-- **stack** — Key-value metadata (e.g. `language`, `runtime`)
-- **standards** — Project standards text (e.g. coding conventions)
+- **version** — CLI version that last wrote this config. Set automatically by `yg init` and
+  `yg init --upgrade`.
 - **quality** — Quality thresholds
 
 ---
 
 ## What you can customize
 
-- **Node types** — The vocabulary of parts your repo uses (e.g. `module`, `service`, `library`). Optionally, each type can declare `required_aspects` — aspects that nodes of that type must have coverage for (directly or via aspect composition).
+- **Node types** — The vocabulary of parts your repo uses (e.g. `module`, `service`, `library`). Each type has a `description` (agent guidance) and optionally `required_aspects` — aspects that nodes of that type must have coverage for (directly or via aspect composition).
 - **Artifacts** — The kinds of meaning you want to capture per node. Each artifact has:
   - `required`: `always` | `never` | `{ when: "<condition>" }`
     - Supported `when` conditions: `has_incoming_relations`, `has_outgoing_relations`, `has_aspect:<name>` (legacy `has_tag:<name>` also accepted)
   - `description`: string
-  - `structural_context`: boolean — When `true`, this artifact is included in the context package of dependent nodes (via structural relations like uses, calls, extends, implements). Default artifacts with this flag: `responsibility.md`, `interface.md`, `constraints.md`, `errors.md`.
+  - `included_in_relations`: boolean — When `true`, this artifact is included in the context package of dependent nodes (via structural relations like uses, calls, extends, implements). Default artifacts with this flag: `responsibility.md`, `interface.md`, `constraints.md`, `errors.md`.
 - **Quality thresholds** — When to warn about shallow memory or large context
 
 ---
@@ -53,40 +53,36 @@ Config file: `.yggdrasil/config.yaml`
 ```yaml
 name: my-repo
 
-stack:
-  language: TypeScript
-  runtime: Node.js 22+
-
-standards: |
-  Strict TypeScript. ESM modules. Vitest for tests.
-
 node_types:
-  - module
-  - service
-  - library
+  module:
+    description: "Business logic unit with clear domain responsibility"
+  service:
+    description: "Component providing functionality to other nodes"
+  library:
+    description: "Shared utility code with no domain knowledge"
 
 artifacts:
   responsibility.md:
     required: always
     description: "What this node is responsible for, and what it is not"
-    structural_context: true
+    included_in_relations: true
   interface.md:
     required:
       when: has_incoming_relations
     description: "Public API — methods, parameters, return types, contracts"
-    structural_context: true
+    included_in_relations: true
   logic.md:
     required: never
     description: "Algorithmic flow, control flow, branching logic, decision trees"
   constraints.md:
     required: never
     description: "Validation rules, business rules, invariants"
-    structural_context: true
+    included_in_relations: true
   errors.md:
     required:
       when: has_incoming_relations
     description: "Failure modes, edge cases, error conditions, recovery behavior"
-    structural_context: true
+    included_in_relations: true
   model.md:
     required: never
     description: "Data structures, schemas, entities, type definitions"
@@ -109,5 +105,5 @@ quality:
 
 ## Notes
 
-- Artifact name `node.yaml` is reserved.
-- `config.yaml: quality.context_budget.error` must be >= `context_budget.warning`.
+- Artifact name `yg-node.yaml` is reserved.
+- `yg-config.yaml: quality.context_budget.error` must be >= `context_budget.warning`.

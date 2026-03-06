@@ -9,12 +9,12 @@
 
 **Layer builders (exported for tests):**
 
-- `buildGlobalLayer(config: YggConfig): ContextLayer` — project name, stack, standards.
+- `buildGlobalLayer(config: YggConfig): ContextLayer` — project name.
 - `buildHierarchyLayer(ancestor: GraphNode, config: YggConfig, graph: Graph): ContextLayer` — filtered by config.artifacts; adds attrs.aspects from ancestor aspects + expandAspects.
-- `buildOwnLayer(node: GraphNode, config: YggConfig, graphRootPath: string, graph: Graph): Promise<ContextLayer>` — reads node.yaml from disk; uses node.artifacts; adds attrs.aspects from node aspects + expandAspects.
-- `buildStructuralRelationLayer(target: GraphNode, relation: Relation, config: YggConfig): ContextLayer` — prefers structural_context artifacts; includes consumes, failure.
+- `buildOwnLayer(node: GraphNode, config: YggConfig, graphRootPath: string, graph: Graph): Promise<ContextLayer>` — reads yg-node.yaml from disk; uses node.artifacts; adds attrs.aspects from node aspects + expandAspects.
+- `buildStructuralRelationLayer(target: GraphNode, relation: Relation, config: YggConfig): ContextLayer` — prefers included_in_relations artifacts; includes consumes, failure.
 - `buildEventRelationLayer(target: GraphNode, relation: Relation): ContextLayer`
-- `buildAspectLayer(aspect: AspectDef, exceptionNote?: string): ContextLayer` — renders aspect content; if aspect has `stability`, appends "Stability tier: ..." line; if `exceptionNote` is provided, appends a warning block: "Exception for this node: {note}". The exception note comes from `node.meta.aspect_exceptions` entries matched by aspect id.
+- `buildAspectLayer(aspect: AspectDef, exceptionNote?: string): ContextLayer` — renders aspect content; if aspect has `stability`, appends "Stability tier: ..." line; if `exceptionNote` is provided, appends a warning block: "Exception for this node: {note}". The exception note comes from the aspect entry's `exceptions` field in `node.meta.aspects`, joined with '; '.
 - `collectAncestors(node: GraphNode): GraphNode[]` — returns ancestors from parent chain.
 
 **Constants (internal):** `STRUCTURAL_RELATION_TYPES`, `EVENT_RELATION_TYPES`.
@@ -23,5 +23,5 @@
 
 - **Node not found**: Throws `Error("Node not found: ${nodePath}")` if nodePath not in graph.nodes.
 - **Broken relation**: Throws `Error("Broken relation: ${nodePath} -> ${relation.target} (target not found)")` when structural or event relation target not in graph.
-- **buildOwnLayer node.yaml read**: Catches readFile errors; emits `(not found)` in content instead of throwing.
+- **buildOwnLayer yg-node.yaml read**: Catches readFile errors; emits `(not found)` in content instead of throwing.
 - **Artifact read failure**: Other readFile calls (e.g. in loader-provided artifacts) — not in context-builder; artifacts come pre-loaded.

@@ -45,9 +45,7 @@ function createGraph(overrides: Partial<Graph> = {}): Graph {
   return {
     config: {
       name: 'Test',
-      stack: {},
-      standards: '',
-      node_types: [{ name: 'service' }],
+      node_types: { service: { description: 'x' } },
       artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
     },
     nodes: new Map(),
@@ -108,7 +106,7 @@ describe('validator', () => {
 
   it('unknown-aspect (E003) returns error when node aspect has no aspect def', async () => {
     const graph = createGraph();
-    graph.nodes.set('a', createNode('a', { aspects: ['no-aspect-for-this'] }));
+    graph.nodes.set('a', createNode('a', { aspects: [{ aspect: 'no-aspect-for-this' }] }));
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'unknown-aspect');
@@ -135,45 +133,12 @@ describe('validator', () => {
     expect(issues[0].message).toContain('Aspect Two');
   });
 
-  it('invalid-aspect-exception (E018) when aspect_exceptions references aspect not in aspects list', async () => {
-    const graph = createGraph();
-    graph.nodes.set(
-      'a',
-      createNode('a', {
-        aspects: ['valid-tag'],
-        aspect_exceptions: [{ aspect: 'nonexistent-aspect', note: 'test' }],
-      }),
-    );
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'invalid-aspect-exception');
-    expect(issues).toHaveLength(1);
-    expect(issues[0].code).toBe('E018');
-    expect(issues[0].message).toContain('nonexistent-aspect');
-  });
-
-  it('valid aspect_exceptions do not produce E018', async () => {
-    const graph = createGraph();
-    graph.nodes.set(
-      'a',
-      createNode('a', {
-        aspects: ['valid-tag'],
-        aspect_exceptions: [{ aspect: 'valid-tag', note: 'deviates from pattern' }],
-      }),
-    );
-
-    const result = await validate(graph);
-    const issues = result.issues.filter((i) => i.rule === 'invalid-aspect-exception');
-    expect(issues).toHaveLength(0);
-  });
 
   it('infrastructure is accepted as valid node type', async () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }, { name: 'infrastructure' }],
+        node_types: { service: { description: 'x' }, infrastructure: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
@@ -192,10 +157,10 @@ describe('validator', () => {
 
     await mkdir(badNodeDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(badNodeDir, 'node.yaml'), 'type: service\n# missing name');
+    await writeFile(path.join(badNodeDir, 'yg-node.yaml'), 'type: service\n# missing name');
 
     try {
       const graph = await loadGraph(tmpDir);
@@ -215,7 +180,7 @@ describe('validator', () => {
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-node-yaml');
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toContain('no node.yaml');
+    expect(issues[0].message).toContain('no yg-node.yaml');
     expect(issues[0].nodePath).toBe('orders/orphan-service');
     expect(issues[0].code).toBe('E015');
   });
@@ -230,10 +195,10 @@ describe('validator', () => {
     await mkdir(orphanDir, { recursive: true });
     await mkdir(serviceDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(serviceDir, 'node.yaml'), 'name: Svc\ntype: service\n');
+    await writeFile(path.join(serviceDir, 'yg-node.yaml'), 'name: Svc\ntype: service\n');
     await writeFile(path.join(orphanDir, 'readme.md'), '# orphan content');
 
     try {
@@ -257,10 +222,10 @@ describe('validator', () => {
 
     await mkdir(childDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: V\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: V\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(childDir, 'node.yaml'), 'name: Child\ntype: service\n');
+    await writeFile(path.join(childDir, 'yg-node.yaml'), 'name: Child\ntype: service\n');
     await writeFile(path.join(childDir, 'responsibility.md'), 'Child responsibility content here — enough to pass.');
 
     try {
@@ -294,9 +259,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: { required: 'never', description: '' },
@@ -398,9 +361,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
@@ -413,10 +374,10 @@ describe('validator', () => {
 
   it('non-regression: does not enforce node/relation vocabulary', async () => {
     const graph = createGraph();
-    graph.config.node_types = [
-      { name: 'totally-custom-type' },
-      { name: 'another-custom-type' },
-    ];
+    graph.config.node_types = {
+      'totally-custom-type': { description: 'x' },
+      'another-custom-type': { description: 'x' },
+    };
     graph.nodes.set(
       'strange/node',
       createNode('strange/node', {
@@ -438,7 +399,7 @@ describe('validator', () => {
 
   it('non-regression: does not require interface.yaml by node type', async () => {
     const graph = createGraph();
-    graph.config.node_types = [{ name: 'service' }, { name: 'api' }];
+    graph.config.node_types = { service: { description: 'x' }, api: { description: 'x' } };
     graph.nodes.set('api/no-interface', {
       ...createNode('api/no-interface', { type: 'api' }),
       artifacts: [{ filename: 'responsibility.md', content: 'x' }],
@@ -619,9 +580,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           interface: {
@@ -643,9 +602,7 @@ describe('validator', () => {
       aspects: [{ name: 'Special', id: 'special', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: {
@@ -756,9 +713,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -785,9 +740,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -815,9 +768,7 @@ describe('validator', () => {
       aspects: [{ name: 'PublicAPI', id: 'public-api', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -828,7 +779,7 @@ describe('validator', () => {
       },
     });
     graph.nodes.set('svc', {
-      ...createNode('svc', { aspects: ['public-api'] }),
+      ...createNode('svc', { aspects: [{ aspect: 'public-api' }] }),
       artifacts: [{ filename: 'responsibility.md', content: 'x' }],
     });
 
@@ -843,9 +794,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           interface: {
@@ -868,9 +817,7 @@ describe('validator', () => {
       aspects: [{ name: 'Special', id: 'special', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           responsibility: { required: 'always', description: 'x' },
           optional: {
@@ -892,9 +839,7 @@ describe('validator', () => {
       aspects: [{ name: 'PublicAPI', id: 'public-api', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
           'interface.md': {
@@ -905,7 +850,7 @@ describe('validator', () => {
       },
     });
     graph.nodes.set('svc', {
-      ...createNode('svc', { aspects: ['public-api'] }),
+      ...createNode('svc', { aspects: [{ aspect: 'public-api' }] }),
       artifacts: [{ filename: 'responsibility.md', content: 'x' }],
     });
 
@@ -997,13 +942,11 @@ describe('validator', () => {
       aspects: [{ name: 'Audit', id: 'requires-audit', artifacts: [] }],
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service', required_aspects: ['requires-audit'] }],
+        node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
     });
-    graph.nodes.set('svc', createNode('svc', { aspects: [] }));
+    graph.nodes.set('svc', createNode('svc'));
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-required-aspect-coverage');
@@ -1016,9 +959,7 @@ describe('validator', () => {
     const graph = createGraph({
       config: {
         name: 'Test',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service', required_aspects: ['requires-audit'] }],
+        node_types: { service: { description: 'x', required_aspects: ['requires-audit'] } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       aspects: [
@@ -1026,7 +967,7 @@ describe('validator', () => {
         { name: 'HIPAA', id: 'requires-hipaa', implies: ['requires-audit'], artifacts: [] },
       ],
     });
-    graph.nodes.set('svc', createNode('svc', { aspects: ['requires-hipaa'] }));
+    graph.nodes.set('svc', createNode('svc', { aspects: [{ aspect: 'requires-hipaa' }] }));
 
     const result = await validate(graph);
     const issues = result.issues.filter((i) => i.rule === 'missing-required-aspect-coverage');
@@ -1070,7 +1011,7 @@ describe('validator', () => {
   it('scoped validate returns parse error instead of "not found" for broken node', async () => {
     const graph = createGraph({
       nodeParseErrors: [
-        { nodePath: 'broken/node', message: 'node.yaml at broken/node/node.yaml: file is empty' },
+        { nodePath: 'broken/node', message: 'yg-node.yaml at broken/node/yg-node.yaml: file is empty' },
       ],
     });
     // The broken node is NOT in graph.nodes (it failed to parse)
@@ -1084,7 +1025,7 @@ describe('validator', () => {
   it('scoped validate returns parse error for child of broken node', async () => {
     const graph = createGraph({
       nodeParseErrors: [
-        { nodePath: 'broken', message: 'node.yaml at broken/node.yaml: file is empty' },
+        { nodePath: 'broken', message: 'yg-node.yaml at broken/yg-node.yaml: file is empty' },
       ],
     });
     const result = await validate(graph, 'broken/child');

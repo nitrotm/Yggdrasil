@@ -36,4 +36,4 @@ The CLI is organized in a layered architecture with clear separation of concerns
 
 ## Invariant
 
-Tools never write node.yaml or artifacts. Exception: init creates bootstrap structure; drift-sync writes .drift-state; journal commands write .journal.yaml.
+Tools never write yg-node.yaml or artifacts. Exception: init creates bootstrap structure; drift-sync writes .drift-state; journal commands write .journal.yaml.

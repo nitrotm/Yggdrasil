@@ -1,0 +1,4 @@
+name: Orders
+type: module
+aspects:
+  - aspect: requires-audit

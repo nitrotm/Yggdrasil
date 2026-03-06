@@ -16,21 +16,21 @@ const FIXTURE_PROJECT = path.join(__dirname, '../../fixtures/sample-project');
 /** Canonical fixture drift-state — used to restore after tests that call syncDriftState. */
 const FIXTURE_DRIFT_STATE: Record<string, { hash: string; files: Record<string, string> }> = {
   'auth/auth-api': {
-    hash: '32264f21ff53921976fad6669ff876d5bf67152f62f9a89db803db0de0bcc514',
+    hash: '19c10fa4950aaff597608d77833bdfc15c77f720c6bca55702e7759a62da8083',
     files: {
-      '.yggdrasil/model/auth/auth-api/node.yaml':
+      '.yggdrasil/model/auth/auth-api/yg-node.yaml':
         '40c1087d83ac1b5132e10d3a40beb65af24c6cd13ff6067b7674654e032b4eac',
       '.yggdrasil/model/auth/auth-api/responsibility.md':
         'f47a9cf8d239d70760ae4779ff68a923559ac9ca50762c64b304c802a302cc92',
-      '.yggdrasil/model/auth/node.yaml':
+      '.yggdrasil/model/auth/yg-node.yaml':
         'c609370d51a049baf4013828f66bc1ecf8ec815da99240ea01237ac912974269',
       '.yggdrasil/model/auth/responsibility.md':
         'd3ca07574d55e24a6f0a7e0771019c6f85f40c127cda11da93034675aa8b9fdb',
-      '.yggdrasil/aspects/requires-logging/aspect.yaml':
+      '.yggdrasil/aspects/requires-logging/yg-aspect.yaml':
         '08dd592c74f6889713e09c899e003badf00430c7d25a74768449eb0d7fb7beb0',
       '.yggdrasil/aspects/requires-logging/content.md':
         '13fff2681612d392624588850569f287bb450307e2ee9750987b281279dd64f3',
-      '.yggdrasil/flows/checkout-flow/flow.yaml':
+      '.yggdrasil/flows/checkout-flow/yg-flow.yaml':
         '1804e9470685eec45545c5ff94e1da359f244ac0c69ddb3721aaeb98bd3d064b',
       '.yggdrasil/flows/checkout-flow/description.md':
         '84056fed046bd51b834af307ee1208c4617eca1df652773c84e4c18f96bcf0fa',
@@ -79,9 +79,9 @@ async function createTmpProject(
 
   await mkdir(nodeDir, { recursive: true });
   await writeFile(
-    path.join(yggRoot, 'config.yaml'),
+    path.join(yggRoot, 'yg-config.yaml'),
     opts.configYaml ??
-      'name: Test\nnode_types: [service]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
+      'name: Test\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
   );
   await writeFile(path.join(yggRoot, '.drift-state'), '{}');
 
@@ -90,7 +90,7 @@ async function createTmpProject(
     for (const pn of opts.parentNodes) {
       const parentDir = path.join(yggRoot, 'model', pn.path);
       await mkdir(parentDir, { recursive: true });
-      await writeFile(path.join(parentDir, 'node.yaml'), pn.yaml);
+      await writeFile(path.join(parentDir, 'yg-node.yaml'), pn.yaml);
     }
   } else {
     // Auto-create parent from nodePath
@@ -100,7 +100,7 @@ async function createTmpProject(
       const parentDir = path.join(yggRoot, 'model', parentPath);
       await mkdir(parentDir, { recursive: true });
       await writeFile(
-        path.join(parentDir, 'node.yaml'),
+        path.join(parentDir, 'yg-node.yaml'),
         `name: ${parts[parts.length - 2]}\ntype: module\n`,
       );
     }
@@ -111,7 +111,7 @@ async function createTmpProject(
     for (const aspect of opts.aspects) {
       const aspectDir = path.join(yggRoot, 'aspects', aspect.id);
       await mkdir(aspectDir, { recursive: true });
-      await writeFile(path.join(aspectDir, 'aspect.yaml'), aspect.yaml);
+      await writeFile(path.join(aspectDir, 'yg-aspect.yaml'), aspect.yaml);
       if (aspect.files) {
         for (const [filename, content] of Object.entries(aspect.files)) {
           await writeFile(path.join(aspectDir, filename), content);
@@ -121,7 +121,7 @@ async function createTmpProject(
   }
 
   // Node YAML
-  await writeFile(path.join(nodeDir, 'node.yaml'), opts.nodeYaml);
+  await writeFile(path.join(nodeDir, 'yg-node.yaml'), opts.nodeYaml);
 
   // Mapping files (source files)
   if (opts.mappingFiles) {
@@ -288,8 +288,8 @@ mapping:
 
         expect(sourcePaths).toContain('src/svc/my.ts');
         expect(graphPaths.length).toBeGreaterThan(0);
-        // Should include node.yaml for the node itself
-        expect(graphPaths).toContain('.yggdrasil/model/svc/my-service/node.yaml');
+        // Should include yg-node.yaml for the node itself
+        expect(graphPaths).toContain('.yggdrasil/model/svc/my-service/yg-node.yaml');
 
         // After sync, detect should report ok
         const report = await detectDrift(graph);
@@ -457,7 +457,7 @@ mapping:
         nodeYaml: `name: AuditedService
 type: service
 aspects:
-  - requires-audit
+  - aspect: requires-audit
 mapping:
   paths:
     - src/audited.ts
@@ -529,7 +529,7 @@ mapping:
         // Modify BOTH source and graph
         await writeFile(path.join(tmpDir, 'src/full.ts'), '// modified source');
         await writeFile(
-          path.join(tmpDir, '.yggdrasil/model/svc/full-svc/node.yaml'),
+          path.join(tmpDir, '.yggdrasil/model/svc/full-svc/yg-node.yaml'),
           'name: FullSvcRenamed\ntype: service\nmapping:\n  paths:\n    - src/full.ts',
         );
 
@@ -577,7 +577,7 @@ mapping:
         nodeYaml: `name: GraphSvc
 type: service
 aspects:
-  - test-aspect
+  - aspect: test-aspect
 mapping:
   paths:
     - src/graph.ts
@@ -607,12 +607,12 @@ mapping:
         const filePaths = Object.keys(storedEntry!.files);
         const graphPaths = filePaths.filter((p) => p.startsWith('.yggdrasil/'));
 
-        // Should include node.yaml for own node
-        expect(graphPaths).toContain('.yggdrasil/model/svc/graph-svc/node.yaml');
-        // Should include parent node.yaml
-        expect(graphPaths).toContain('.yggdrasil/model/svc/node.yaml');
+        // Should include yg-node.yaml for own node
+        expect(graphPaths).toContain('.yggdrasil/model/svc/graph-svc/yg-node.yaml');
+        // Should include parent yg-node.yaml
+        expect(graphPaths).toContain('.yggdrasil/model/svc/yg-node.yaml');
         // Should include aspect files
-        expect(graphPaths).toContain('.yggdrasil/aspects/test-aspect/aspect.yaml');
+        expect(graphPaths).toContain('.yggdrasil/aspects/test-aspect/yg-aspect.yaml');
         expect(graphPaths).toContain('.yggdrasil/aspects/test-aspect/requirements.md');
         // Should include source file
         expect(filePaths).toContain('src/graph.ts');
@@ -631,17 +631,17 @@ mapping:
 
       await mkdir(childNodeDir, { recursive: true });
       await writeFile(
-        path.join(yggRoot, 'config.yaml'),
-        'name: Test\nnode_types: [module]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
+        path.join(yggRoot, 'yg-config.yaml'),
+        'name: Test\nnode_types:\n  module:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n',
       );
       await writeFile(path.join(yggRoot, '.drift-state'), '{}');
       await writeFile(
-        path.join(parentNodeDir, 'node.yaml'),
+        path.join(parentNodeDir, 'yg-node.yaml'),
         'name: Platform\ntype: module\nmapping:\n  paths:\n    - src/platform\n',
       );
       await writeFile(path.join(parentNodeDir, 'responsibility.md'), 'Platform handles shared concerns.');
       await writeFile(
-        path.join(childNodeDir, 'node.yaml'),
+        path.join(childNodeDir, 'yg-node.yaml'),
         'name: Auth\ntype: module\nmapping:\n  paths:\n    - src/platform/auth\n',
       );
       await writeFile(path.join(childNodeDir, 'responsibility.md'), 'Auth handles authentication.');

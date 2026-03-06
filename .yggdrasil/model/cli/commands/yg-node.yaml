@@ -1,0 +1,7 @@
+name: Commands
+type: module
+aspects:
+  - aspect: deterministic
+  - aspect: cli-command-contract
+
+relations: []

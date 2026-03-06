@@ -1,0 +1,21 @@
+name: OwnerCommand
+type: library
+aspects:
+  - aspect: deterministic
+  - aspect: cli-command-contract
+  - aspect: posix-paths
+
+relations:
+  - target: cli/core/loader
+    type: uses
+    consumes: [loadGraph]
+  - target: cli/utils
+    type: uses
+    consumes: [normalizeMappingPaths, normalizeProjectRelativePath]
+  - target: cli/model
+    type: uses
+    consumes: [Graph, OwnerResult]
+
+mapping:
+  paths:
+    - source/cli/src/cli/owner.ts

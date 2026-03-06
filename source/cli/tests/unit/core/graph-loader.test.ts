@@ -14,8 +14,8 @@ describe('graph-loader', () => {
     const yggRoot = path.join(tmpDir, '.yggdrasil');
     await mkdir(yggRoot, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: T\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility:\n    required: always\n    description: x',
       'utf-8',
     );
 
@@ -123,7 +123,7 @@ describe('graph-loader', () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-graph-invalid-config-throw');
     const yggRoot = path.join(tmpDir, '.yggdrasil');
     await mkdir(path.join(yggRoot, 'model'), { recursive: true });
-    await writeFile(path.join(yggRoot, 'config.yaml'), 'invalid: yaml: [[[', 'utf-8');
+    await writeFile(path.join(yggRoot, 'yg-config.yaml'), 'invalid: yaml: [[[', 'utf-8');
 
     try {
       await expect(loadGraph(tmpDir, { tolerateInvalidConfig: false })).rejects.toThrow();
@@ -142,7 +142,7 @@ describe('graph-loader', () => {
     expect(Array.isArray(graph.schemas)).toBe(true);
   });
 
-  it('skips subdirectories without node.yaml (hasNodeYaml false)', async () => {
+  it('skips subdirectories without yg-node.yaml (hasNodeYaml false)', async () => {
     const { mkdir, writeFile, rm } = await import('node:fs/promises');
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-graph-skip-no-node');
     const yggRoot = path.join(tmpDir, '.yggdrasil');
@@ -150,12 +150,12 @@ describe('graph-loader', () => {
     await mkdir(path.join(modelDir, 'svc', 'with-node'), { recursive: true });
     await mkdir(path.join(modelDir, 'svc', 'empty-dir'), { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: T\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(modelDir, 'svc', 'node.yaml'), 'name: Svc\ntype: module\n');
+    await writeFile(path.join(modelDir, 'svc', 'yg-node.yaml'), 'name: Svc\ntype: module\n');
     await writeFile(
-      path.join(modelDir, 'svc', 'with-node', 'node.yaml'),
+      path.join(modelDir, 'svc', 'with-node', 'yg-node.yaml'),
       'name: W\ntype: service\n',
     );
 
@@ -177,10 +177,10 @@ describe('graph-loader', () => {
     await mkdir(modelDir, { recursive: true });
     await writeFile(path.join(yggRoot, 'aspects'), 'not-a-dir', 'utf-8');
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: T\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
+    await writeFile(path.join(modelDir, 'yg-node.yaml'), 'name: S\ntype: service\n');
 
     try {
       const graph = await loadGraph(tmpDir);
@@ -198,10 +198,10 @@ describe('graph-loader', () => {
     const modelDir = path.join(yggRoot, 'model', 'svc');
     await mkdir(modelDir, { recursive: true });
     await writeFile(
-      path.join(yggRoot, 'config.yaml'),
-      'name: T\nnode_types: [service]\nartifacts:\n  responsibility:\n    required: always\n    description: x',
+      path.join(yggRoot, 'yg-config.yaml'),
+      'name: T\nnode_types:\n  service:\n    description: x\nartifacts:\n  responsibility:\n    required: always\n    description: x',
     );
-    await writeFile(path.join(modelDir, 'node.yaml'), 'name: S\ntype: service\n');
+    await writeFile(path.join(modelDir, 'yg-node.yaml'), 'name: S\ntype: service\n');
     // No aspects/, flows/, schemas/ dirs
 
     try {
@@ -221,13 +221,13 @@ describe('graph-loader', () => {
     const yggRoot = path.join(tmpDir, '.yggdrasil');
     const nodeDir = path.join(yggRoot, 'model', 'svc');
     await mkdir(nodeDir, { recursive: true });
-    await writeFile(path.join(yggRoot, 'config.yaml'), 'invalid: yaml: [[[', 'utf-8');
+    await writeFile(path.join(yggRoot, 'yg-config.yaml'), 'invalid: yaml: [[[', 'utf-8');
     await writeFile(
-      path.join(yggRoot, 'model', 'node.yaml'),
+      path.join(yggRoot, 'model', 'yg-node.yaml'),
       'name: Root\ntype: module\n',
       'utf-8',
     );
-    await writeFile(path.join(nodeDir, 'node.yaml'), 'name: Svc\ntype: service\n', 'utf-8');
+    await writeFile(path.join(nodeDir, 'yg-node.yaml'), 'name: Svc\ntype: service\n', 'utf-8');
 
     try {
       const graph = await loadGraph(tmpDir, { tolerateInvalidConfig: true });

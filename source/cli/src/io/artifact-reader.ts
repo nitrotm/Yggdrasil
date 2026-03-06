@@ -4,7 +4,7 @@ import type { Artifact } from '../model/types.js';
 
 export async function readArtifacts(
   dirPath: string,
-  excludeFiles: string[] = ['node.yaml'],
+  excludeFiles: string[] = ['yg-node.yaml'],
   includeFiles?: string[],
 ): Promise<Artifact[]> {
   const entries = await readdir(dirPath, { withFileTypes: true });

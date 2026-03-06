@@ -7,10 +7,10 @@ import { parseFlow } from '../../../src/io/flow-parser.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('flow-parser', () => {
-  it('parses valid flow.yaml correctly', async () => {
+  it('parses valid yg-flow.yaml correctly', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -34,7 +34,7 @@ nodes:
   it('throws on empty YAML file', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-empty');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(flowYaml, '', 'utf-8');
 
     await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow(
@@ -47,7 +47,7 @@ nodes:
   it('throws when name is missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-missing-name');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -65,7 +65,7 @@ nodes:
   it('throws when name is empty string', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-empty-name');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -84,7 +84,7 @@ nodes:
   it('throws when nodes is missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-missing-nodes');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -101,7 +101,7 @@ name: Test Flow
   it('throws when nodes is empty array', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-empty-nodes');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -119,7 +119,7 @@ nodes: []
   it('throws when nodes contains no strings', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-nonstring-nodes');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -139,7 +139,7 @@ nodes: [123, {}]
   it('trims name', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-trim');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -158,7 +158,7 @@ nodes: [a/b]
   it('parses optional aspects array', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-aspects');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(
       flowYaml,
       `
@@ -181,7 +181,7 @@ aspects:
   it('sets path to basename of flowDir', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-path');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(flowYaml, 'name: Path Test\nnodes: [a/b]', 'utf-8');
 
     const flow = await parseFlow(tmpDir, flowYaml);
@@ -194,7 +194,7 @@ aspects:
   it('throws when aspects is not an array', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-bad-aspects');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(flowYaml, 'name: Test\nnodes: [a/b]\naspects: "not-an-array"\n', 'utf-8');
 
     await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow(
@@ -207,7 +207,7 @@ aspects:
   it('returns undefined when aspects absent', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-no-aspects');
     await mkdir(tmpDir, { recursive: true });
-    const flowYaml = path.join(tmpDir, 'flow.yaml');
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
     await writeFile(flowYaml, 'name: Plain\nnodes: [a/b]', 'utf-8');
 
     const flow = await parseFlow(tmpDir, flowYaml);

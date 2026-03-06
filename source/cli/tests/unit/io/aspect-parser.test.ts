@@ -11,10 +11,10 @@ const FIXTURE_DIR = path.join(
 );
 
 describe('aspect-parser', () => {
-  it('parses valid aspect.yaml correctly', async () => {
+  it('parses valid yg-aspect.yaml correctly', async () => {
     const aspect = await parseAspect(
       path.join(FIXTURE_DIR),
-      path.join(FIXTURE_DIR, 'aspect.yaml'),
+      path.join(FIXTURE_DIR, 'yg-aspect.yaml'),
       'requires-audit',
     );
 
@@ -26,7 +26,7 @@ describe('aspect-parser', () => {
   it('throws on empty YAML file', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-empty');
     await mkdir(tmpDir, { recursive: true });
-    const badPath = path.join(tmpDir, 'aspect.yaml');
+    const badPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(badPath, '', 'utf-8');
 
     await expect(parseAspect(tmpDir, badPath, 'empty-aspect')).rejects.toThrow(
@@ -39,7 +39,7 @@ describe('aspect-parser', () => {
   it('throws when name is missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect');
     await mkdir(tmpDir, { recursive: true });
-    const badPath = path.join(tmpDir, 'aspect.yaml');
+    const badPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(badPath, `implies: []\n`, 'utf-8');
 
     await expect(parseAspect(tmpDir, badPath, 'some-aspect')).rejects.toThrow(
@@ -52,7 +52,7 @@ describe('aspect-parser', () => {
   it('uses id from directory path (3rd parameter)', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-tag');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: My Aspect\n`, 'utf-8');
 
     const aspect = await parseAspect(tmpDir, aspectPath, 'my-directory-name');
@@ -65,7 +65,7 @@ describe('aspect-parser', () => {
   it('parses implies when present', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-implies');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(
       aspectPath,
       `name: HIPAA
@@ -84,7 +84,7 @@ implies:
   it('throws when id is empty', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-empty-id');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: Test\n`, 'utf-8');
 
     await expect(parseAspect(tmpDir, aspectPath, '')).rejects.toThrow(
@@ -100,7 +100,7 @@ implies:
   it('throws when implies is not an array', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-bad-implies');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: Test\nimplies: "not-an-array"\n`, 'utf-8');
 
     await expect(parseAspect(tmpDir, aspectPath, 'bad-implies')).rejects.toThrow(
@@ -113,7 +113,7 @@ implies:
   it('defaults optional fields when missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: Minimal Aspect\n`, 'utf-8');
 
     const aspect = await parseAspect(tmpDir, aspectPath, 'minimal-aspect');
@@ -127,7 +127,7 @@ implies:
   it('parses stability when present', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-stability');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: Stable Aspect\nstability: protocol\n`, 'utf-8');
 
     const aspect = await parseAspect(tmpDir, aspectPath, 'stable');
@@ -139,7 +139,7 @@ implies:
   it('throws when stability is invalid', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-bad-stability');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(aspectPath, `name: Test\nstability: bogus\n`, 'utf-8');
 
     await expect(parseAspect(tmpDir, aspectPath, 'bad-stability')).rejects.toThrow(
@@ -152,7 +152,7 @@ implies:
   it('parses all optional fields together', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-aspect-full');
     await mkdir(tmpDir, { recursive: true });
-    const aspectPath = path.join(tmpDir, 'aspect.yaml');
+    const aspectPath = path.join(tmpDir, 'yg-aspect.yaml');
     await writeFile(
       aspectPath,
       `name: Full Aspect

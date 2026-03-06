@@ -9,25 +9,25 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PROJECT = path.join(__dirname, '../../fixtures/sample-project');
 
 describe('collectTrackedFiles', () => {
-  it('includes own node.yaml and artifacts', async () => {
+  it('includes own yg-node.yaml and artifacts', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     const node = graph.nodes.get('orders/order-service')!;
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/model/orders/order-service/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/order-service/yg-node.yaml');
     // order-service has responsibility.md, description.md artifacts (config-allowed)
     expect(paths).toContain('.yggdrasil/model/orders/order-service/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/orders/order-service/description.md');
   });
 
-  it('includes parent node.yaml and artifacts', async () => {
+  it('includes parent yg-node.yaml and artifacts', async () => {
     const graph = await loadGraph(FIXTURE_PROJECT);
     const node = graph.nodes.get('orders/order-service')!;
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/model/orders/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/yg-node.yaml');
     expect(paths).toContain('.yggdrasil/model/orders/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/orders/description.md');
   });
@@ -39,7 +39,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // orders/order-service has requires-audit aspect
-    expect(paths).toContain('.yggdrasil/aspects/requires-audit/aspect.yaml');
+    expect(paths).toContain('.yggdrasil/aspects/requires-audit/yg-aspect.yaml');
     expect(paths).toContain('.yggdrasil/aspects/requires-audit/content.md');
   });
 
@@ -50,7 +50,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // orders/order-service participates in checkout-flow
-    expect(paths).toContain('.yggdrasil/flows/checkout-flow/flow.yaml');
+    expect(paths).toContain('.yggdrasil/flows/checkout-flow/yg-flow.yaml');
     expect(paths).toContain('.yggdrasil/flows/checkout-flow/description.md');
   });
 
@@ -106,9 +106,9 @@ describe('collectTrackedFiles', () => {
     expect(sourceFiles).toHaveLength(0);
     expect(graphFiles.length).toBeGreaterThan(0);
 
-    // Should still have its own node.yaml and artifacts
+    // Should still have its own yg-node.yaml and artifacts
     const paths = files.map((f) => f.path);
-    expect(paths).toContain('.yggdrasil/model/orders/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/orders/yg-node.yaml');
   });
 
   it('includes relational dependency artifacts', async () => {
@@ -118,14 +118,14 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // order-service uses auth/auth-api and users/user-repo
-    // Since the fixture config has no structural_context artifacts,
+    // Since the fixture config has no included_in_relations artifacts,
     // it falls back to all config-allowed artifacts on the target
     expect(paths).toContain('.yggdrasil/model/auth/auth-api/responsibility.md');
     expect(paths).toContain('.yggdrasil/model/users/user-repo/responsibility.md');
   });
 
-  it('uses structural_context artifacts when configured', () => {
-    // Build a synthetic graph where config has structural_context
+  it('uses included_in_relations artifacts when configured', () => {
+    // Build a synthetic graph where config has included_in_relations
     const target: GraphNode = {
       path: 'dep/svc',
       meta: { name: 'DepSvc', type: 'service' },
@@ -151,12 +151,10 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: {
           'responsibility.md': { required: 'always', description: 'x' },
-          'interface.md': { required: 'never', description: 'x', structural_context: true },
+          'interface.md': { required: 'never', description: 'x', included_in_relations: true },
           'description.md': { required: 'never', description: 'x' },
         },
       },
@@ -173,7 +171,7 @@ describe('collectTrackedFiles', () => {
     const files = collectTrackedFiles(node, graph);
     const paths = files.map((f) => f.path);
 
-    // Should include only the structural_context artifact from dep
+    // Should include only the included_in_relations artifact from dep
     expect(paths).toContain('.yggdrasil/model/dep/svc/interface.md');
     // Should NOT include non-structural artifacts from the dep
     expect(paths).not.toContain('.yggdrasil/model/dep/svc/responsibility.md');
@@ -200,9 +198,7 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'module' }, { name: 'service' }],
+        node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([
@@ -226,7 +222,7 @@ describe('collectTrackedFiles', () => {
     const files = collectTrackedFiles(child, graph);
     const paths = files.map((f) => f.path);
 
-    expect(paths).toContain('.yggdrasil/flows/parent-flow/flow.yaml');
+    expect(paths).toContain('.yggdrasil/flows/parent-flow/yg-flow.yaml');
     expect(paths).toContain('.yggdrasil/flows/parent-flow/description.md');
   });
 
@@ -238,7 +234,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // Should still have node files
-    expect(paths).toContain('.yggdrasil/model/users/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/users/yg-node.yaml');
     // Should not have aspect files
     const aspectPaths = paths.filter((p) => p.includes('/aspects/'));
     expect(aspectPaths).toHaveLength(0);
@@ -252,7 +248,7 @@ describe('collectTrackedFiles', () => {
     const paths = files.map((f) => f.path);
 
     // Should have own files but no dep artifacts from other nodes
-    expect(paths).toContain('.yggdrasil/model/users/node.yaml');
+    expect(paths).toContain('.yggdrasil/model/users/yg-node.yaml');
     // Should not have auth or order node files (those are only via relations)
     const otherModelPaths = paths.filter(
       (p) => p.startsWith('.yggdrasil/model/') && !p.startsWith('.yggdrasil/model/users'),
@@ -282,9 +278,7 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([
@@ -319,9 +313,7 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'service' }],
+        node_types: { service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([['my/svc', node]]),
@@ -339,14 +331,14 @@ describe('collectTrackedFiles', () => {
   it('deduplicates aspect files inherited from both own and ancestor', () => {
     const parent: GraphNode = {
       path: 'orders',
-      meta: { name: 'Orders', type: 'module', aspects: ['requires-audit'] },
+      meta: { name: 'Orders', type: 'module', aspects: [{ aspect: 'requires-audit' }] },
       artifacts: [],
       children: [],
       parent: null,
     };
     const child: GraphNode = {
       path: 'orders/order-service',
-      meta: { name: 'OrderService', type: 'service', aspects: ['requires-audit'] },
+      meta: { name: 'OrderService', type: 'service', aspects: [{ aspect: 'requires-audit' }] },
       artifacts: [{ filename: 'responsibility.md', content: 'x' }],
       children: [],
       parent,
@@ -356,9 +348,7 @@ describe('collectTrackedFiles', () => {
     const graph: Graph = {
       config: {
         name: 'T',
-        stack: {},
-        standards: '',
-        node_types: [{ name: 'module' }, { name: 'service' }],
+        node_types: { module: { description: 'x' }, service: { description: 'x' } },
         artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
       },
       nodes: new Map([
@@ -383,7 +373,7 @@ describe('collectTrackedFiles', () => {
     // requires-audit appears in both parent and child aspects,
     // but aspect files should only appear once
     const auditPaths = paths.filter((p) => p.includes('requires-audit'));
-    expect(auditPaths).toHaveLength(2); // aspect.yaml + content.md
+    expect(auditPaths).toHaveLength(2); // yg-aspect.yaml + content.md
     expect(new Set(paths).size).toBe(paths.length);
   });
 });
