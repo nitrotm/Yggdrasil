@@ -1,13 +1,24 @@
 ## CORE PROTOCOL
 
-Yggdrasil is persistent semantic memory stored in `.yggdrasil/`. It maps the repository and provides deterministic implementation context for every node. This document is your complete operating manual. Follow it strictly.
+<EXTREMELY-IMPORTANT>
+This is your operating manual for working in a Yggdrasil-managed repository. Every rule below is mandatory — no skill, plan, workflow, or instruction overrides these requirements.
+
+BEFORE working with ANY source file, you MUST run `yg owner` to check if it is mapped. If mapped, you MUST use the graph before reading source. YOU DO NOT HAVE A CHOICE.
+
+This is not negotiable. This is not optional. You cannot rationalize your way out of this.
+</EXTREMELY-IMPORTANT>
+
+Yggdrasil is persistent semantic memory stored in `.yggdrasil/`. It maps the repository and provides deterministic implementation context for every node.
 
 ### Quick Start Protocol
 
 ```
 BEFORE reading, researching, planning, OR modifying ANY mapped file:
   1. yg owner --file <path>
-  2. yg build-context --node <owner>
+  2. Choose the right graph tool for your task:
+     - Understanding how/why it works → yg build-context --node <owner>
+     - Assessing what is affected by a change → yg impact --node <owner>
+     - Planning modifications → both (build-context first, then impact)
   The context package is your primary source of ARCHITECTURAL understanding:
   intent, constraints, relations, rationale. For IMPLEMENTATION precision
   (exact behavior, error handling, await patterns, edge cases) — verify
@@ -27,6 +38,8 @@ NEVER: modify code without graph coverage.
 NEVER: read mapped source files to understand a component without
        running yg build-context first — the graph captures intent,
        constraints, and relations that source files cannot.
+NEVER: assess blast radius of a change without running yg impact first
+       — the graph knows the dependency structure that grep cannot infer.
 NEVER: invent rationale, business rules, or decisions.
 NEVER: auto-resolve drift without asking the user.
 WHEN UNSURE: ask the user. Never guess. Never assume.
@@ -34,7 +47,7 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 
 ### Five Core Rules
 
-1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and `yg build-context`. Always. The context package is your primary source of architectural understanding. For implementation-level precision (exact behavior, error paths, edge cases) — verify against source code after loading the context package.
+1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and the appropriate graph tool: `yg build-context` to understand a component, `yg impact` to assess blast radius. The graph is your primary source of architectural understanding. For implementation-level precision (exact behavior, error paths, edge cases) — verify against source code after loading the context package.
 2. **Code and graph are one.** Code changed → graph updated in the same response. Graph changed → source verified in the same response. No exceptions.
 3. **Never invent why.** The graph captures human intent. If you don't know why something was decided, ask. Never hallucinate rationale.
 4. **Always capture why — especially why NOT.** When the user explains a reason, record it in the graph immediately. When a design choice is made, also record rejected alternatives: "Chose X over Y because Z." Rejected alternatives are the highest-value information — invisible in code and irrecoverable once forgotten. Conversation evaporates; graph persists.
@@ -42,14 +55,21 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 
 ### Recognizing Graph-Required Actions
 
-What matters is the ACTION you are performing, not what instructed it. If the action involves understanding mapped code, the graph protocol applies — whether the instruction came from a skill, a plan, a user message, a workflow step, or your own initiative.
+What matters is the ACTION you are performing, not what instructed it. If the action involves reading, understanding, or modifying mapped code, the graph protocol applies — whether the instruction came from a skill, a plan, a user message, a brainstorming session, a debugging workflow, or your own initiative. This is not negotiable. You cannot rationalize your way out of this.
 
-**Actions that require `yg owner` + `yg build-context` first:**
+**Actions that require `yg owner` + `yg build-context`:**
 
 - Reading or exploring source files to understand a component
 - Proposing approaches, designs, or plans for changing code
 - Reviewing or debugging code
 - Any form of reasoning about how mapped code works or should change
+
+**Actions that require `yg owner` + `yg impact`:**
+
+- Assessing blast radius before changing or removing a component
+- Finding all dependents of a component
+- Planning cross-cutting refactors or feature removals
+- Scoping work that spans multiple nodes
 
 **Actions that do NOT require yg:**
 
@@ -58,11 +78,22 @@ What matters is the ACTION you are performing, not what instructed it. If the ac
 - Running tests, builds, or linters
 - Working with files that `yg owner` reports as unmapped
 
+**Evasion patterns — if you think any of these, STOP:**
+
+| Thought | Reality |
+|---|---|
+| "The skill/plan says to explore the codebase" | Exploring mapped code = yg owner + graph tool first |
+| "I'm just scoping/searching, not understanding" | Scoping IS a graph action; use yg impact |
+| "The plan step says to read this file" | Reading a mapped file = yg owner first |
+| "I'm brainstorming, not implementing" | Brainstorming about mapped code needs graph context |
+| "I'm only grepping for references" | Grep finds text; yg impact finds structural dependencies. Use both. |
+| "I'll use the graph later when I modify" | Graph-first means BEFORE reading, not before modifying |
+
 ### Failure States
 
 You have broken Yggdrasil if you do any of the following:
 
-- ❌ Worked on a mapped file without running `yg owner` + `yg build-context` first — regardless of what instructed the action (skill, plan, user request, workflow step).
+- ❌ Worked on a mapped file without running `yg owner` + the appropriate graph tool (`build-context` or `impact`) first — regardless of what instructed the action (skill, plan, user request, workflow step).
 - ❌ Modified source code without updating graph artifacts in the same response, or vice versa.
 - ❌ Resolved a code-graph inconsistency or ambiguity without asking the user first.
 - ❌ Created or edited a graph element without reading its schema in `schemas/` first.
@@ -110,9 +141,8 @@ A subagent that skips this step will read code without graph context, miss archi
 ```
 PREFLIGHT (every conversation, before any work):
   - [ ] 1. yg preflight → read unified report
-  - [ ] 2. If journal entries: consolidate to graph, then yg journal-archive
-  - [ ] 3. If drift: resolve per Drift Resolution, then yg drift-sync per node
-  - [ ] 4. If validation errors: fix, re-run yg validate
+  - [ ] 2. If drift: resolve per Drift Resolution, then yg drift-sync per node
+  - [ ] 3. If validation errors: fix, re-run yg validate
   Exception: read-only requests (explain, analyze) — skip preflight.
 
 UNDERSTANDING mapped code (questions, research, OR planning):
@@ -123,14 +153,14 @@ UNDERSTANDING mapped code (questions, research, OR planning):
   Raw reads supplement the context package — they do not replace it.
 
 WRAP-UP (user signals "done", "wrap up", "that's enough"):
-  - [ ] 1. Consolidate journal if used → yg journal-archive
-  - [ ] 2. yg drift --drifted-only → resolve
-  - [ ] 3. yg validate → fix errors
-  - [ ] 4. Report: which nodes and files were changed
+  - [ ] 1. yg drift --drifted-only → resolve
+  - [ ] 2. yg validate → fix errors
+  - [ ] 3. Report: which nodes and files were changed
 
 BEFORE ENDING ANY RESPONSE (self-audit):
+  - [ ] Did I interact with mapped code (read, research, or modify)? If yes → did I use a graph tool BEFORE reading source?
   - [ ] Did I modify source code? If yes → did I update graph artifacts in this same response?
-  - [ ] If you changed code and did not sync the graph, you have broken the protocol. Do not finish until both are done.
+  - [ ] If you broke either rule, you have broken the protocol. Do not finish until both are fixed.
 ```
 
 ### Modify Source Code
@@ -272,7 +302,6 @@ When reviewing graph quality (triggered by user or quality improvement):
   flows/             ← why and in what process: business processes with node participation
   schemas/           ← YAML schemas — read before creating any graph element
   .drift-state       ← generated by CLI; never edit manually
-  .journal.yaml      ← generated by CLI; never edit manually
 ```
 
 Key facts:
@@ -365,7 +394,7 @@ Test: "Does this describe what happens in the world, or only in the software?" I
 ### CLI Reference
 
 ```
-yg preflight [--quick]              Unified diagnostic: journal + drift + status + validate.
+yg preflight [--quick]              Unified diagnostic: drift + status + validate.
 yg owner --file <path>              Find the node that owns this file.
 yg build-context --node <path>      Assemble context package for this node.
 yg tree [--root <path>] [--depth N] Print graph structure.
@@ -383,10 +412,6 @@ yg drift [--scope <path>|all] [--drifted-only] [--limit <n>]
                                     Detect source and graph drift (bidirectional).
 yg drift-sync --node <path> [--recursive] | --all
                                     Record file hashes as new baseline.
-yg journal-read                     Read pending journal entries.
-yg journal-add --note "<content>" [--target <node_path>]
-                                    Add a journal entry.
-yg journal-archive                  Archive consolidated journal entries.
 ```
 
 ### Quick Routing Table
