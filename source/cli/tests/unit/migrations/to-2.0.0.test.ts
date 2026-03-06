@@ -249,4 +249,22 @@ describe('migration to 2.0.0', () => {
     const markerCount = (internals.match(/<!-- migrated-stack-standards-v2 -->/g) ?? []).length;
     expect(markerCount).toBe(1);
   });
+
+  it('handles minimal project with no model/aspects/flows/schemas dirs', async () => {
+    await writeFile(path.join(yggRoot, 'config.yaml'), 'name: T\nnode_types: [module]\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n');
+    const result = await migrateTo2(yggRoot);
+    expect(result.actions.length).toBeGreaterThan(0);
+    expect(await exists(path.join(yggRoot, 'yg-config.yaml'))).toBe(true);
+    // No model/aspects/flows/schemas dirs should not cause errors
+    expect(await exists(path.join(yggRoot, 'model'))).toBe(false);
+  });
+
+  it('warns on invalid yg-node.yaml content', async () => {
+    const nodeDir = path.join(yggRoot, 'model', 'svc');
+    await mkdir(nodeDir, { recursive: true });
+    await writeFile(path.join(nodeDir, 'yg-node.yaml'), 'just a string\n');
+    await writeFile(path.join(yggRoot, 'yg-config.yaml'), 'version: "2.0.0"\nname: T\nnode_types:\n  module:\n    description: x\nartifacts:\n  responsibility.md:\n    required: always\n    description: x\n');
+    const result = await migrateTo2(yggRoot);
+    expect(result.warnings.some(w => w.includes('not a valid YAML object'))).toBe(true);
+  });
 });

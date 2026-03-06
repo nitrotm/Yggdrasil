@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **`version` field in `yg-config.yaml`:** Tracks the CLI version that created/last migrated this config. Used by the migration system to determine which migrations to run.
+- **Migration system:** `yg init --upgrade` now detects project version and automatically
+  migrates from 1.x to 2.0.0 — file renames to `yg-*` prefix, config transforms, aspects
+  restructuring (`[id]` → `[{aspect: id}]`), and stack/standards content migration to root node
 
 ## [2.0.0] - 2026-03-05
 

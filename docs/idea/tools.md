@@ -348,7 +348,7 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
 
 **Behavior:**
 
-1. Check if `.yggdrasil/` exists. If it exists and `upgrade` is `false` — error. If it exists and `upgrade` is `true` — go to step 5 (only rules file).
+1. Check if `.yggdrasil/` exists. If it exists and `upgrade` is `false` — error. If it exists and `upgrade` is `true` — go to step 5.
 2. Create directory structure:
 
    ```text
@@ -369,17 +369,33 @@ Upgrade mode — refreshes only the rules file (when `.yggdrasil/` already exist
    journals-archive/
    ```
 
-5. Generate the platform rules file in the location appropriate for the `platform` parameter
+5. Run migrations (upgrade mode only):
+
+   a. Read `version` from `yg-config.yaml`. If absent, treat as `1.0.0`.
+
+   b. If project version equals CLI version — skip migrations, proceed to step 6.
+
+   c. If project version is newer than CLI version — print a warning and exit without
+      modifying any files.
+
+   d. For each applicable migration (project version < migration version ≤ CLI version),
+      run in order. Each action prints with a `✓` prefix on success or a `⚠` prefix on
+      warning/skip.
+
+   e. After all migrations complete, write the updated `version` to `yg-config.yaml`.
+
+6. Generate the platform rules file in the location appropriate for the `platform` parameter
    (see Platform rules file section).
 
 **Result:**
 
 - Full initialization: list of created files and directories.
-- Upgrade mode: path of the refreshed rules file.
+- Upgrade mode: path of the refreshed rules file and list of migration actions applied.
 
 **Errors:**
 
 - `.yggdrasil/` already exists and `upgrade` was not provided — full init is a one-time operation.
+- Project version is newer than CLI version — user must upgrade the CLI before running `--upgrade`.
 
 **Default configuration:**
 

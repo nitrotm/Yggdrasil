@@ -19,6 +19,8 @@ Config file: `.yggdrasil/yg-config.yaml`
 
 ### Optional fields
 
+- **version** — CLI version that last wrote this config. Set automatically by `yg init` and
+  `yg init --upgrade`.
 - **quality** — Quality thresholds
 
 ---

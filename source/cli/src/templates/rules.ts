@@ -275,7 +275,7 @@ const KNOWLEDGE_BASE = `## KNOWLEDGE BASE
 
 \`\`\`
 .yggdrasil/
-  yg-config.yaml     ← vocabulary, node types, artifact rules, required aspects
+  yg-config.yaml     ← version, vocabulary, node types, artifact rules, required aspects
   model/             ← what exists: nodes, hierarchy, relations, file mappings
   aspects/           ← what must: cross-cutting requirements with rationale and guidance
   flows/             ← why and in what process: business processes with node participation
