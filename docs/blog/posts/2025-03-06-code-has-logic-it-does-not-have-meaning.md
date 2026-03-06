@@ -1,6 +1,7 @@
 ---
 layout: home
 title: Code has logic. It does not have meaning.
+titleTemplate: false
 description: Why repositories need semantic memory, not bigger context windows
 date: 2025-03-06
 ---
