@@ -1,12 +1,4 @@
 import { defineConfig } from "vitepress";
-import { getBlogPosts } from "./blog-posts.js";
-
-function getBlogSidebarItems() {
-  return getBlogPosts().map((p) => ({
-    text: `${p.date} — ${p.title}`,
-    link: p.link,
-  }));
-}
 
 export default defineConfig({
   base: "/Yggdrasil/",
@@ -18,7 +10,6 @@ export default defineConfig({
       { text: "Home", link: "/" },
       { text: "Getting Started", link: "/getting-started" },
       { text: "Concept", link: "/concept/foundation" },
-      { text: "Blog", link: "/blog/" },
       { text: "GitHub", link: "https://github.com/krzysztofdudek/Yggdrasil" },
     ],
     sidebar: [
@@ -37,14 +28,6 @@ export default defineConfig({
           { text: "Materialization", link: "/concept/materialization" },
           { text: "Integration", link: "/concept/integration" },
           { text: "Tools", link: "/concept/tools" },
-        ],
-      },
-      {
-        text: "Blog",
-        collapsed: true,
-        items: [
-          { text: "Recent posts", link: "/blog/" },
-          ...getBlogSidebarItems(),
         ],
       },
     ],

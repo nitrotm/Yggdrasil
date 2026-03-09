@@ -2,9 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate:blog": "node .vitepress/scripts/generate-blog-index.mjs",
-    "dev": "npm run generate:blog && vitepress dev",
-    "build": "npm run generate:blog && vitepress build",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
     "preview": "vitepress preview"
   },
   "devDependencies": {
