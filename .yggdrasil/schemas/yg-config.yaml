@@ -8,15 +8,6 @@ version: "2.0.0"                  # managed by CLI — do not edit manually. Tra
 
 name: "My Project"               # required — project display name
 
-stack:                            # required — technology stack (freeform keys)
-  language: "TypeScript"          #   primary language
-  runtime: "Node.js"             #   runtime environment
-  # framework: "Express"         #   optional — any additional stack entries
-  # database: "PostgreSQL"
-  # testing: "Vitest"
-
-standards: ""                     # optional — global coding conventions (free text)
-
 node_types:                       # required — non-empty object of node type definitions
   module:                         #   key = type name used in yg-node.yaml
     description: "Business logic unit with clear domain responsibility"

@@ -1,5 +1,5 @@
 {
-  "hash": "c3e60b99c58fc3d17b375b18831185b050224fe717d0a1a8f42934c266a38c36",
+  "hash": "840f43f2c5a95e6360e3e5ca37cede16afd508b955639ecf09798b65d98dbb80",
   "files": {
     ".yggdrasil/model/cli/templates/yg-node.yaml": "179dafe5c50d4445c90b2dbe605a070d7fc4999348bc6d3f88d6e7b818fcdecc",
     ".yggdrasil/model/cli/templates/interface.md": "6878d32b7ad3c171de4b2c14b5aca814ac6797d713195b59e80b996d5844da43",
@@ -14,11 +14,11 @@
     ".yggdrasil/flows/init/description.md": "7ab06dca456fe57c748e343faba4dff4db88ef73792ab2eaf28298ff595adba0",
     "source/cli/src/templates/default-config.ts": "a9920fd452a16f0478ef9124f8694534a12b3fd8b9584499604ab8a2cb76281c",
     "source/cli/src/templates/platform.ts": "c92d31c3944cc6134759c877ad0b06fa1ca38f1294649af7ca39ab74460105e1",
+    "source/cli/src/templates/rules.ts": "c6649daa74604acf85488d19938b1374911fad7a8aeaa6ca0b3366bb0e2f9026",
     "source/cli/graph-schemas/yg-aspect.yaml": "fccd6d4bae648aa7192f9652bbc5cd8be007cfea88f00136a1c88e229f8312b6",
-    "source/cli/graph-schemas/yg-config.yaml": "03e8726e74e6d1792e74f97a49387d1dad54b02b0ae6fbc75b1cc40f97ea3a3f",
     "source/cli/graph-schemas/yg-flow.yaml": "a5fc2ee65eef7b600bd7cf94ad4bd2dbdb6e0c76ce8914f7b9f60046a6a2d4f6",
     "source/cli/graph-schemas/yg-node.yaml": "9d39f69f8d86eff0bb9596e0d931feb5fe2eff8f0f0528e5ebb409d7f4afc997",
-    "source/cli/src/templates/rules.ts": "c6649daa74604acf85488d19938b1374911fad7a8aeaa6ca0b3366bb0e2f9026"
+    "source/cli/graph-schemas/yg-config.yaml": "e0679dfb7b8a7fb568f69bde78904128c6265c9c2e655945dbc369aba307468f"
   },
   "mtimes": {
     ".yggdrasil/model/cli/templates/yg-node.yaml": 1772776392199.7905,
@@ -36,7 +36,7 @@
     "source/cli/src/templates/platform.ts": 1771702373192.354,
     "source/cli/src/templates/rules.ts": 1773080587471.376,
     "source/cli/graph-schemas/yg-aspect.yaml": 1772776392204.2083,
-    "source/cli/graph-schemas/yg-config.yaml": 1772776392204.3481,
+    "source/cli/graph-schemas/yg-config.yaml": 1773232305112.249,
     "source/cli/graph-schemas/yg-flow.yaml": 1772776392204.48,
     "source/cli/graph-schemas/yg-node.yaml": 1772776392204.6162
   }

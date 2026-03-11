@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-03-11
+
+### Removed
+
+- Removed deprecated `stack` and `standards` fields from config schema example
+  (`graph-schemas/yg-config.yaml`). These fields were already ignored by the parser
+  since v2.0.0 — this cleans up the last reference in the shipped schema template.
+
 ## [2.3.1] - 2026-03-09
 
 ### Changed
