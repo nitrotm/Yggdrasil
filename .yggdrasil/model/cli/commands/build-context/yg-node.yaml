@@ -10,13 +10,13 @@ relations:
     consumes: [loadGraph]
   - target: cli/core/context
     type: uses
-    consumes: [buildContext]
+    consumes: [buildContext, collectAncestors, toContextMapOutput]
   - target: cli/core/validator
     type: uses
     consumes: [validate]
   - target: cli/formatters
     type: uses
-    consumes: [formatContextText]
+    consumes: [formatContextYaml, formatFullContent]
 
 mapping:
   paths:

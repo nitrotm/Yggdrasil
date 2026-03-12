@@ -38,9 +38,9 @@ describe('build-context command (unit-like CLI contract)', () => {
       });
 
       expect(result.status).toBe(0);
-      expect(result.stdout).toContain('<context-package ');
-      expect(result.stdout).toContain('<global>');
-      expect(result.stdout).toContain('<hierarchy');
+      expect(result.stdout).toContain('meta:');
+      expect(result.stdout).toContain('project:');
+      expect(result.stdout).toContain('hierarchy:');
     });
   });
 
@@ -56,8 +56,8 @@ describe('build-context command (unit-like CLI contract)', () => {
       );
 
       expect(result.status).toBe(0);
-      expect(result.stdout).toContain('<global>');
-      expect(result.stdout).toContain('<dependency');
+      expect(result.stdout).toContain('project:');
+      expect(result.stdout).toContain('dependencies:');
 
       const buildDir = path.join(cwd, '.yggdrasil', '_build');
       const exists = await access(buildDir).then(

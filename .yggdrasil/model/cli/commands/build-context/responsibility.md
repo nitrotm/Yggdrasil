@@ -1,14 +1,16 @@
 # Build Context Command Responsibility
 
-**In scope:** `yg build-context --node <path>`. Assemble and output context package for a node.
+**In scope:** `yg build-context --node <path> [--full]`. Assemble and output context package for a node.
 
-- Load graph via `loadGraph(process.cwd())`. Trim node path, strip trailing slash.
-- Validate graph first: `validate(graph, 'all')`. If any errors (severity 'error'), block build-context and report validation failure.
-- `buildContext(graph, nodePath)` — assemble 5-layer context package (global, hierarchy, own, aspects, relational).
-- `formatContextText(contextPackage)` — format as plain text with XML-like tags.
-- Append token count and budget status (ok/warning/error based on config thresholds).
+- Load graph via `loadGraph(process.cwd())`. Trim node path, strip leading `./` and trailing `/`.
+- Collect relevant node paths (node, ancestors, relation targets, relation target ancestors) for scoped validation.
+- Validate graph first: `validate(graph, 'all')`. If any errors (severity 'error') affect the node's context, block build-context and report validation failure. Unrelated errors are ignored with a count.
+- `buildContext(graph, nodePath)` — assemble context package.
+- `toContextMapOutput(pkg, graph)` — convert to structured map output.
+- `formatContextYaml(mapOutput)` — format as YAML context map.
+- If `--full`: collect and append full artifact file contents via `formatFullContent`.
 - Output to stdout.
 
-**Consumes:** loadGraph (cli/core/loader), buildContext (cli/core/context), validate (cli/core/validator), formatContextText (cli/formatters).
+**Consumes:** loadGraph (cli/core/loader), buildContext + collectAncestors + toContextMapOutput (cli/core/context), validate (cli/core/validator), formatContextYaml + formatFullContent (cli/formatters).
 
 **Out of scope:** Context assembly algorithm (cli/core/context), formatting logic (cli/formatters), validation rules (cli/core/validator).

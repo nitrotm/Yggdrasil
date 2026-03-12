@@ -6,29 +6,29 @@ Assemble a context package for a node — the exact specification an agent reads
 
 ## Trigger
 
-User runs `yg build-context --node <path>`.
+User runs `yg build-context --node <path> [--full]`.
 
 ## Goal
 
-Output plain text with XML-like tags to stdout: assembled context (global, hierarchy, own, aspects, relational) plus token count and budget status.
+Output YAML context map to stdout: structured metadata (token count, budget status), node info, hierarchy, dependencies, and artifact registry. With `--full`, append full artifact file contents.
 
 ## Participants
 
-- `cli/commands/build-context` — orchestrates loadGraph, validate, buildContext, formatContextText
+- `cli/commands/build-context` — orchestrates loadGraph, validate, buildContext, toContextMapOutput, formatContextYaml, formatFullContent
 - `cli/core/loader` — loads graph from `.yggdrasil/`
-- `cli/core/validator` — structural checks; build-context blocks if any errors
-- `cli/core/context` — 5-step layer assembly (global, hierarchy, own, aspects, relational); relational merges structural dependencies and flows into one section; aspects include flow.aspects for participating flows
-- `cli/formatters` — formats context package as plain text with XML-like tags
+- `cli/core/validator` — structural checks; build-context blocks if errors affect the node's context
+- `cli/core/context` — 5-step layer assembly (global, hierarchy, own, aspects, relational); relational merges structural dependencies and flows into one section; aspects include flow.aspects for participating flows; toContextMapOutput converts to structured map
+- `cli/formatters` — formats context map as YAML; formats full file contents
 
 ## Paths
 
 ### Happy path
 
-Graph loads; validation passes (no errors). Context builder assembles layers; formatter outputs plain text with XML-like tags. Token count and budget status appended.
+Graph loads; validation passes (no errors affecting this node's context). Context builder assembles layers; formatter outputs YAML context map. With `--full`, artifact file contents appended.
 
 ### Validation errors block
 
-Graph has structural errors (E001–E017). Build-context does not run; user must fix errors first. Output: validation failure message.
+Graph has structural errors (E001-E017) affecting this node's context. Build-context does not run; user must fix errors first. Unrelated errors in other nodes are ignored.
 
 ### Node not found
 

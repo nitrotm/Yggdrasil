@@ -94,10 +94,10 @@ describe.skipIf(!distExists)('CLI E2E', () => {
   it('yg build-context', () => {
     const { stdout, status } = run(['build-context', '--node', 'orders/order-service']);
     expect(status).toBe(0);
-    expect(stdout).toContain('<context-package ');
-    expect(stdout).toContain('node-name="OrderService"');
-    expect(stdout).toContain('<global>');
-    expect(stdout).toContain('<own-artifacts');
+    expect(stdout).toContain('meta:');
+    expect(stdout).toContain('name: OrderService');
+    expect(stdout).toContain('project:');
+    expect(stdout).toContain('artifacts:');
   });
 
   it('yg build-context nonexistent node', () => {

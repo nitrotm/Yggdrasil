@@ -1,14 +1,12 @@
 import { Command } from 'commander';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { loadGraph } from '../core/graph-loader.js';
-import { buildContext, collectAncestors } from '../core/context-builder.js';
+import { buildContext, collectAncestors, toContextMapOutput } from '../core/context-builder.js';
+import { formatContextYaml, formatFullContent } from '../formatters/context-text.js';
 import { validate } from '../core/validator.js';
-import { formatContextText } from '../formatters/context-text.js';
 import type { Graph } from '../model/types.js';
 
-/**
- * Collect the set of node paths that participate in context assembly for a given node:
- * the node itself, its ancestors, and its direct relation targets.
- */
 function collectRelevantNodePaths(graph: Graph, nodePath: string): Set<string> {
   const relevant = new Set<string>();
   const node = graph.nodes.get(nodePath);
@@ -21,9 +19,15 @@ function collectRelevantNodePaths(graph: Graph, nodePath: string): Set<string> {
     relevant.add(ancestor.path);
   }
 
-  // Direct relation targets
+  // Direct relation targets + their ancestors
   for (const rel of node.meta.relations ?? []) {
     relevant.add(rel.target);
+    const target = graph.nodes.get(rel.target);
+    if (target) {
+      for (const ancestor of collectAncestors(target)) {
+        relevant.add(ancestor.path);
+      }
+    }
   }
 
   return relevant;
@@ -34,20 +38,18 @@ export function registerBuildCommand(program: Command): void {
     .command('build-context')
     .description('Assemble a context package for one node')
     .requiredOption('--node <node-path>', 'Node path relative to .yggdrasil/model/')
-    .action(async (options: { node: string }) => {
+    .option('--full', 'Include artifact file contents in output')
+    .action(async (options: { node: string; full?: boolean }) => {
       try {
         const graph = await loadGraph(process.cwd());
         const nodePath = options.node.trim().replace(/^\.\//, '').replace(/\/$/, '');
 
-        // Collect nodes relevant to this context assembly
         const relevantNodes = collectRelevantNodePaths(graph, nodePath);
 
-        // Validate but only block on errors relevant to this node's context
         const validationResult = await validate(graph, 'all');
         const relevantErrors = validationResult.issues.filter(
           (issue) =>
             issue.severity === 'error' &&
-            // Global errors (no nodePath) always block — e.g., E012 invalid config
             (!issue.nodePath || relevantNodes.has(issue.nodePath)),
         );
         if (relevantErrors.length > 0) {
@@ -66,27 +68,96 @@ export function registerBuildCommand(program: Command): void {
         }
 
         const pkg = await buildContext(graph, nodePath);
-        const warningThreshold = graph.config.quality?.context_budget.warning ?? 10000;
-        const errorThreshold = graph.config.quality?.context_budget.error ?? 20000;
-        const budgetStatus =
-          pkg.tokenCount >= errorThreshold
-            ? 'error'
-            : pkg.tokenCount >= warningThreshold
-              ? 'warning'
-              : 'ok';
+        const mapOutput = toContextMapOutput(pkg, graph);
 
-        let output = formatContextText(pkg);
-        output += `Budget status: ${budgetStatus}\n`;
-        process.stdout.write(output);
+        let output = formatContextYaml(mapOutput);
 
-        if (budgetStatus === 'error') {
-          process.stderr.write(
-            `Warning: context package exceeds error budget (${pkg.tokenCount} >= ${errorThreshold}). Consider splitting the node.\n`,
-          );
+        if (options.full) {
+          // Collect all file contents in order from all registry sections
+          const allFiles: Array<{ path: string; content: string }> = [];
+          const allEntries = [
+            ...Object.values(mapOutput.artifacts.nodes),
+            ...Object.values(mapOutput.artifacts.aspects),
+            ...Object.values(mapOutput.artifacts.flows),
+          ];
+          const seen = new Set<string>();
+          for (const entry of allEntries) {
+            for (const filePath of entry.files) {
+              if (seen.has(filePath)) continue; // dedup
+              seen.add(filePath);
+              const content = await findFileContent(filePath, graph);
+              if (content !== undefined) {
+                allFiles.push({ path: filePath, content });
+              }
+            }
+          }
+
+          output += formatFullContent(allFiles);
         }
+
+        process.stdout.write(output);
       } catch (error) {
         process.stderr.write(`Error: ${(error as Error).message}\n`);
         process.exit(1);
       }
     });
+}
+
+/**
+ * Find file content from the loaded graph data or disk.
+ * Paths are relative to .yggdrasil/ (e.g., "model/cli/core/loader/responsibility.md").
+ * For YAML definition files (yg-node.yaml, yg-aspect.yaml, yg-flow.yaml) that aren't
+ * stored in memory, falls back to reading from disk.
+ */
+async function findFileContent(filePath: string, graph: Graph): Promise<string | undefined> {
+  // Helper: read YAML definition file from disk when not available in memory
+  async function readYamlFromDisk(relativePath: string): Promise<string | undefined> {
+    try {
+      const fullPath = path.join(graph.rootPath, relativePath);
+      return (await readFile(fullPath, 'utf-8')).trim();
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (filePath.startsWith('model/')) {
+    const rest = filePath.slice('model/'.length);
+    const parts = rest.split('/');
+    const filename = parts.pop()!;
+    const nodePath = parts.join('/');
+    const node = graph.nodes.get(nodePath);
+    if (!node) return undefined;
+    if (filename === 'yg-node.yaml') {
+      return node.nodeYamlRaw?.trim() ?? await readYamlFromDisk(filePath);
+    }
+    const art = node.artifacts.find((a) => a.filename === filename);
+    return art?.content;
+  }
+  if (filePath.startsWith('aspects/')) {
+    const rest = filePath.slice('aspects/'.length);
+    const parts = rest.split('/');
+    const aspectId = parts[0];
+    const filename = parts.slice(1).join('/');
+    const aspect = graph.aspects.find((a) => a.id === aspectId);
+    if (!aspect) return undefined;
+    if (filename === 'yg-aspect.yaml') {
+      return readYamlFromDisk(filePath);
+    }
+    const art = aspect.artifacts.find((a) => a.filename === filename);
+    return art?.content;
+  }
+  if (filePath.startsWith('flows/')) {
+    const rest = filePath.slice('flows/'.length);
+    const parts = rest.split('/');
+    const flowPath = parts[0];
+    const filename = parts.slice(1).join('/');
+    const flow = graph.flows.find((f) => f.path === flowPath);
+    if (!flow) return undefined;
+    if (filename === 'yg-flow.yaml') {
+      return readYamlFromDisk(filePath);
+    }
+    const art = flow.artifacts.find((a) => a.filename === filename);
+    return art?.content;
+  }
+  return undefined;
 }
