@@ -6,7 +6,7 @@ aspects:
 relations:
   - target: cli/model
     type: uses
-    consumes: [ContextPackage]
+    consumes: [ContextPackage, ContextMapOutput]
 
 mapping:
   paths:
