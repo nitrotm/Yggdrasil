@@ -24,11 +24,10 @@ BEFORE reading, researching, planning, OR modifying ANY mapped file:
      - Understanding how/why it works → yg build-context --node <owner>
      - Assessing what is affected by a change → yg impact --node <owner>
      - Planning modifications → both (build-context first, then impact)
-  The context package is your primary source of ARCHITECTURAL understanding:
-  intent, constraints, relations, rationale. For IMPLEMENTATION precision
-  (exact behavior, error handling, await patterns, edge cases) — verify
-  against source code. Aspects describe intended patterns; individual
-  implementations may deviate.
+  `yg build-context --node <path>`. Read the YAML map for topology,
+  then read artifact files listed in the artifacts section. For quick
+  orientation, the map alone is sufficient. For implementation, read
+  all artifact files before changing code.
   If the context package seems insufficient — enrich the graph.
 
 AFTER modifying:
@@ -153,7 +152,10 @@ PREFLIGHT (every conversation, before any work):
 
 UNDERSTANDING mapped code (questions, research, OR planning):
   - [ ] 1. yg owner --file <path>
-  - [ ] 2. Owner found → yg build-context --node <path>. Use context package as primary source.
+  - [ ] 2. Owner found → yg build-context --node <path>. Read the YAML map
+         for topology, then read artifact files from the artifacts section.
+         For quick orientation, the map alone is sufficient. For implementation,
+         read all artifact files before changing code.
   - [ ] 3. Owner not found → use file analysis, state it is not graph-backed.
   Never use grep or raw file reads as primary understanding when graph coverage exists.
   Raw reads supplement the context package — they do not replace it.
@@ -332,7 +334,13 @@ Projects can define additional artifact types in `yg-config.yaml` under `artifac
 
 ### Context Assembly
 
-Run `yg build-context --node <path>` to get the deterministic context package for a node. The package assembles global project identity, hierarchy, own artifacts, aspects, and relational context. It is your architectural map. For implementation-level claims (exact call patterns, error handling, await vs fire-and-forget) — verify against source code. If the package is insufficient, enrich the graph.
+**Reading context:** `yg build-context --node <path>` returns a YAML map with the node's topology (hierarchy, dependencies, aspects, flows) and an `artifacts` section listing files to read. All artifact paths are relative to `.yggdrasil/` — construct full path as `.yggdrasil/<path>`.
+
+**Default mode (paths-only):** Use for all graph operations. Read the YAML map first to understand topology. Then read artifact files from the `artifacts` section using the Read tool. For quick orientation (scoping, blast radius assessment), the map alone is sufficient. For implementation or modification, read all artifact files before changing code.
+
+**Full mode (`--full`):** Use only when you cannot read files individually — e.g., when pasting context into a prompt, sharing with a user, or when you have no Read tool available.
+
+Artifact paths are stable identifiers within a session. When building context for multiple nodes, skip reading files you have already read — same path means same content.
 
 ### Information Routing
 
@@ -402,7 +410,8 @@ Test: "Does this describe what happens in the world, or only in the software?" I
 ```
 yg preflight [--quick]              Unified diagnostic: drift + status + validate.
 yg owner --file <path>              Find the node that owns this file.
-yg build-context --node <path>      Assemble context package for this node.
+yg build-context --node <path>      Assemble context map with artifact paths (default).
+yg build-context --node <path> --full  Same map + file contents appended below separator.
 yg tree [--root <path>] [--depth N] Print graph structure.
 yg aspects                          List aspects with metadata (YAML output).
 yg flows                            List flows with metadata (YAML output).
