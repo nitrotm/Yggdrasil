@@ -530,7 +530,10 @@ function buildArtifactRegistry(
   }
 
   // Dependency targets and their ancestors — included_in_relations only, no yg-node.yaml
-  const seenDepAncestors = new Set<string>();
+  // Pre-seed with hierarchy ancestor paths so addNodeEntry's first-wins dedup
+  // always prefers the fuller hierarchy registration (all config artifacts + yg-node.yaml).
+  // Also include node.path to skip the target node itself.
+  const seenDepAncestors = new Set<string>([node.path, ...ancestors.map((a) => a.path)]);
   for (const dep of dependencies) {
     const target = graph.nodes.get(dep.path);
     if (target) {
