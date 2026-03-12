@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`yg build-context` output format.** Restructured from inline XML to a two-section YAML format:
+  structural map (topology, relationships, aspects, flows) + artifact registry (file paths).
+  Default mode returns paths only — agents read files individually using Read tool.
+  New `--full` flag appends file contents below a `---` separator in XML-style tags.
+
+### Added
+
+- **Dependency hierarchy in context packages.** Dependencies now include their full parent
+  hierarchy with ancestors' artifacts and effective aspects, giving agents domain-level
+  context for each dependency.
+- **`--full` flag for `yg build-context`.** Appends artifact file contents to the YAML map
+  for use in environments without file reading capabilities.
+
 ## [2.3.3] - 2026-03-12
 
 ### Fixed

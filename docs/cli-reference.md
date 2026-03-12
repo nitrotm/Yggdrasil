@@ -40,11 +40,16 @@ Prints the full structure of the semantic memory.
 - `--depth <n>` — Maximum depth
 
 ```bash
-yg build-context --node <node-path>
+yg build-context --node <node-path> [--full]
 ```
 
-Shows the exact context package your agent reads before working on a node (plain text with
-XML-like tags).
+Shows the exact context package your agent reads before working on a node. Output is a
+two-section YAML format: a structural map (topology, relationships, aspects, flows) followed
+by an artifact registry (file paths). Default mode returns paths only — agents read files
+individually using their file-reading tool.
+
+- `--full` — Appends artifact file contents below a `---` separator in XML-style tags, for
+  environments without file reading capabilities
 
 ```bash
 yg owner --file <path>

@@ -45,7 +45,7 @@ yg build-context --node orders/order-service
 
 **Reading and analysis:**
 
-- `yg build-context --node <path>` — Assemble context package for a node
+- `yg build-context --node <path> [--full]` — Assemble context package (YAML structural map + artifact paths; `--full` appends file contents)
 - `yg status` — Graph health summary
 - `yg tree [--root <path>] [--depth N]` — Graph structure as tree
 - `yg owner --file <path>` — Find which graph node owns a source file
