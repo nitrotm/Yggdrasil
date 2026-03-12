@@ -1101,16 +1101,48 @@ describe('collectDependencyAncestors', () => {
     expect(Array.isArray(ancestors[0].artifactFilenames)).toBe(true);
   });
 
-  it('filters ancestor artifacts by included_in_relations', async () => {
-    const graph = await loadGraph(FIXTURE_PROJECT);
-    const target = graph.nodes.get('auth/auth-api')!;
-    const ancestors = collectDependencyAncestors(target, graph.config, graph);
+  it('filters ancestor artifacts by included_in_relations', () => {
+    const config: YggConfig = {
+      name: 'T',
+      node_types: { module: { description: 'x' }, service: { description: 'x' } },
+      artifacts: {
+        'responsibility.md': { required: 'always', description: 'x' },
+        'interface.md': { required: 'never', description: 'x', included_in_relations: true },
+        'internals.md': { required: 'never', description: 'x' },
+      },
+    };
+    const parent: GraphNode = {
+      path: 'auth',
+      meta: { name: 'Auth', type: 'module' },
+      artifacts: [
+        { filename: 'responsibility.md', content: 'x' },
+        { filename: 'interface.md', content: 'y' },
+        { filename: 'internals.md', content: 'z' },
+      ],
+      children: [],
+      parent: null,
+    };
+    const child: GraphNode = {
+      path: 'auth/auth-api',
+      meta: { name: 'AuthAPI', type: 'service' },
+      artifacts: [],
+      children: [],
+      parent,
+    };
+    parent.children = [child];
+    const graph: Graph = {
+      config,
+      nodes: new Map([['auth', parent], ['auth/auth-api', child]]),
+      aspects: [],
+      flows: [],
+      schemas: [],
+      rootPath: '/tmp',
+    };
 
-    // Ancestor artifacts should only include files with included_in_relations=true.
-    // If no artifacts have included_in_relations, falls back to all config artifacts.
-    for (const ancestor of ancestors) {
-      expect(ancestor.artifactFilenames.length).toBeGreaterThanOrEqual(0);
-    }
+    const ancestors = collectDependencyAncestors(child, config, graph);
+    expect(ancestors).toHaveLength(1);
+    // Only interface.md should appear (included_in_relations=true), NOT responsibility.md or internals.md
+    expect(ancestors[0].artifactFilenames).toEqual(['interface.md']);
   });
 });
 

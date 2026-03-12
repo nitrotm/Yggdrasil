@@ -372,13 +372,13 @@ export function collectDependencyAncestors(
   const structuralFilenames = Object.entries(config.artifacts ?? {})
     .filter(([, c]) => c.included_in_relations)
     .map(([filename]) => filename);
+  const configArtifactKeys = [...Object.keys(config.artifacts ?? {})];
 
   return ancestors.map((ancestor) => {
     const nodeAspects = (ancestor.meta.aspects ?? []).map(a => a.aspect);
     const expanded = expandAspects(nodeAspects, graph.aspects);
 
     // Use included_in_relations artifacts if any exist, else fall back to all config artifacts
-    const configArtifactKeys = [...Object.keys(config.artifacts ?? {})];
     const filterFilenames = structuralFilenames.length > 0 ? structuralFilenames : configArtifactKeys;
     const availableFiles = filterFilenames.filter((f) =>
       ancestor.artifacts.some((a) => a.filename === f),
