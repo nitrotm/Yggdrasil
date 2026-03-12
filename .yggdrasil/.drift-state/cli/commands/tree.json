@@ -1,11 +1,12 @@
 {
-  "hash": "0fbe27fb2d9bfa352bcb3d3ab9aed2b29a3fe08d460c26cecaeee068fccc6349",
+  "hash": "45c51694efb97ea3b4e3695f0cd3101bc202f2c7499b992e7d345bd48c093935",
   "files": {
     ".yggdrasil/model/cli/commands/tree/yg-node.yaml": "d149f775c9239de76636a3d12c9ec6f62f7cbde4c76acd4015174678330123ec",
     ".yggdrasil/model/cli/commands/tree/interface.md": "7205a01e45012c8863f18707b2a73ae2c272f2ec03e597ceb496fc2d238adae2",
     ".yggdrasil/model/cli/commands/tree/internals.md": "00fc4cd83a6752fea70bc007dd12dd9ac15ceb363899cf038339304d88757875",
     ".yggdrasil/model/cli/commands/tree/responsibility.md": "2f05012d6dbe4273c84878c885f0676539680b967d34b74cdb0743745116b941",
     ".yggdrasil/model/cli/yg-node.yaml": "9a7f1a3b29f91683713e7a7d185b14830b8c9dd43ed49dda97fd546de5d39445",
+    ".yggdrasil/model/cli/internals.md": "fcd16e38b431eead0b12e14b05dd25184ad4ef23884fbde7402172b0985857f6",
     ".yggdrasil/model/cli/responsibility.md": "d88b933a6551942c862f23799206d64dcf8f619ed51308c3f0173b774d22509d",
     ".yggdrasil/model/cli/commands/yg-node.yaml": "0437a8e9e67ad06a70e5688858ea64dd4ef28c65c32dc59097138bf93f83cbcb",
     ".yggdrasil/model/cli/commands/internals.md": "8643ece78afa4a286856e9bd80e3315a5cc7b7ccbbe46e592ede55b030de528a",
@@ -20,8 +21,7 @@
     ".yggdrasil/model/cli/model/interface.md": "5165795248633223e129f9341462f208112563f6fac932ab119195cbd686b31d",
     ".yggdrasil/flows/graph-navigation/yg-flow.yaml": "bc6404a74c0c48bb16cb677d155b1d4a5f5a02a846e4f5a2978315420fc23143",
     ".yggdrasil/flows/graph-navigation/description.md": "d343bb1a375026e63e0815716a75149306814f7eaf65300bbe1a7e11483a8d7f",
-    "source/cli/src/cli/tree.ts": "16737878e0c4c9acc86739d5087a043d253666a0dc8cecc6a492d682f725e9ab",
-    ".yggdrasil/model/cli/internals.md": "fcd16e38b431eead0b12e14b05dd25184ad4ef23884fbde7402172b0985857f6"
+    "source/cli/src/cli/tree.ts": "dd9568529c1d3ff1720e97e434f2e0afe31943b468c76f69edb71ad9e4f80ac6"
   },
   "mtimes": {
     ".yggdrasil/model/cli/commands/tree/yg-node.yaml": 1772776392192.877,
@@ -44,6 +44,6 @@
     ".yggdrasil/model/cli/model/interface.md": 1772778758662.7588,
     ".yggdrasil/flows/graph-navigation/yg-flow.yaml": 1772776392188.8533,
     ".yggdrasil/flows/graph-navigation/description.md": 1772743197470.2842,
-    "source/cli/src/cli/tree.ts": 1772485235660.7534
+    "source/cli/src/cli/tree.ts": 1773311498487.3071
   }
 }

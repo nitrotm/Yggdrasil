@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-03-12
+
+### Fixed
+
+- **`yg tree` aspect display.** Aspects were rendered as `[object Object]` instead of
+  their IDs. Now correctly extracts the `aspect` field from each `NodeAspectEntry` before
+  joining.
+
 ## [2.3.2] - 2026-03-11
 
 ### Removed
