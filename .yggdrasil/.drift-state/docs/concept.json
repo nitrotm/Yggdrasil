@@ -1,27 +1,27 @@
 {
-  "hash": "fb037bb3b69f93b8a4a44c8b1ce6ff23f5854b9ba2adb677b0e53036ff88a9d9",
+  "hash": "aa83e8c561feb22c2d99ceba520585cb781b4e63adcb82de48a0bdc065f93f1f",
   "files": {
     ".yggdrasil/model/docs/concept/yg-node.yaml": "ca2b98c32f647e74dae82b3f5a8d8ef18e542a2a2c41a946ddb88a897a2b3725",
     ".yggdrasil/model/docs/concept/responsibility.md": "1b5a6590a3620359d6010c5bd05e665732cb35dff7b765a0d205244577bca2dd",
     ".yggdrasil/model/docs/yg-node.yaml": "1182af1dc3aeceb24262745dc13a456dc75d280a313d4bb5b364b5d3e8e6f1e3",
     ".yggdrasil/model/docs/responsibility.md": "070a2a6c6b29116ab18d2b824068d227cc4682f30fd5ef79b3cbe307dbe632fe",
-    "docs/concept/engine.md": "c633958f534911f669347936e74629140f2011dd1a21f5727a6cc72b1b8756b6",
+    "docs/concept/engine.md": "8ddcbb0d35108fb1454c3243aff946d2a324a48ee91d9bf525995dcfc4365fff",
     "docs/concept/foundation.md": "b7c496414f2922043ac5aa6fe030fa6a09a9b138a0e7f3628d3fa14a8d885f2a",
     "docs/concept/graph.md": "6e2f7f8425cdc144356b0b0982a6273cc02132b660491eb4ef35d4e383585bf0",
     "docs/concept/integration.md": "c90d2fb08daf616d18b58a323e07677b89b17359c2a053311fcd5c72ad1dfb5b",
     "docs/concept/materialization.md": "3ef091a28938f2e4c46b0fd2e9d6d442f11fe303897b526768187e46d4f02c87",
-    "docs/concept/tools.md": "061230bf969a153e9b5ff8c4e0281a10062d9d7d9d44a693b26ab69e1caa3139"
+    "docs/concept/tools.md": "f308c491a41af55ac37846f4e6ee4a7c032a0edef7a7845c3512eb5be6740d67"
   },
   "mtimes": {
-    ".yggdrasil/model/docs/concept/yg-node.yaml": 1772828318189.249,
-    ".yggdrasil/model/docs/concept/responsibility.md": 1772828318480.2405,
-    ".yggdrasil/model/docs/yg-node.yaml": 1772776392200.4812,
-    ".yggdrasil/model/docs/responsibility.md": 1772828320283.2747,
-    "docs/concept/engine.md": 1773065853755.4622,
-    "docs/concept/foundation.md": 1772829192525.396,
-    "docs/concept/graph.md": 1772778904187.7903,
-    "docs/concept/integration.md": 1773065824995.0466,
-    "docs/concept/materialization.md": 1772781876843.865,
-    "docs/concept/tools.md": 1773084690575.7727
+    ".yggdrasil/model/docs/concept/yg-node.yaml": 1773348114770.2327,
+    ".yggdrasil/model/docs/concept/responsibility.md": 1773348114770.108,
+    ".yggdrasil/model/docs/yg-node.yaml": 1773348114770.4653,
+    ".yggdrasil/model/docs/responsibility.md": 1773348114770.3477,
+    "docs/concept/engine.md": 1773352057982.5305,
+    "docs/concept/foundation.md": 1773348114775.2588,
+    "docs/concept/graph.md": 1773348114775.4246,
+    "docs/concept/integration.md": 1773348114775.6372,
+    "docs/concept/materialization.md": 1773348114775.7795,
+    "docs/concept/tools.md": 1773352044073.2073
   }
 }

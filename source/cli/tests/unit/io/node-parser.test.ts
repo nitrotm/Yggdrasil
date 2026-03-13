@@ -13,8 +13,12 @@ describe('node-parser', () => {
 
     expect(meta.name).toBe('OrderService');
     expect(meta.type).toBe('service');
-    expect(meta.relations).toContainEqual({ target: 'auth/auth-api', type: 'uses' });
-    expect(meta.relations).toContainEqual({ target: 'users/user-repo', type: 'uses' });
+    expect(meta.relations).toContainEqual(
+      expect.objectContaining({ target: 'auth/auth-api', type: 'uses', consumes: ['authenticate'], failure: 'reject-request' }),
+    );
+    expect(meta.relations).toContainEqual(
+      expect.objectContaining({ target: 'users/user-repo', type: 'uses' }),
+    );
     expect(meta.blackbox).toBe(false);
     expect(meta.mapping).toEqual({ paths: ['src/orders/order.service.ts'] });
   });

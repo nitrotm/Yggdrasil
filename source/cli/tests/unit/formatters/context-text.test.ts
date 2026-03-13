@@ -83,6 +83,22 @@ describe('formatContextYaml', () => {
     );
   });
 
+  it('omits hierarchy and dependencies when empty', () => {
+    const output = formatContextYaml(makeMinimalOutput());
+    const parsed = yamlParse(output);
+    expect(parsed.hierarchy).toBeUndefined();
+    expect(parsed.dependencies).toBeUndefined();
+  });
+
+  it('includes hierarchy when non-empty', () => {
+    const data = makeMinimalOutput();
+    data.hierarchy = [{ path: 'parent', name: 'Parent', type: 'module', aspects: [] }];
+    const output = formatContextYaml(data);
+    const parsed = yamlParse(output);
+    expect(parsed.hierarchy).toHaveLength(1);
+    expect(parsed.hierarchy[0].path).toBe('parent');
+  });
+
   it('renders dependency with hierarchy and aspects', () => {
     const data = makeMinimalOutput();
     data.dependencies = [{

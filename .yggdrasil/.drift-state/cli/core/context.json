@@ -1,5 +1,5 @@
 {
-  "hash": "3401f967b408fc4dacb91fc68d777b5c3a164d4dbb76931412f96c50d5111633",
+  "hash": "2b602e2d8d0fd5ad42f3f13a3c016f9997584ff35e3aece8b0eb2bce503a7d64",
   "files": {
     ".yggdrasil/model/cli/core/context/yg-node.yaml": "554fcc526816c5d3403e363d2d016c2c91b1a79fb2a3b3019b7233665db4eaa6",
     ".yggdrasil/model/cli/core/context/responsibility.md": "2f1639ee31215186bce1ff5060da400d46c890b56963981004712c23d2a9d8ed",
@@ -17,18 +17,18 @@
     ".yggdrasil/model/cli/utils/responsibility.md": "4918c48366c7b3f35bb7b97fa74252c47f14ba72417c5cc5f3e1100b503c7ddd",
     ".yggdrasil/model/cli/utils/interface.md": "19ebc12ccbc4a90f9f016dead73a3592c6a397a010ed9cf39993b9f01bc8d96e",
     ".yggdrasil/flows/build-context/yg-flow.yaml": "ff5cd08671ba3c432dbc3aeea962bef5862445756275f404cd5b13ad091abb87",
-    ".yggdrasil/flows/build-context/description.md": "a45c7933eb7a4b0055eeaf112ccb0211d88656288ed0a0c306fd3ce4d126a2ae",
     ".yggdrasil/flows/graph-analysis/yg-flow.yaml": "b76dee1120416f885ec54fbc540d653a67fcc1018066c4e3fe5840909540eb45",
     ".yggdrasil/flows/graph-analysis/description.md": "2c5f6e377cea91a9b447f395971203f02c2a91a816e847269adb6f84c8786603",
     "source/cli/src/core/context-files.ts": "d43b1033d4470355f251fab00fcb19331a6bac90453f48f6bac3641dc952a54a",
     ".yggdrasil/model/cli/core/context/interface.md": "3e13970a3631f21efb6c4542616f57469a39ab9a364b0f6ab08c455b87fe1673",
     ".yggdrasil/model/cli/core/context/internals.md": "1b23253cf8f9f0a7464a07a37e1534a6279e6e8f5fe71b3ece76e0d9dc8b8f1a",
-    "source/cli/src/core/context-builder.ts": "7944dd17cc781eed8b26bf9a7d36dfbc9d0eca82c987b3000c28a79e8aa1d4d4"
+    ".yggdrasil/flows/build-context/description.md": "60e4619e480293f028a1c2b756ce30c8800adc613dc9c64e6bd6ef7f3d5fcf87",
+    "source/cli/src/core/context-builder.ts": "aad828b420dd5eca28b0174180ef95dc017f85ac36fe0a4edd501c9f51792af0"
   },
   "mtimes": {
     ".yggdrasil/model/cli/core/context/yg-node.yaml": 1773348114763.791,
-    ".yggdrasil/model/cli/core/context/interface.md": 1773350745075.674,
-    ".yggdrasil/model/cli/core/context/internals.md": 1773350759606.7676,
+    ".yggdrasil/model/cli/core/context/interface.md": 1773350794409.1912,
+    ".yggdrasil/model/cli/core/context/internals.md": 1773350794409.4854,
     ".yggdrasil/model/cli/core/context/responsibility.md": 1773349776849.4968,
     ".yggdrasil/model/cli/yg-node.yaml": 1773348114769.7412,
     ".yggdrasil/model/cli/internals.md": 1773348114767.1863,
@@ -44,10 +44,10 @@
     ".yggdrasil/model/cli/utils/responsibility.md": 1773348114769.523,
     ".yggdrasil/model/cli/utils/interface.md": 1773348114769.2603,
     ".yggdrasil/flows/build-context/yg-flow.yaml": 1773348114755.1821,
-    ".yggdrasil/flows/build-context/description.md": 1773348114755.0757,
+    ".yggdrasil/flows/build-context/description.md": 1773351322340.0305,
     ".yggdrasil/flows/graph-analysis/yg-flow.yaml": 1773348114755.7466,
     ".yggdrasil/flows/graph-analysis/description.md": 1773348114755.652,
-    "source/cli/src/core/context-builder.ts": 1773350710128.9907,
+    "source/cli/src/core/context-builder.ts": 1773351011397.8857,
     "source/cli/src/core/context-files.ts": 1773349696605.778
   }
 }

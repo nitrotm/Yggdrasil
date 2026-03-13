@@ -1,25 +1,25 @@
 {
-  "hash": "7f34f1824ca6993b5a301aaba3296263304a256d7c18effdd91f5ca207c6db54",
+  "hash": "bb9b0f891f3b65c489caa5b29b6c1ad134d586347a3916df21e1e8483b8a4120",
   "files": {
     ".yggdrasil/model/docs/yg-node.yaml": "1182af1dc3aeceb24262745dc13a456dc75d280a313d4bb5b364b5d3e8e6f1e3",
     ".yggdrasil/model/docs/responsibility.md": "070a2a6c6b29116ab18d2b824068d227cc4682f30fd5ef79b3cbe307dbe632fe",
-    "docs/cli-reference.md": "46e813a2d64f9229309d9e1ec926dd672294e846155df75a8e2527d61fe727e1",
+    "docs/cli-reference.md": "21551a45ec73f3d84e345e82adcdfc8c0e2cc5f0a1d01cbf4d16e9449778e959",
     "docs/configuration.md": "930d07f178709dced83eb0e1d27479ae5fa2d804eecaaa349fc8ef765620c627",
     "docs/getting-started.md": "bd967ee1fb52aaca13ba218b44610b767c6bf276ab98e1d4dd637ab8955ccf3a",
     "docs/index.md": "4bfc5e57d2f214863e2aba80a2f5ba3f7dde2e057a49cb3a1ca46ba428a5eebe",
     "docs/platforms.md": "20e2b9c50f75e37c47d6a796c25e68e77eb53ebf81e56f768300f09d62ee2338",
-    "docs/package-lock.json": "5de0744623b0f0d3ae0f73845845ae1d5c89623da74cf542447129cb159f167e",
-    "docs/package.json": "e3c48dc4ed7f4a2fc56f5d8dec2cbf2a07ffcad6f566d41a206a88a68225d756"
+    "docs/package.json": "e3c48dc4ed7f4a2fc56f5d8dec2cbf2a07ffcad6f566d41a206a88a68225d756",
+    "docs/package-lock.json": "5de0744623b0f0d3ae0f73845845ae1d5c89623da74cf542447129cb159f167e"
   },
   "mtimes": {
-    ".yggdrasil/model/docs/yg-node.yaml": 1772776392200.4812,
-    ".yggdrasil/model/docs/responsibility.md": 1772828320283.2747,
-    "docs/cli-reference.md": 1773071315615.4722,
-    "docs/configuration.md": 1772776392202.4404,
-    "docs/getting-started.md": 1772829457957.486,
-    "docs/index.md": 1773065874221.2637,
-    "docs/platforms.md": 1772485235626.6682,
-    "docs/package.json": 1773085358086.3213,
-    "docs/package-lock.json": 1772432507086.5698
+    ".yggdrasil/model/docs/yg-node.yaml": 1773348114770.4653,
+    ".yggdrasil/model/docs/responsibility.md": 1773348114770.3477,
+    "docs/cli-reference.md": 1773352010044.2747,
+    "docs/configuration.md": 1773348114776.373,
+    "docs/getting-started.md": 1773348114776.449,
+    "docs/index.md": 1773348114776.556,
+    "docs/platforms.md": 1773348114777.8167,
+    "docs/package.json": 1773348114777.7324,
+    "docs/package-lock.json": 1773348114777.6494
   }
 }

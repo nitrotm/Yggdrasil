@@ -5,10 +5,13 @@ import {
   buildContext,
   buildGlobalLayer,
   buildAspectLayer,
+  buildHierarchyLayer,
+  buildOwnLayer,
   buildStructuralRelationLayer,
   buildEventRelationLayer,
   collectAncestors,
   collectDependencyAncestors,
+  collectEffectiveAspectIds,
   toContextMapOutput,
 } from '../../../src/core/context-builder.js';
 import { formatContextMarkdown } from '../../../src/formatters/markdown.js';
@@ -68,6 +71,16 @@ describe('context-builder', () => {
       expect(layer.content).toContain('updateUserSessions uses await');
     });
 
+    it('includes stability tier when set', () => {
+      const layer = buildAspectLayer({
+        name: 'PubSub Events',
+        id: 'pubsub-events',
+        stability: 'protocol',
+        artifacts: [{ filename: 'rules.md', content: 'Fire and forget pattern' }],
+      });
+      expect(layer.content).toContain('**Stability tier:** protocol');
+    });
+
     it('does not include exception section when no exception provided', () => {
       const layer = buildAspectLayer({
         name: 'PubSub Events',
@@ -75,6 +88,79 @@ describe('context-builder', () => {
         artifacts: [{ filename: 'rules.md', content: 'Fire and forget pattern' }],
       });
       expect(layer.content).not.toContain('Exception for this node');
+    });
+  });
+
+  describe('buildHierarchyLayer', () => {
+    it('omits aspects attr when ancestor has no aspects', () => {
+      const ancestor: GraphNode = {
+        path: 'parent',
+        meta: { name: 'Parent', type: 'module' },
+        artifacts: [{ filename: 'responsibility.md', content: 'Parent context' }],
+        children: [],
+        parent: null,
+      };
+      const config: YggConfig = {
+        name: 'Test',
+        node_types: { module: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      };
+      const graph: Graph = {
+        rootPath: '/tmp',
+        config,
+        nodes: new Map(),
+        aspects: [],
+        flows: [],
+      };
+      const layer = buildHierarchyLayer(ancestor, config, graph);
+      expect(layer.attrs).toBeUndefined();
+      expect(layer.content).toContain('Parent context');
+    });
+  });
+
+  describe('buildOwnLayer', () => {
+    it('falls back to reading yg-node.yaml from disk when nodeYamlRaw is undefined', async () => {
+      const graph = await loadGraph(FIXTURE_PROJECT);
+      const node = graph.nodes.get('orders/order-service')!;
+      // Clear nodeYamlRaw to force the disk read branch
+      const original = node.nodeYamlRaw;
+      node.nodeYamlRaw = undefined;
+      const layer = await buildOwnLayer(node, graph.config, graph.rootPath, graph);
+      expect(layer.content).toContain('yg-node.yaml');
+      node.nodeYamlRaw = original;
+    });
+
+    it('shows not found when yg-node.yaml is missing from disk', async () => {
+      const node: GraphNode = {
+        path: 'nonexistent/node',
+        meta: { name: 'Test', type: 'module' },
+        artifacts: [],
+        children: [],
+        parent: null,
+        nodeYamlRaw: undefined,
+      };
+      const config: YggConfig = {
+        name: 'Test',
+        node_types: { module: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      };
+      const graph: Graph = {
+        rootPath: '/tmp/nonexistent',
+        config,
+        nodes: new Map(),
+        aspects: [],
+        flows: [],
+      };
+      const layer = await buildOwnLayer(node, config, '/tmp/nonexistent', graph);
+      expect(layer.content).toContain('(not found)');
+    });
+  });
+
+  describe('collectEffectiveAspectIds', () => {
+    it('returns empty set for nonexistent node', async () => {
+      const graph = await loadGraph(FIXTURE_PROJECT);
+      const result = collectEffectiveAspectIds(graph, 'does/not/exist');
+      expect(result.size).toBe(0);
     });
   });
 
@@ -112,6 +198,8 @@ describe('context-builder', () => {
       expect(layer.content).toContain('retry 3x');
       expect(layer.content).toContain('### interface.md');
       expect(layer.content).toContain('### errors.md');
+      expect(layer.attrs!.consumes).toBe('methodA');
+      expect(layer.attrs!.failure).toBe('retry 3x');
     });
 
     it('omits consumes and failure when absent', () => {
@@ -127,6 +215,8 @@ describe('context-builder', () => {
       expect(layer.content).not.toContain('Consumes:');
       expect(layer.content).not.toContain('On failure:');
       expect(layer.content).toContain('### interface.md');
+      expect(layer.attrs!.consumes).toBeUndefined();
+      expect(layer.attrs!.failure).toBeUndefined();
     });
 
     it('uses included_in_relations artifacts when configured', () => {
@@ -216,6 +306,20 @@ describe('context-builder', () => {
       const layer = buildEventRelationLayer(target, rel);
       expect(layer.content).toContain('You publish');
       expect(layer.content).not.toContain('Consumes:');
+    });
+
+    it('uses event_name when provided', () => {
+      const target: GraphNode = {
+        path: 'events/handler',
+        meta: { name: 'Handler', type: 'service' },
+        artifacts: [],
+        children: [],
+        parent: null,
+      };
+      const rel: Relation = { target: 'events/handler', type: 'emits', event_name: 'order.created' };
+      const layer = buildEventRelationLayer(target, rel);
+      expect(layer.content).toContain('order.created');
+      expect(layer.attrs!['event-name']).toBe('order.created');
     });
 
     it('formats listens relation', () => {
@@ -1143,5 +1247,67 @@ describe('toContextMapOutput', () => {
         expect(f).toMatch(/^aspects\//);
       }
     }
+  });
+
+  it('includes consumes and failure on dependency refs', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    const authDep = output.dependencies.find((d) => d.path === 'auth/auth-api');
+    expect(authDep).toBeDefined();
+    expect(authDep!.consumes).toEqual(['authenticate']);
+    expect(authDep!.failure).toBe('reject-request');
+  });
+
+  it('includes implies on aspects in artifact registry', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    const auditAspect = output.artifacts.aspects['requires-audit'];
+    expect(auditAspect).toBeDefined();
+    expect(auditAspect.implies).toEqual(['requires-logging']);
+  });
+
+  it('includes flow aspects in artifact registry', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    const flow = output.artifacts.flows['checkout-flow'];
+    expect(flow).toBeDefined();
+    expect(flow.aspects).toEqual(['requires-logging']);
+  });
+
+  it('reports budget status warning when near threshold', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    // Override config to set a very low warning threshold
+    graph.config.quality = { context_budget: { warning: 1, error: 999999 } };
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    expect(output.meta.budgetStatus).toBe('warning');
+  });
+
+  it('reports budget status error when over error threshold', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    graph.config.quality = { context_budget: { warning: 1, error: 2 } };
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    expect(output.meta.budgetStatus).toBe('error');
+  });
+
+  it('includes event-name on emits relation dependencies', async () => {
+    const graph = await loadGraph(FIXTURE_PROJECT);
+    const pkg = await buildContext(graph, 'orders/order-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    const emitsDep = output.dependencies.find(
+      (d) => d.path === 'users/user-repo' && d.relation === 'emits',
+    );
+    expect(emitsDep).toBeDefined();
+    expect(emitsDep!['event-name']).toBe('order.created');
   });
 });
