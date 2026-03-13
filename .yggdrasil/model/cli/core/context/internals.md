@@ -9,7 +9,7 @@
 1. **Global** — yg-config.yaml: project name
 2. **Hierarchy** — collectAncestors from node.parent up to root; for each ancestor, filter artifacts by config, build hierarchy layer
 3. **Own** — yg-node.yaml (read from disk) + filtered artifacts
-4. **Relational** — for each relation: structural (uses/calls/extends/implements) → buildStructuralRelationLayer (consumes, failure, included_in_relations artifacts); event (emits/listens) → buildEventRelationLayer
+4. **Relational** — for each relation: structural (uses/calls/extends/implements) → buildStructuralRelationLayer (consumes, failure, included_in_relations artifacts); event (emits/listens) → buildEventRelationLayer. In YAML map output (toContextMapOutput), each dependency additionally includes: (a) its full ancestor hierarchy via collectDependencyAncestors (root to parent, with their aspects and included_in_relations artifacts), and (b) its effective aspects via collectEffectiveAspectIds (own + ancestors + flow-propagated + implies-expanded)
 5. **Flows** — flows where node or ancestor in flow.nodes; for each flow: flow artifacts
 6. **Aspects** — union of aspect ids from hierarchy + own + flow layers (expanded via implies); for each resolved aspect, look up the matching entry in `node.meta.aspects` and join its `exceptions` array (if any) to pass as exception note to `buildAspectLayer`
 
@@ -28,6 +28,15 @@ Implementation note: steps 4–5 execute before step 6 internally so that flow-p
 - EVENT_RELATION_TYPES: emits, listens
 
 Structural relations get interface/errors from target (included_in_relations). Event relations get event name + consumes.
+
+## Dependency Hierarchy in YAML Map Output
+
+`toContextMapOutput` enriches each dependency beyond what raw layers contain. For each structural/event dependency target:
+
+1. **collectDependencyAncestors(target)** — walks target's parent chain from root to parent. Each ancestor entry includes: path, name, type, own aspects (expanded via implies), and artifactFilenames (filtered by included_in_relations, falling back to all config artifacts). Ancestor artifacts are registered in the artifact registry for agent reading.
+2. **collectEffectiveAspectIds(graph, targetPath)** — computes the full set of aspects effective on the dependency: own aspects + ancestor aspects + flow-propagated aspects, all expanded via implies. This set appears in the dependency's `aspects` field in the YAML output.
+
+This means a node's context package includes not just the dependency's own artifacts, but its full positional context in the graph — the agent understands WHERE the dependency sits and WHAT cross-cutting requirements apply to it.
 
 ## Aspect Exceptions
 
