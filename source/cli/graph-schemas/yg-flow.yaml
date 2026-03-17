@@ -3,7 +3,7 @@
 # plus description.md with required sections (see rules).
 
 name: EndToEndProcessName     # required — display name
-nodes:                        # required, non-empty — participant nodes
+nodes:                        # required, non-empty — participant nodes (alias: participants)
   - orders/order-service      # paths relative to model/
   - payments/payment-service
   - inventory/inventory-service

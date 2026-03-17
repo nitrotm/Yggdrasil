@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-03-17
+
+### Fixed
+
+- **Rules: flow field name mismatch.** Agent rules referenced `participants` as the
+  flow YAML field name, but the schema and parser use `nodes`. Corrected rules to say
+  `nodes`. Parser now also accepts `participants` as an alias for backward compatibility.
+- **Flow loading resilience.** `loadFlows` no longer silently swallows parse errors
+  from individual flows — only a missing `flows/` directory is tolerated.
+
 ## [2.5.0] - 2026-03-13
 
 ### Changed

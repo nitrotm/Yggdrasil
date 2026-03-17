@@ -400,7 +400,7 @@ When code anchors (\`anchors\` in an aspect entry in \`yg-node.yaml\`) are prese
 
 - [ ] 1. Read \`schemas/yg-flow.yaml\`
 - [ ] 2. Create \`flows/<name>/\` directory
-- [ ] 3. Write \`yg-flow.yaml\` — declare participants and flow-level aspects
+- [ ] 3. Write \`yg-flow.yaml\` — declare nodes (participant list) and flow-level aspects
 - [ ] 4. Write \`description.md\` with required sections: Business context, Trigger, Goal, Participants, Paths (at least Happy path), Invariants across all paths
 - [ ] 5. \`yg validate\`
 
@@ -453,7 +453,7 @@ yg drift-sync --node <path> [--recursive] | --all
 | Information specific to this node | Local node artifact (check \`yg-config.yaml artifacts\` for types) |
 | Rule that applies to many nodes | Aspect (content \`.md\` files in \`aspects/<id>/\`) |
 | Architectural invariant for a node type | Required aspect in \`yg-config.yaml node_types\` |
-| Business process participation | Flow (\`yg-flow.yaml participants\`) |
+| Business process participation | Flow (\`yg-flow.yaml nodes\`) |
 | Process-level requirement | Flow \`aspects\` + aspect directory |
 | Context shared across a domain | Parent node artifact |
 | Technology stack | Node artifact at appropriate hierarchy level |

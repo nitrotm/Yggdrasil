@@ -14,16 +14,16 @@
     "source/cli/src/model/types.ts": "1b83608400d896d722f3c31397dc1b4adb2bd5124e0f14d56e4e0609ec1dcb3d"
   },
   "mtimes": {
-    ".yggdrasil/model/cli/model/yg-node.yaml": 1773398938114.7756,
-    ".yggdrasil/model/cli/model/interface.md": 1773399466269.6519,
-    ".yggdrasil/model/cli/model/internals.md": 1773398938114.5964,
-    ".yggdrasil/model/cli/model/responsibility.md": 1773398938114.6821,
-    ".yggdrasil/model/cli/yg-node.yaml": 1773398938116.34,
-    ".yggdrasil/model/cli/internals.md": 1773398938113.86,
-    ".yggdrasil/model/cli/responsibility.md": 1773398938114.885,
-    ".yggdrasil/aspects/deterministic/yg-aspect.yaml": 1773398938098.9814,
-    ".yggdrasil/aspects/deterministic/content.md": 1773398938098.8867,
-    "source/cli/src/model/.gitkeep": 1773398938244.7034,
-    "source/cli/src/model/types.ts": 1773399048227.877
+    ".yggdrasil/model/cli/model/yg-node.yaml": 1772776392198.5452,
+    ".yggdrasil/model/cli/model/interface.md": 1773400320632.7947,
+    ".yggdrasil/model/cli/model/internals.md": 1772743197449.5266,
+    ".yggdrasil/model/cli/model/responsibility.md": 1772778759688.719,
+    ".yggdrasil/model/cli/yg-node.yaml": 1772776392200.1245,
+    ".yggdrasil/model/cli/internals.md": 1772829219205.6714,
+    ".yggdrasil/model/cli/responsibility.md": 1772828320680.1243,
+    ".yggdrasil/aspects/deterministic/yg-aspect.yaml": 1772776392187.3232,
+    ".yggdrasil/aspects/deterministic/content.md": 1772778780694.5889,
+    "source/cli/src/model/.gitkeep": 1771702275795.2727,
+    "source/cli/src/model/types.ts": 1773400320636.7217
   }
 }

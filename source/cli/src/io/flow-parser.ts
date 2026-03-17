@@ -16,14 +16,18 @@ export async function parseFlow(flowDir: string, flowYamlPath: string): Promise<
     throw new Error(`yg-flow.yaml at ${flowYamlPath}: missing or empty 'name'`);
   }
 
-  const nodes = raw.nodes;
+  const nodes = raw.nodes ?? raw.participants;
   if (!Array.isArray(nodes) || nodes.length === 0) {
-    throw new Error(`yg-flow.yaml at ${flowYamlPath}: 'nodes' must be a non-empty array`);
+    throw new Error(
+      `yg-flow.yaml at ${flowYamlPath}: 'nodes' (or 'participants') must be a non-empty array`,
+    );
   }
 
   const nodePaths = (nodes as unknown[]).filter((n): n is string => typeof n === 'string');
   if (nodePaths.length === 0) {
-    throw new Error(`yg-flow.yaml at ${flowYamlPath}: 'nodes' must contain string node paths`);
+    throw new Error(
+      `yg-flow.yaml at ${flowYamlPath}: 'nodes' (or 'participants') must contain string node paths`,
+    );
   }
 
   let aspects: string[] | undefined;

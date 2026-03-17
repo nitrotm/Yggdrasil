@@ -81,6 +81,52 @@ nodes:
     await rm(tmpDir, { recursive: true, force: true });
   });
 
+  it('accepts participants as alias for nodes', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-participants');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
+    await writeFile(
+      flowYaml,
+      `
+name: Compat Flow
+participants:
+  - orders/order-service
+  - auth/auth-api
+`,
+      'utf-8',
+    );
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+
+    expect(flow.name).toBe('Compat Flow');
+    expect(flow.nodes).toEqual(['orders/order-service', 'auth/auth-api']);
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('prefers nodes over participants when both present', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-both');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
+    await writeFile(
+      flowYaml,
+      `
+name: Both Flow
+nodes:
+  - a/b
+participants:
+  - c/d
+`,
+      'utf-8',
+    );
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+
+    expect(flow.nodes).toEqual(['a/b']);
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
   it('throws when nodes is missing', async () => {
     const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-missing-nodes');
     await mkdir(tmpDir, { recursive: true });
@@ -93,7 +139,9 @@ name: Test Flow
       'utf-8',
     );
 
-    await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow("'nodes' must be a non-empty array");
+    await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow(
+      "'nodes' (or 'participants') must be a non-empty array",
+    );
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -111,7 +159,7 @@ nodes: []
       'utf-8',
     );
 
-    await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow("'nodes' must be a non-empty array");
+    await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow('must be a non-empty array');
 
     await rm(tmpDir, { recursive: true, force: true });
   });
@@ -130,7 +178,7 @@ nodes: [123, {}]
     );
 
     await expect(parseFlow(tmpDir, flowYaml)).rejects.toThrow(
-      "'nodes' must contain string node paths",
+      'must contain string node paths',
     );
 
     await rm(tmpDir, { recursive: true, force: true });

@@ -175,7 +175,7 @@ End-to-end flow metadata.
 
 ```yaml
 name: Checkout flow # string, required
-nodes: # list of strings, required, non-empty
+nodes: # list of strings, required, non-empty (alias: participants)
   - orders/order-service # path relative to model/
   - payments/payment-service
 aspects: # list of strings, optional — aspect ids propagated to all participants

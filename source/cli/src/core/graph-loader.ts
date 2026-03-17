@@ -182,19 +182,20 @@ async function scanAspectsDirectory(
 }
 
 async function loadFlows(flowsDir: string): Promise<FlowDef[]> {
+  let entries;
   try {
-    const entries = await readdir(flowsDir, { withFileTypes: true });
-    const flows: FlowDef[] = [];
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const flowYamlPath = path.join(flowsDir, entry.name, 'yg-flow.yaml');
-      const flow = await parseFlow(path.join(flowsDir, entry.name), flowYamlPath);
-      flows.push(flow);
-    }
-    return flows;
+    entries = await readdir(flowsDir, { withFileTypes: true });
   } catch {
-    return [];
+    return []; // flows/ directory does not exist — OK
   }
+  const flows: FlowDef[] = [];
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const flowYamlPath = path.join(flowsDir, entry.name, 'yg-flow.yaml');
+    const flow = await parseFlow(path.join(flowsDir, entry.name), flowYamlPath);
+    flows.push(flow);
+  }
+  return flows;
 }
 
 async function loadSchemas(schemasDir: string): Promise<SchemaDef[]> {

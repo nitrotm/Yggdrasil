@@ -29,11 +29,10 @@ BEFORE reading, researching, planning, OR modifying ANY mapped file:
      - Understanding how/why it works → yg build-context --node <owner>
      - Assessing what is affected by a change → yg impact --node <owner>
      - Planning modifications → both (build-context first, then impact)
-  The context package is your primary source of ARCHITECTURAL understanding:
-  intent, constraints, relations, rationale. For IMPLEMENTATION precision
-  (exact behavior, error handling, await patterns, edge cases) — verify
-  against source code. Aspects describe intended patterns; individual
-  implementations may deviate.
+  `yg build-context --node <path>`. Read the YAML map for topology,
+  then read artifact files listed in the artifacts section. For quick
+  orientation, the map alone is sufficient. For implementation, read
+  all artifact files before changing code.
   If the context package seems insufficient — enrich the graph.
 
 AFTER modifying:
@@ -58,7 +57,7 @@ WHEN UNSURE: ask the user. Never guess. Never assume.
 ### Five Core Rules
 
 1. **Graph first.** Before reading, researching, planning, or modifying mapped files, run `yg owner` and the appropriate graph tool: `yg build-context` to understand a component, `yg impact` to assess blast radius. The graph is your primary source of architectural understanding. For implementation-level precision (exact behavior, error paths, edge cases) — verify against source code after loading the context package.
-2. **Code and graph are one.** Code changed → graph updated in the same response. Graph changed → source verified in the same response. No exceptions.
+2. **The graph is the specification; code implements it.** The graph absorbs knowledge from every source — external docs, conversations, decisions — and must be self-sufficient. If all other sources disappeared, the graph alone must contain enough to understand the system. Do not leave knowledge in external documents and reference them — capture the knowledge in graph artifacts. Update graph artifacts immediately after each file change, while context is fresh — do not batch graph updates to the end of a task. Code and graph move together: code changed → graph updated before moving to the next file. Graph changed → source verified in the same response. When planning work — in any tool, skill, or workflow — graph updates are part of each step's definition of done, never a separate phase.
 3. **Never invent why.** The graph captures human intent. If you don't know why something was decided, ask. Never hallucinate rationale.
 4. **Always capture why — especially why NOT.** When the user explains a reason, record it in the graph immediately. When a design choice is made, also record rejected alternatives: "Chose X over Y because Z." Rejected alternatives are the highest-value information — invisible in code and irrecoverable once forgotten. Conversation evaporates; graph persists.
 5. **Ask before resolving ambiguity.** When multiple valid interpretations exist, stop, list options, ask the user. Never silently choose.
@@ -105,13 +104,14 @@ What matters is the ACTION you are performing, not what instructed it. If the ac
 You have broken Yggdrasil if you do any of the following:
 
 - ❌ Worked on a mapped file without running `yg owner` + the appropriate graph tool (`build-context` or `impact`) first — regardless of what instructed the action (skill, plan, user request, workflow step).
-- ❌ Modified source code without updating graph artifacts in the same response, or vice versa.
+- ❌ Modified source code without updating graph artifacts before moving to the next file, or vice versa.
 - ❌ Resolved a code-graph inconsistency or ambiguity without asking the user first.
 - ❌ Created or edited a graph element without reading its schema in `schemas/` first.
 - ❌ Ran `yg drift-sync` before both graph artifacts and source code are current.
 - ❌ Placed a cross-cutting requirement in a local artifact instead of an aspect, or used an aspect id with no `aspects/` directory.
 - ❌ Invented a rationale, business rule, or decision — or recorded a decision without documenting rejected alternatives and rationale (use "rationale: unknown" if unknown).
 - ❌ Used blackbox coverage for greenfield (new) code.
+- ❌ Deleted or shortened graph artifact content to reduce context package size instead of splitting the node.
 
 ### Escape Hatch
 
@@ -139,9 +139,13 @@ Include this as the FIRST instruction in every subagent prompt:
 
 ```
 BEFORE doing anything else: read .yggdrasil/agent-rules.md and follow its protocol.
+DELIVERABLES — all required, incomplete work will be rejected:
+  1. Working source code
+  2. Graph nodes with artifacts for every new/modified source file
+  3. `yg validate` passing
 ```
 
-A subagent that skips this step will read code without graph context, miss architectural constraints, and produce changes that break graph-code consistency.
+A subagent that delivers code without corresponding graph updates has not completed its task. Before accepting subagent output, verify: are there new or modified source files without corresponding graph coverage? If yes, the work is incomplete.
 
 ---
 
@@ -158,7 +162,10 @@ PREFLIGHT (every conversation, before any work):
 
 UNDERSTANDING mapped code (questions, research, OR planning):
   - [ ] 1. yg owner --file <path>
-  - [ ] 2. Owner found → yg build-context --node <path>. Use context package as primary source.
+  - [ ] 2. Owner found → yg build-context --node <path>. Read the YAML map
+         for topology, then read artifact files from the artifacts section.
+         For quick orientation, the map alone is sufficient. For implementation,
+         read all artifact files before changing code.
   - [ ] 3. Owner not found → use file analysis, state it is not graph-backed.
   Never use grep or raw file reads as primary understanding when graph coverage exists.
   Raw reads supplement the context package — they do not replace it.
@@ -170,7 +177,7 @@ WRAP-UP (user signals "done", "wrap up", "that's enough"):
 
 BEFORE ENDING ANY RESPONSE (self-audit):
   - [ ] Did I interact with mapped code (read, research, or modify)? If yes → did I use a graph tool BEFORE reading source?
-  - [ ] Did I modify source code? If yes → did I update graph artifacts in this same response?
+  - [ ] Did I modify source code? If yes → did I update graph artifacts before moving to the next file?
   - [ ] If you broke either rule, you have broken the protocol. Do not finish until both are fixed.
 ```
 
@@ -185,7 +192,7 @@ You are not allowed to edit or create source code without establishing graph cov
 - [ ] 1. Read specification: `yg build-context --node <node_path>`
 - [ ] 2. Assess blast radius: `yg impact --node <node_path>` — review dependents, descendants, and co-aspect nodes before changing interfaces or shared behavior
 - [ ] 3. Modify source code
-- [ ] 4. Sync graph artifacts — edit artifact files to reflect the changes
+- [ ] 4. Sync graph artifacts — edit artifact files to reflect the changes (after each file, not batched — context is freshest immediately after the change)
 - [ ] 5. Run `yg validate` — fix all errors (if unfixable after 3 attempts → stop, report to user)
 - [ ] 6. Run `yg drift-sync --node <node_path>` — only after graph and code are both current
 
@@ -295,7 +302,8 @@ When reviewing graph quality (triggered by user or quality improvement):
 
 - **`yg` not found** → inform user: "yg CLI is not installed or not in PATH." Stop.
 - **Unfixable validate errors** → if not resolved after 3 attempts, stop and report to user. Do not loop.
-- **Budget exceeded** → if `yg build-context` exits with error (context package exceeds budget), warn user: "This node should be split." Do not proceed with implementation.
+- **Budget warning (W005/W006)** → informational. `yg validate` shows a breakdown (own/hierarchy/aspects/flows/dependencies). Large inherited context means the system is complex — this is not a problem to fix, it is reality to acknowledge. Do not delete knowledge from artifacts. Do not attempt to "reduce" inherited context.
+- **Own budget warning (W015)** → own artifacts are large. Consider splitting this node's responsibilities into child nodes. Redistribute knowledge across children so total knowledge is preserved or increased, never reduced.
 - **Corrupted `.yggdrasil/` files** → report to user. Do not attempt repair.
 - **Incremental sync** → run `yg drift-sync` every 3-5 source files during multi-file tasks. Do not defer to end.
 
@@ -337,7 +345,13 @@ Projects can define additional artifact types in `yg-config.yaml` under `artifac
 
 ### Context Assembly
 
-Run `yg build-context --node <path>` to get the deterministic context package for a node. The package assembles global project identity, hierarchy, own artifacts, aspects, and relational context. It is your architectural map. For implementation-level claims (exact call patterns, error handling, await vs fire-and-forget) — verify against source code. If the package is insufficient, enrich the graph.
+**Reading context:** `yg build-context --node <path>` returns a YAML map with the node's topology (hierarchy, dependencies, aspects, flows) and an `artifacts` section listing files to read. All artifact paths are relative to `.yggdrasil/` — construct full path as `.yggdrasil/<path>`.
+
+**Default mode (paths-only):** Use for all graph operations. Read the YAML map first to understand topology. Then read artifact files from the `artifacts` section using the Read tool. For quick orientation (scoping, blast radius assessment), the map alone is sufficient. For implementation or modification, read all artifact files before changing code.
+
+**Full mode (`--full`):** Use only when you cannot read files individually — e.g., when pasting context into a prompt, sharing with a user, or when you have no Read tool available.
+
+Artifact paths are stable identifiers within a session. When building context for multiple nodes, skip reading files you have already read — same path means same content.
 
 ### Information Routing
 
@@ -382,7 +396,7 @@ When code anchors (`anchors` in an aspect entry in `yg-node.yaml`) are present, 
 
 - [ ] 1. Read `schemas/yg-flow.yaml`
 - [ ] 2. Create `flows/<name>/` directory
-- [ ] 3. Write `yg-flow.yaml` — declare participants and flow-level aspects
+- [ ] 3. Write `yg-flow.yaml` — declare nodes (participant list) and flow-level aspects
 - [ ] 4. Write `description.md` with required sections: Business context, Trigger, Goal, Participants, Paths (at least Happy path), Invariants across all paths
 - [ ] 5. `yg validate`
 
@@ -407,7 +421,8 @@ Test: "Does this describe what happens in the world, or only in the software?" I
 ```
 yg preflight [--quick]              Unified diagnostic: drift + status + validate.
 yg owner --file <path>              Find the node that owns this file.
-yg build-context --node <path>      Assemble context package for this node.
+yg build-context --node <path>      Assemble context map with artifact paths (default).
+yg build-context --node <path> --full  Same map + file contents appended below separator.
 yg tree [--root <path>] [--depth N] Print graph structure.
 yg aspects                          List aspects with metadata (YAML output).
 yg flows                            List flows with metadata (YAML output).
@@ -434,7 +449,7 @@ yg drift-sync --node <path> [--recursive] | --all
 | Information specific to this node | Local node artifact (check `yg-config.yaml artifacts` for types) |
 | Rule that applies to many nodes | Aspect (content `.md` files in `aspects/<id>/`) |
 | Architectural invariant for a node type | Required aspect in `yg-config.yaml node_types` |
-| Business process participation | Flow (`yg-flow.yaml participants`) |
+| Business process participation | Flow (`yg-flow.yaml nodes`) |
 | Process-level requirement | Flow `aspects` + aspect directory |
 | Context shared across a domain | Parent node artifact |
 | Technology stack | Node artifact at appropriate hierarchy level |
