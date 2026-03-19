@@ -2,13 +2,11 @@
   <img src="docs/public/logo.svg" alt="Yggdrasil" width="150" />
 </div>
 
+<video src="https://github.com/user-attachments/assets/49c8fe8f-c3b9-4202-b655-7f987dcab4cb" controls></video>
+
 # Yggdrasil
 
 ## Stop re-explaining your codebase to your AI agent
-
-
-https://github.com/user-attachments/assets/49c8fe8f-c3b9-4202-b655-7f987dcab4cb
-
 
 AI agents keep forgetting your architecture, constraints, and past decisions. Yggdrasil gives your repository persistent semantic memory, so each task starts with the right context instead of another giant prompt.
 
