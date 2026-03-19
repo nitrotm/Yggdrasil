@@ -15,14 +15,50 @@ AI agents keep forgetting your architecture, constraints, and past decisions. Yg
 
 ***
 
-## Why this exists
+## 📦 Install
+
+```bash
+npm install -g @chrisdudek/yg
+```
+
+## 🚀 Initialize
+
+```bash
+cd your-project
+yg init --platform <platform>
+```
+
+That is it. Your agent now has persistent semantic memory.
+
+***
+
+## ⚙️ How it works
+
+1. You run `yg init` in your project.
+2. A `.yggdrasil` folder appears in the repo.
+3. As your agent works, it builds and updates semantic memory about the system.
+4. Before changing a file, it asks for relevant context.
+5. Yggdrasil returns a short, bounded context package for that exact area.
+6. The agent writes code and updates memory in the same step.
+
+The memory is stored as plain Markdown and YAML.
+
+No database.
+No lock-in.
+No hidden black box.
+
+Delete `.yggdrasil` and your project works exactly as before.
+
+***
+
+## 💡 Why this exists
 
 Every new AI coding task starts the same way.
 
-You explain how the system works.  
-What must not break.  
-Why this module exists.  
-Which rules apply here.  
+You explain how the system works.
+What must not break.
+Why this module exists.
+Which rules apply here.
 What happened last time this went wrong.
 
 Then the session ends.
@@ -41,7 +77,7 @@ The problem is memory.
 
 ***
 
-## What you get
+## ✅ What you get
 
 Yggdrasil gives your repository persistent semantic memory.
 
@@ -49,15 +85,57 @@ Instead of dumping the whole repo into a prompt, it gives the agent the exact co
 
 That means:
 
-- Less re-explaining the same architecture over and over.
-- Fewer broken edits caused by missing context.
-- Less prompt bloat and fewer giant rules files.
-- Better AI-assisted changes on medium and large codebases.
-- Architectural knowledge that survives between sessions, people, and tools.
+- 🔁 Less re-explaining the same architecture over and over.
+- 🛡️ Fewer broken edits caused by missing context.
+- 📉 Less prompt bloat and fewer giant rules files.
+- 📈 Better AI-assisted changes on medium and large codebases.
+- 🧠 Architectural knowledge that survives between sessions, people, and tools.
 
 ***
 
-## One example
+## 🧩 Building blocks
+
+Yggdrasil organizes knowledge into a few simple building blocks.
+
+**🌳 Nodes** are the core units. They form a tree — parent nodes provide domain context, children inherit it. A node can map to a single file, a directory, or a group of files. Not every node maps 1:1 to a file — you choose the granularity that makes sense.
+
+**🔗 Relations** connect nodes. They describe which parts of the system depend on each other, what is consumed, and what happens when a dependency fails.
+
+**🌊 Flows** describe business processes that span multiple nodes. "Customer checks out an order" is a flow — it touches orders, payments, inventory, notifications. Without flows, this end-to-end knowledge lives in no single file and gets lost between sessions.
+
+**🔷 Aspects** capture cross-cutting requirements: audit logging, rate limiting, authentication, idempotency — rules that apply across many parts of the system. Instead of repeating "this area must emit audit events" in every node, you define it once as an aspect and apply it where it belongs.
+
+Together, these give the agent a structured map of your system — not just files, but meaning.
+
+***
+
+## 🌱 How knowledge grows
+
+Yggdrasil is not a scanner that indexes your code automatically. The knowledge it holds is built through your conversations with the agent.
+
+**This is a deliberate design choice.** Automatically extracted information is shallow — function signatures, file lists, import graphs. The knowledge that actually prevents broken changes is deeper: *why* this module exists, *what* must never break, *which* business rules apply here, *what* was tried before and rejected. That kind of knowledge comes from you.
+
+Here is what this looks like in practice:
+
+- You start working on a module. The agent creates nodes, maps files, writes down responsibilities.
+- You mention a business rule — the agent captures it in an aspect.
+- You describe a process — the agent creates a flow.
+- You explain why a design decision was made — the agent records it, including what was rejected and why.
+
+Each conversation makes the graph richer. After a few sessions, the agent stops asking the same questions — the answers are already in the graph.
+
+**The more you direct the work, the faster knowledge accumulates:**
+
+- 🎯 Point the agent at a specific module and ask it to map the area.
+- 🔍 Ask it to identify cross-cutting patterns and create aspects.
+- 🔄 Ask it to trace a business process end-to-end and create a flow.
+- 📐 When the agent produces a bad output, ask what was missing in the graph — then fix the graph, not just the code.
+
+This is conscious work. It takes effort. But the investment compounds — every piece of knowledge captured is knowledge you will never have to explain again. To any agent, in any tool, in any future session.
+
+***
+
+## 🔍 One example
 
 You ask the agent to add a payment retry to `OrderService`.
 
@@ -88,47 +166,7 @@ That is the difference between code generation and context-aware change.
 
 ***
 
-## Install
-
-```bash
-npm install -g @chrisdudek/yg
-```
-
-***
-
-## Initialize
-
-```bash
-cd your-project
-yg init --platform <platform>
-```
-
-That is it.
-
-Your agent now has persistent semantic memory.
-
-***
-
-## How it works
-
-1. You run `yg init` in your project.
-2. A `.yggdrasil` folder appears in the repo.
-3. As your agent works, it builds and updates semantic memory about the system.
-4. Before changing a file, it asks for relevant context.
-5. Yggdrasil returns a short, bounded context package for that exact area.
-6. The agent writes code and updates memory in the same step.
-
-The memory is stored as plain Markdown and YAML.
-
-No database.  
-No lock-in.  
-No hidden black box.
-
-Delete `.yggdrasil` and your project works exactly as before.
-
-***
-
-## What Yggdrasil actually stores
+## 🗄️ What Yggdrasil actually stores
 
 Yggdrasil helps agents work with more than raw files.
 
@@ -147,7 +185,7 @@ Also why it exists and what must not break.
 
 ***
 
-## Why this matters
+## 🧭 Why this matters
 
 Code contains logic.
 
@@ -171,7 +209,7 @@ Yggdrasil helps the repository remember what the system is.
 
 ***
 
-## What it is not
+## 🚫 What it is not
 
 Yggdrasil is not a code generator.
 
@@ -191,7 +229,7 @@ Remove `.yggdrasil` and your codebase still works exactly as before.
 
 ***
 
-## Supported platforms
+## 🖥️ Supported platforms
 
 - Cursor
 - Claude Code
@@ -207,7 +245,7 @@ More can be added.
 
 ***
 
-## Early results
+## 📊 Early results
 
 Experiments on real open-source repositories (Hoppscotch, Medusa, Django, DRF, Caddy, Payload CMS) across Python, Go, and TypeScript.
 
@@ -227,7 +265,7 @@ These results validate the core thesis: AI agents do not need bigger context win
 
 ***
 
-## When it is worth it
+## ✅ When it is worth it
 
 Yggdrasil is worth it when:
 
@@ -239,7 +277,7 @@ Yggdrasil is worth it when:
 
 ***
 
-## When it is not worth it yet
+## ⏳ When it is not worth it yet
 
 Yggdrasil is probably not worth it yet when:
 
@@ -249,7 +287,7 @@ Yggdrasil is probably not worth it yet when:
 
 ***
 
-## Documentation
+## 📚 Documentation
 
 Full specification and architecture:
 
@@ -257,6 +295,6 @@ Full specification and architecture:
 
 ***
 
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE).
