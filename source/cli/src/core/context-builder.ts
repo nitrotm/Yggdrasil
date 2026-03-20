@@ -479,6 +479,7 @@ export function toContextMapOutput(
   const participatingFlows = collectParticipatingFlows(graph, node);
   const flowRefs: FlowRef[] = participatingFlows.map((f) => {
     const ref: FlowRef = { path: f.path, name: f.name };
+    if (f.description) ref.description = f.description;
     if (f.aspects?.length) ref.aspects = f.aspects;
     return ref;
   });
@@ -488,7 +489,7 @@ export function toContextMapOutput(
   const hierarchyRefs: AncestorRef[] = ancestors.map((a) => {
     const nodeAspectIds = (a.meta.aspects ?? []).map((e) => e.aspect);
     const expanded = expandAspects(nodeAspectIds, graph.aspects);
-    return { path: a.path, name: a.meta.name, type: a.meta.type, aspects: expanded };
+    return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded };
   });
 
   // Dependencies — structural + event
@@ -503,7 +504,7 @@ export function toContextMapOutput(
     const depHierarchy: AncestorRef[] = depAncestors.map((a) => {
       const ids = (a.meta.aspects ?? []).map((e) => e.aspect);
       const expanded = expandAspects(ids, graph.aspects);
-      return { path: a.path, name: a.meta.name, type: a.meta.type, aspects: expanded };
+      return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded };
     });
 
     const depEffectiveAspects = [...collectEffectiveAspectIds(graph, target.path)];
@@ -512,6 +513,7 @@ export function toContextMapOutput(
       path: target.path,
       name: target.meta.name,
       type: target.meta.type,
+      description: target.meta.description,
       relation: relation.type,
       aspects: depEffectiveAspects,
       hierarchy: depHierarchy,
@@ -541,6 +543,7 @@ export function toContextMapOutput(
       path: pkg.nodePath,
       name: pkg.nodeName,
       type: node.meta.type,
+      description: node.meta.description,
       mappings: normalizeMappingPaths(node.meta.mapping),
       aspects: nodeAspects,
       flows: flowRefs,
@@ -626,10 +629,11 @@ function buildArtifactRegistry(
     for (const art of aspect.artifacts) {
       files.push(`aspects/${aspect.id}/${art.filename}`);
     }
-    const entry: { name: string; implies?: string[]; files: string[] } = {
+    const entry: { name: string; description?: string; implies?: string[]; files: string[] } = {
       name: aspect.name,
       files,
     };
+    if (aspect.description) entry.description = aspect.description;
     if (aspect.implies?.length) entry.implies = aspect.implies;
     aspects[aspect.id] = entry;
   }
@@ -642,10 +646,11 @@ function buildArtifactRegistry(
     for (const art of flow.artifacts) {
       files.push(`flows/${flow.path}/${art.filename}`);
     }
-    const entry: { name: string; aspects?: string[]; files: string[] } = {
+    const entry: { name: string; description?: string; aspects?: string[]; files: string[] } = {
       name: flow.name,
       files,
     };
+    if (flow.description) entry.description = flow.description;
     if (flow.aspects?.length) entry.aspects = flow.aspects;
     flows[flow.path] = entry;
   }

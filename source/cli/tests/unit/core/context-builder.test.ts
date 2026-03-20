@@ -1412,4 +1412,181 @@ describe('toContextMapOutput', () => {
     // Clean up
     graph.flows.pop();
   });
+
+  it('surfaces description on node, hierarchy, and dependencies in context map output', async () => {
+    const parent: GraphNode = {
+      path: 'payments',
+      meta: { name: 'Payments', type: 'module', description: 'Payment domain module' },
+      artifacts: [],
+      children: [],
+      parent: null,
+    };
+    const child: GraphNode = {
+      path: 'payments/payment-service',
+      meta: { name: 'PaymentService', type: 'service', description: 'Handles payment processing' },
+      artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+      children: [],
+      parent,
+    };
+    parent.children = [child];
+    const dep: GraphNode = {
+      path: 'payments/gateway',
+      meta: {
+        name: 'Gateway',
+        type: 'service',
+        description: 'External payment gateway client',
+        relations: undefined,
+      },
+      artifacts: [{ filename: 'responsibility.md', content: 'gateway resp' }],
+      children: [],
+      parent,
+    };
+    parent.children.push(dep);
+
+    // Give the child a relation to dep
+    child.meta.relations = [{ target: 'payments/gateway', type: 'uses' }];
+
+    const graph: Graph = {
+      config: {
+        name: 'T',
+        node_types: { module: { description: 'x' }, service: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      },
+      nodes: new Map([
+        ['payments', parent],
+        ['payments/payment-service', child],
+        ['payments/gateway', dep],
+      ]),
+      aspects: [],
+      flows: [],
+      schemas: [],
+      rootPath: '/tmp',
+    };
+
+    const pkg = await buildContext(graph, 'payments/payment-service');
+    const output = toContextMapOutput(pkg, graph);
+
+    // Node description
+    expect(output.node.description).toBe('Handles payment processing');
+
+    // Hierarchy ancestor description
+    expect(output.hierarchy).toHaveLength(1);
+    expect(output.hierarchy[0].description).toBe('Payment domain module');
+
+    // Dependency description
+    const gatewayDep = output.dependencies.find((d) => d.path === 'payments/gateway');
+    expect(gatewayDep).toBeDefined();
+    expect(gatewayDep!.description).toBe('External payment gateway client');
+
+    // Dependency hierarchy ancestor description
+    expect(gatewayDep!.hierarchy).toHaveLength(1);
+    expect(gatewayDep!.hierarchy[0].description).toBe('Payment domain module');
+  });
+
+  it('surfaces description on aspects and flows in artifact registry', async () => {
+    const node: GraphNode = {
+      path: 'svc',
+      meta: { name: 'Svc', type: 'service', aspects: [{ aspect: 'my-aspect' }] },
+      artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+      children: [],
+      parent: null,
+    };
+    const graph: Graph = {
+      config: {
+        name: 'T',
+        node_types: { service: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      },
+      nodes: new Map([['svc', node]]),
+      aspects: [
+        {
+          name: 'My Aspect',
+          id: 'my-aspect',
+          description: 'Aspect description text',
+          artifacts: [{ filename: 'content.md', content: 'rules' }],
+        },
+      ],
+      flows: [
+        {
+          path: 'my-flow',
+          name: 'My Flow',
+          description: 'Flow description text',
+          nodes: ['svc'],
+          artifacts: [],
+        },
+      ],
+      schemas: [],
+      rootPath: '/tmp',
+    };
+
+    const pkg = await buildContext(graph, 'svc');
+    const output = toContextMapOutput(pkg, graph);
+
+    expect(output.artifacts.aspects['my-aspect'].description).toBe('Aspect description text');
+    expect(output.artifacts.flows['my-flow'].description).toBe('Flow description text');
+  });
+
+  it('surfaces description on flow refs', async () => {
+    const node: GraphNode = {
+      path: 'svc',
+      meta: { name: 'Svc', type: 'service' },
+      artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+      children: [],
+      parent: null,
+    };
+    const graph: Graph = {
+      config: {
+        name: 'T',
+        node_types: { service: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      },
+      nodes: new Map([['svc', node]]),
+      aspects: [],
+      flows: [
+        {
+          path: 'my-flow',
+          name: 'My Flow',
+          description: 'Flow description text',
+          nodes: ['svc'],
+          artifacts: [],
+        },
+      ],
+      schemas: [],
+      rootPath: '/tmp',
+    };
+
+    const pkg = await buildContext(graph, 'svc');
+    const output = toContextMapOutput(pkg, graph);
+
+    const flowRef = output.node.flows.find((f) => f.path === 'my-flow');
+    expect(flowRef).toBeDefined();
+    expect(flowRef!.description).toBe('Flow description text');
+  });
+
+  it('omits description fields when not set', async () => {
+    const node: GraphNode = {
+      path: 'svc',
+      meta: { name: 'Svc', type: 'service' }, // no description
+      artifacts: [{ filename: 'responsibility.md', content: 'x' }],
+      children: [],
+      parent: null,
+    };
+    const graph: Graph = {
+      config: {
+        name: 'T',
+        node_types: { service: { description: 'x' } },
+        artifacts: { 'responsibility.md': { required: 'always', description: 'x' } },
+      },
+      nodes: new Map([['svc', node]]),
+      aspects: [],
+      flows: [],
+      schemas: [],
+      rootPath: '/tmp',
+    };
+
+    const pkg = await buildContext(graph, 'svc');
+    const output = toContextMapOutput(pkg, graph);
+
+    expect(output.node.description).toBeUndefined();
+  });
 });
