@@ -1,28 +1,49 @@
-import { stringify } from 'yaml';
+import { Document } from 'yaml';
 import type { ContextMapOutput } from '../model/types.js';
 
 /**
  * Format a ContextMapOutput as YAML (paths-only, default mode).
  */
 export function formatContextYaml(data: ContextMapOutput): string {
-  const output: Record<string, unknown> = {
-    meta: {
-      'token-count': data.meta.tokenCount,
-      'budget-status': data.meta.budgetStatus,
-    },
-    project: data.project,
-    node: data.node,
-    hierarchy: data.hierarchy.length > 0 ? data.hierarchy : undefined,
-    dependencies: data.dependencies.length > 0 ? data.dependencies : undefined,
-    artifacts: data.artifacts,
+  const output: Record<string, unknown> = {};
+
+  output.project = data.project;
+  output.glossary = data.glossary;
+  output.node = data.node;
+  if (data.hierarchy.length > 0) output.hierarchy = data.hierarchy;
+  if (data.dependencies.length > 0) output.dependencies = data.dependencies;
+  output.meta = {
+    'token-count': data.meta.tokenCount,
+    'budget-status': data.meta.budgetStatus,
+    breakdown: data.meta.breakdown,
   };
 
-  // Remove undefined keys
-  for (const key of Object.keys(output)) {
-    if (output[key] === undefined) delete output[key];
+  const doc = new Document(output, { aliasDuplicateObjects: false });
+
+  // Add comments before sections
+  const items = (doc.contents as any).items;
+  for (const pair of items) {
+    const key = String(pair.key);
+    switch (key) {
+      case 'glossary':
+        pair.key.commentBefore =
+          ' Glossary: definitions of all aspects and flows referenced in this context.\n Read this first — IDs below (in node, hierarchy, dependencies) refer to entries here.';
+        break;
+      case 'node':
+        pair.key.commentBefore = ' Target node: the component you are working on.';
+        break;
+      case 'hierarchy':
+        pair.key.commentBefore =
+          ' Hierarchy: ancestor modules from root to parent. Context is inherited top-down.';
+        break;
+      case 'dependencies':
+        pair.key.commentBefore =
+          ' Dependencies: components this node directly depends on.';
+        break;
+    }
   }
 
-  return stringify(output, { lineWidth: 0, aliasDuplicateObjects: false });
+  return doc.toString({ lineWidth: 0 });
 }
 
 /**
