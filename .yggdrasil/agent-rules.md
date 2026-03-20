@@ -25,7 +25,8 @@ BEFORE reading, researching, planning, OR modifying ANY mapped file:
      - Assessing what is affected by a change → yg impact --node <owner>
      - Planning modifications → both (build-context first, then impact)
   `yg build-context --node <path>`. Read the YAML map for topology,
-  then read artifact files listed in the artifacts section. For quick
+  starting with the glossary at the top (aspect and flow definitions),
+  then read artifact files listed inline on each element. For quick
   orientation, the map alone is sufficient. For implementation, read
   all artifact files before changing code.
   If the context package seems insufficient — enrich the graph.
@@ -159,9 +160,10 @@ PREFLIGHT (every conversation, before any work):
 UNDERSTANDING mapped code (questions, research, OR planning):
   - [ ] 1. yg owner --file <path>
   - [ ] 2. Owner found → yg build-context --node <path>. Read the YAML map
-         for topology, then read artifact files from the artifacts section.
-         For quick orientation, the map alone is sufficient. For implementation,
-         read all artifact files before changing code.
+         for topology, starting with the glossary at the top for aspect and
+         flow definitions, then read artifact files listed inline on each
+         element. For quick orientation, the map alone is sufficient. For
+         implementation, read all artifact files before changing code.
   - [ ] 3. Owner not found → use file analysis, state it is not graph-backed.
   Never use grep or raw file reads as primary understanding when graph coverage exists.
   Raw reads supplement the context package — they do not replace it.
@@ -342,11 +344,20 @@ Projects can define additional artifact types in `yg-config.yaml` under `artifac
 
 ### Context Assembly
 
-**Reading context:** `yg build-context --node <path>` returns a YAML map with the node's topology (hierarchy, dependencies, aspects, flows) and an `artifacts` section listing files to read. All artifact paths are relative to `.yggdrasil/` — construct full path as `.yggdrasil/<path>`.
+**Reading context:** `yg build-context --node <path>` returns a YAML map structured as follows:
 
-**Default mode (paths-only):** Use for all graph operations. Read the YAML map first to understand topology. Then read artifact files from the `artifacts` section using the Read tool. For quick orientation (scoping, blast radius assessment), the map alone is sufficient. For implementation or modification, read all artifact files before changing code.
+- **`glossary`** (top) — definitions for every aspect and flow referenced in the map, each with `files` listing their artifact paths. Read this first to understand IDs used throughout.
+- **`node`** — the target node with inline `files` (its artifact paths). No `yg-node.yaml` in file lists.
+- **`hierarchy`** — ancestor and sibling nodes, each with inline `files`.
+- **`dependencies`** — dependency nodes, each with inline `files`.
+- **`meta`** (bottom) — context assembly metadata.
+- YAML comments before each section guide reading order.
 
-The YAML map includes `description` for nodes, aspects, and flows when present. Use descriptions for quick orientation without reading full artifacts — they summarize what each element is. Aspect and flow references in `hierarchy` and `dependencies` are IDs only — look up their names and descriptions in the `artifacts.aspects` and `artifacts.flows` sections, which serve as a complete glossary of all aspects and flows referenced anywhere in the map.
+All artifact paths are relative to `.yggdrasil/` — construct full path as `.yggdrasil/<path>`.
+
+**Default mode (paths-only):** Use for all graph operations. Read the YAML map first — start with the `glossary` to understand aspects and flows, then the `node` section for the target. Read artifact files inline on each element using the Read tool. For quick orientation (scoping, blast radius assessment), the map alone is sufficient. For implementation or modification, read all artifact files before changing code.
+
+The glossary at the top defines all aspects and flows — read it first to understand IDs used throughout.
 
 **Full mode (`--full`):** Use only when you cannot read files individually — e.g., when pasting context into a prompt, sharing with a user, or when you have no Read tool available.
 
