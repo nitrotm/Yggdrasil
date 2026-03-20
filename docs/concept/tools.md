@@ -555,7 +555,7 @@ their participants, and associated aspects.
 1. Resolve `.yggdrasil/` root (repository root or nearest parent).
 2. Load the graph — find all flow directories under `.yggdrasil/flows/`.
 3. Sort by flow name.
-4. Output YAML with `name`, `nodes` (participants), `aspects` (if present).
+4. Output YAML with `name`, `nodes` (participants), `description` (if present), `aspects` (if present).
 
 **Result:**
 
@@ -564,6 +564,7 @@ their participants, and associated aspects.
   nodes:
     - orders/order-service
     - auth/auth-api
+  description: "End-to-end purchase flow from cart to confirmation"
   aspects:
     - requires-audit
 ```
