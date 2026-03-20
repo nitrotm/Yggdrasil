@@ -1,6 +1,7 @@
 {
   "hash": "fb080700b8208e2c9a132826b44b4c8d2a8a11b1a4c5ca6fd324b16bb1aac96d",
   "files": {
+    ".yggdrasil/model/docs/yg-node.yaml": "7703eeb36a741d8f3223b2e1b7387320780667ec09c5ad9ba0813e4c9c4e7732",
     ".yggdrasil/model/docs/responsibility.md": "070a2a6c6b29116ab18d2b824068d227cc4682f30fd5ef79b3cbe307dbe632fe",
     "docs/cli-reference.md": "7b16db6631915f9da1ab5aeaa92fc30e9e17cb15b538dc1e68f742170f8c31b4",
     "docs/configuration.md": "930d07f178709dced83eb0e1d27479ae5fa2d804eecaaa349fc8ef765620c627",
@@ -8,8 +9,7 @@
     "docs/index.md": "4bfc5e57d2f214863e2aba80a2f5ba3f7dde2e057a49cb3a1ca46ba428a5eebe",
     "docs/platforms.md": "20e2b9c50f75e37c47d6a796c25e68e77eb53ebf81e56f768300f09d62ee2338",
     "docs/package.json": "e3c48dc4ed7f4a2fc56f5d8dec2cbf2a07ffcad6f566d41a206a88a68225d756",
-    "docs/package-lock.json": "5de0744623b0f0d3ae0f73845845ae1d5c89623da74cf542447129cb159f167e",
-    ".yggdrasil/model/docs/yg-node.yaml": "7703eeb36a741d8f3223b2e1b7387320780667ec09c5ad9ba0813e4c9c4e7732"
+    "docs/package-lock.json": "5de0744623b0f0d3ae0f73845845ae1d5c89623da74cf542447129cb159f167e"
   },
   "mtimes": {
     ".yggdrasil/model/docs/yg-node.yaml": 1774000493275.099,

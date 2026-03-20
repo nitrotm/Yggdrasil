@@ -1,6 +1,7 @@
 {
   "hash": "29c413a423a2657e49d5c3ca45a03e264cbd85b4581b35316d3c300226da6ba5",
   "files": {
+    ".yggdrasil/model/examples/yg-node.yaml": "214f3574361cf5fa2a0c4b2e5352298c0276c742618ead5fcdd48f5d5c792d54",
     ".yggdrasil/model/examples/responsibility.md": "8e108d83d3ff8a848ef1842adeb0db63c0d92fc0e5db2c3a4c3bc73461ad4c2e",
     "examples/expense-tracker/.yggdrasil/aspects/error-format/content.md": "cf271be89efc950dd9f363f1d49a3e88d92c60f3be0ae79eadd002f8cb4ac9ba",
     "examples/expense-tracker/.yggdrasil/aspects/error-format/yg-aspect.yaml": "882a8c65b013e0088ac8cc0fa00b4746114416318d0b009bb5f8f7e75de7398b",
@@ -120,8 +121,7 @@
     "examples/expense-tracker/.gitignore": "3e0a66576c31855fcdc99efc1b793e5c4ebf735c077f166653b3c2aa02286e0d",
     "examples/expense-tracker/README.md": "c0edf19a1243806fd04aee8dd59aeb2b09bc3674880d3e611db7b9026f0bd9c2",
     "examples/expense-tracker/package-lock.json": "44cc68935a72a8ad161635d87135e99e3f798864c4c888530de0c32d1ed074a9",
-    "examples/expense-tracker/package.json": "d42ff4e29e776c2c1f8894946a0b2c15baff83d65be9e13fcf0bfede355fe6c5",
-    ".yggdrasil/model/examples/yg-node.yaml": "214f3574361cf5fa2a0c4b2e5352298c0276c742618ead5fcdd48f5d5c792d54"
+    "examples/expense-tracker/package.json": "d42ff4e29e776c2c1f8894946a0b2c15baff83d65be9e13fcf0bfede355fe6c5"
   },
   "mtimes": {
     ".yggdrasil/model/examples/yg-node.yaml": 1774000500537.5996,

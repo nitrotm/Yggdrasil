@@ -1526,7 +1526,7 @@ describe('toContextMapOutput', () => {
     expect(output.artifacts.flows['my-flow'].description).toBe('Flow description text');
   });
 
-  it('surfaces description on flow refs', async () => {
+  it('flow refs contain only path and aspects, not name or description', async () => {
     const node: GraphNode = {
       path: 'svc',
       meta: { name: 'Svc', type: 'service' },
@@ -1560,7 +1560,12 @@ describe('toContextMapOutput', () => {
 
     const flowRef = output.node.flows.find((f) => f.path === 'my-flow');
     expect(flowRef).toBeDefined();
-    expect(flowRef!.description).toBe('Flow description text');
+    expect(flowRef!.path).toBe('my-flow');
+    expect((flowRef as Record<string, unknown>).name).toBeUndefined();
+    expect((flowRef as Record<string, unknown>).description).toBeUndefined();
+    // name and description are in artifacts.flows glossary instead
+    expect(output.artifacts.flows['my-flow'].name).toBe('My Flow');
+    expect(output.artifacts.flows['my-flow'].description).toBe('Flow description text');
   });
 
   it('omits description fields when not set', async () => {

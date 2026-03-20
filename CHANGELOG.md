@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   look up aspect/flow descriptions in `artifacts.aspects` and `artifacts.flows` sections
   when encountering ID-only references in hierarchy and dependencies.
 
+### Changed
+
+- **Leaner flow refs in context output.** `node.flows` entries now contain only `path`
+  and `aspects` — `name` and `description` moved to the `artifacts.flows` glossary,
+  eliminating redundancy.
+
 ### Fixed
 
 - **No more YAML anchors in context output.** The `yaml` serializer created `&a1`/`*a1`

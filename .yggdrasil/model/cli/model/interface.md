@@ -50,7 +50,7 @@ Model is a TypeScript type library — it contains no executable code and does n
 - **Graph** — Root container: config, nodes (Map by path), aspects, flows, schemas, rootPath. Optional configError and nodeParseErrors.
 - **GraphNode** — A node in the model tree: path, meta (NodeMeta), nodeYamlRaw, artifacts, children, parent.
 - **NodeAspectEntry** — Unified aspect entry for a node: `{ aspect: string; exceptions?: string[]; anchors?: string[] }`. Each entry links a node to an aspect with optional per-node exceptions and code anchors.
-- **NodeMeta** — Parsed yg-node.yaml: name, type, optional aspects (NodeAspectEntry[]), blackbox, relations, mapping.
+- **NodeMeta** — Parsed yg-node.yaml: name, type, optional description, optional aspects (NodeAspectEntry[]), blackbox, relations, mapping.
 - **Relation** — Typed edge: target path, RelationType, optional consumes, failure, event_name.
 - **RelationType** — Union: uses | calls | extends | implements | emits | listens.
 
@@ -66,9 +66,9 @@ Model is a TypeScript type library — it contains no executable code and does n
 - **ContextMapOutput** — Top-level structured output for v2 format: meta includes tokenCount, budgetStatus (`'ok' | 'warning' | 'severe'`), and breakdown (BudgetBreakdown). Also includes project string, node summary, hierarchy, dependencies, and artifact registry.
 - **ArtifactRegistry** — Index of all artifact files referenced in a context package: nodes, aspects, and flows keyed by path/id with their associated file lists.
 - **NodeAspectRef** — Aspect reference on a node: id, optional anchors, optional exceptions.
-- **FlowRef** — Flow reference: path, name, optional aspects list.
-- **AncestorRef** — Ancestor node reference: path, name, type, aspects list.
-- **DependencyRef** — Dependency reference: path, name, type, relation kind, optional consumes/failure/event-name, aspects list, hierarchy chain.
+- **FlowRef** — Flow reference: path, optional aspects list. Name and description are in the ArtifactRegistry flows glossary.
+- **AncestorRef** — Ancestor node reference: path, name, type, optional description, aspects list.
+- **DependencyRef** — Dependency reference: path, name, type, optional description, relation kind, optional consumes/failure/event-name, aspects list, hierarchy chain.
 
 ## Validation types
 
@@ -87,7 +87,7 @@ Model is a TypeScript type library — it contains no executable code and does n
 
 - **AspectStability** — Type union: `'schema' | 'protocol' | 'implementation'`. Indicates how stable an aspect's claims are expected to be. Schema = enforced by data model (most stable). Protocol = contractual pattern. Implementation = specific mechanism (least stable).
 - **AspectDef** — Loaded aspect: name, id, optional description, optional implies, optional stability (AspectStability), artifacts.
-- **FlowDef** — Loaded flow: path, name, nodes (participant paths), optional aspects, artifacts.
+- **FlowDef** — Loaded flow: path, name, optional description, nodes (participant paths), optional aspects, artifacts.
 - **SchemaDef** — Schema reference: schemaType (node/aspect/flow).
 
 ## Other types

@@ -1,13 +1,17 @@
 {
-  "hash": "ee33aab962cba2d3ea14334d87df287e598c2e9e5811671d6e3417bb3faa4e88",
+  "hash": "130824959858e8fa3556a4a5430d3cd7d2426387ffe0e05d5e6f6f796ee023a3",
   "files": {
+    ".yggdrasil/model/cli/commands/owner/yg-node.yaml": "4388655f26d779bdef6562ad3ced3fed91516d14423fb4732f1da63f3e72cfb7",
     ".yggdrasil/model/cli/commands/owner/interface.md": "090750cf9142e124bd0388b28af76d48924257311817c6ca11a126790e0c7894",
     ".yggdrasil/model/cli/commands/owner/internals.md": "a2eeb123d02b44285f247fd5670b85746dcde4c442928e48809bff98656a7aaa",
     ".yggdrasil/model/cli/commands/owner/responsibility.md": "30fd166b28fed3aed27a0c984f22ade2d98962d0dce76d0dbce8109d1dc31aad",
+    ".yggdrasil/model/cli/yg-node.yaml": "df8a5321838edda0335736e81375b7219819d8b4065a45f883ed9686a07bd049",
     ".yggdrasil/model/cli/internals.md": "fcd16e38b431eead0b12e14b05dd25184ad4ef23884fbde7402172b0985857f6",
     ".yggdrasil/model/cli/responsibility.md": "d88b933a6551942c862f23799206d64dcf8f619ed51308c3f0173b774d22509d",
+    ".yggdrasil/model/cli/commands/yg-node.yaml": "90c82e11bc4328e2af6f6308903ea570647d34f975ef9fd2365ab03e43f3c522",
     ".yggdrasil/model/cli/commands/internals.md": "8643ece78afa4a286856e9bd80e3315a5cc7b7ccbbe46e592ede55b030de528a",
     ".yggdrasil/model/cli/commands/responsibility.md": "711ea50b0bfccad8487bf3478185a93da77e81c58257dc3e1b21abebbf48683e",
+    ".yggdrasil/aspects/deterministic/yg-aspect.yaml": "20f321091b4f489efbf167feea9d42d73f7cffb21ea2e86958e565b550da164b",
     ".yggdrasil/aspects/deterministic/content.md": "1f1b33f34741a7dbe90f15783e2a11eaa874529b297702423ae503e470a70089",
     ".yggdrasil/aspects/cli-command-contract/yg-aspect.yaml": "81ba5d9318ec49940495487c056356f9bd462d67ca4bb06d3fd954cf26945d01",
     ".yggdrasil/aspects/cli-command-contract/content.md": "b1509ccd44cc91f1cff43926b69f16845407f518ecf4d448d24a0b4a4e2894c3",
@@ -20,14 +24,10 @@
     ".yggdrasil/model/cli/utils/responsibility.md": "4918c48366c7b3f35bb7b97fa74252c47f14ba72417c5cc5f3e1100b503c7ddd",
     ".yggdrasil/model/cli/utils/interface.md": "19ebc12ccbc4a90f9f016dead73a3592c6a397a010ed9cf39993b9f01bc8d96e",
     ".yggdrasil/model/cli/model/responsibility.md": "b668c6db2090a36a54277f62fb228c266d87c6d119f89e6ed67e140392863a66",
-    ".yggdrasil/model/cli/model/interface.md": "9caff93a1efe338c93258c35f9308efafac37268109717f651247923551d08ad",
+    ".yggdrasil/flows/graph-navigation/yg-flow.yaml": "b2e3edbef4faa5f01a890af1be273242dfec713f8b379896d05147c5aa79dc9c",
     ".yggdrasil/flows/graph-navigation/description.md": "d343bb1a375026e63e0815716a75149306814f7eaf65300bbe1a7e11483a8d7f",
     "source/cli/src/cli/owner.ts": "0f61533b8880929eeccfa9a6969d57bed35142a234ae5fb9a8d9a3647771e552",
-    ".yggdrasil/model/cli/commands/owner/yg-node.yaml": "4388655f26d779bdef6562ad3ced3fed91516d14423fb4732f1da63f3e72cfb7",
-    ".yggdrasil/model/cli/yg-node.yaml": "df8a5321838edda0335736e81375b7219819d8b4065a45f883ed9686a07bd049",
-    ".yggdrasil/model/cli/commands/yg-node.yaml": "90c82e11bc4328e2af6f6308903ea570647d34f975ef9fd2365ab03e43f3c522",
-    ".yggdrasil/aspects/deterministic/yg-aspect.yaml": "20f321091b4f489efbf167feea9d42d73f7cffb21ea2e86958e565b550da164b",
-    ".yggdrasil/flows/graph-navigation/yg-flow.yaml": "b2e3edbef4faa5f01a890af1be273242dfec713f8b379896d05147c5aa79dc9c"
+    ".yggdrasil/model/cli/model/interface.md": "1271b0fed18c7058e811dd7b28039cab84bcb0efe39e2f6c4c1588a5834a95e9"
   },
   "mtimes": {
     ".yggdrasil/model/cli/commands/owner/yg-node.yaml": 1774000457235.2727,
@@ -53,7 +53,7 @@
     ".yggdrasil/model/cli/utils/responsibility.md": 1772743197446.85,
     ".yggdrasil/model/cli/utils/interface.md": 1772743197447.6619,
     ".yggdrasil/model/cli/model/responsibility.md": 1772778759688.719,
-    ".yggdrasil/model/cli/model/interface.md": 1773400320632.7947,
+    ".yggdrasil/model/cli/model/interface.md": 1774003202105.1316,
     ".yggdrasil/flows/graph-navigation/yg-flow.yaml": 1774000511520.5981,
     ".yggdrasil/flows/graph-navigation/description.md": 1772743197470.2842,
     "source/cli/src/cli/owner.ts": 1773084689493.5942

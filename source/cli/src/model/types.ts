@@ -195,8 +195,6 @@ export interface NodeAspectRef {
 
 export interface FlowRef {
   path: string;
-  name: string;
-  description?: string;
   aspects?: string[];
 }
 

@@ -24,7 +24,7 @@
 
 **Structured output converter:**
 
-- `toContextMapOutput(pkg: ContextPackage, graph: Graph): ContextMapOutput` — converts a layers-based ContextPackage into the structured ContextMapOutput format. Extracts node aspects (with anchors/exceptions), flows, hierarchy ancestors, dependencies (with their own hierarchy and effective aspects), and builds an ArtifactRegistry mapping all referenced graph files. Budget status uses `'severe'` (not `'error'`) for over-budget. Includes `breakdown: BudgetBreakdown` in meta via `computeBudgetBreakdown`.
+- `toContextMapOutput(pkg: ContextPackage, graph: Graph): ContextMapOutput` — converts a layers-based ContextPackage into the structured ContextMapOutput format. Extracts node aspects (with anchors/exceptions), flow participation (path + aspects only — name/description are in ArtifactRegistry), hierarchy ancestors (with description), dependencies (with description, their own hierarchy, and effective aspects), and builds an ArtifactRegistry mapping all referenced graph files with descriptions. Budget status uses `'severe'` (not `'error'`) for over-budget. Includes `breakdown: BudgetBreakdown` in meta via `computeBudgetBreakdown`.
 
 **Types:**
 

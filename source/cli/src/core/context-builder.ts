@@ -478,8 +478,7 @@ export function toContextMapOutput(
   // Node flows
   const participatingFlows = collectParticipatingFlows(graph, node);
   const flowRefs: FlowRef[] = participatingFlows.map((f) => {
-    const ref: FlowRef = { path: f.path, name: f.name };
-    if (f.description) ref.description = f.description;
+    const ref: FlowRef = { path: f.path };
     if (f.aspects?.length) ref.aspects = f.aspects;
     return ref;
   });

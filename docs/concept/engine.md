@@ -188,7 +188,6 @@ node:
     - id: requires-audit
   flows:
     - path: checkout
-      name: Checkout Flow
       aspects:
         - requires-saga
 hierarchy:
