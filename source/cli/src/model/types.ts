@@ -43,6 +43,7 @@ export interface NodeAspectEntry {
 export interface NodeMeta {
   name: string;
   type: string;
+  description?: string;
   aspects?: NodeAspectEntry[];
   blackbox?: boolean;
   relations?: Relation[];
@@ -113,6 +114,7 @@ export interface FlowDef {
   /** Directory name under flows/, e.g. "checkout-flow" */
   path: string;
   name: string;
+  description?: string;
   nodes: string[];
   /** Optional aspect ids — aspects propagate to all participants */
   aspects?: string[];
@@ -194,6 +196,7 @@ export interface NodeAspectRef {
 export interface FlowRef {
   path: string;
   name: string;
+  description?: string;
   aspects?: string[];
 }
 
@@ -201,6 +204,7 @@ export interface AncestorRef {
   path: string;
   name: string;
   type: string;
+  description?: string;
   aspects: string[];
 }
 
@@ -208,6 +212,7 @@ export interface DependencyRef {
   path: string;
   name: string;
   type: string;
+  description?: string;
   relation: string;
   consumes?: string[];
   failure?: string;
@@ -232,6 +237,7 @@ export interface ContextMapOutput {
     path: string;
     name: string;
     type: string;
+    description?: string;
     mappings: string[];
     aspects: NodeAspectRef[];
     flows: FlowRef[];
@@ -243,8 +249,8 @@ export interface ContextMapOutput {
 
 export interface ArtifactRegistry {
   nodes: Record<string, { files: string[] }>;
-  aspects: Record<string, { name: string; implies?: string[]; files: string[] }>;
-  flows: Record<string, { name: string; aspects?: string[]; files: string[] }>;
+  aspects: Record<string, { name: string; description?: string; implies?: string[]; files: string[] }>;
+  flows: Record<string, { name: string; description?: string; aspects?: string[]; files: string[] }>;
 }
 
 // ============================================================
