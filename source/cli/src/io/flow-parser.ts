@@ -16,6 +16,8 @@ export async function parseFlow(flowDir: string, flowYamlPath: string): Promise<
     throw new Error(`yg-flow.yaml at ${flowYamlPath}: missing or empty 'name'`);
   }
 
+  const description = typeof raw.description === 'string' ? raw.description.trim() : undefined;
+
   const nodes = raw.nodes ?? raw.participants;
   if (!Array.isArray(nodes) || nodes.length === 0) {
     throw new Error(
@@ -44,6 +46,7 @@ export async function parseFlow(flowDir: string, flowYamlPath: string): Promise<
   return {
     path: path.basename(flowDir),
     name: (raw.name as string).trim(),
+    description,
     nodes: nodePaths,
     ...(aspects !== undefined && { aspects }),
     artifacts,

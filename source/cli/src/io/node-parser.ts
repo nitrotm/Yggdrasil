@@ -30,6 +30,7 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
     throw new Error(`yg-node.yaml at ${filePath}: missing or empty 'type'`);
   }
 
+  const description = typeof raw.description === 'string' ? raw.description.trim() : undefined;
   const relations = parseRelations(raw.relations, filePath);
   const mapping = parseMapping(raw.mapping, filePath);
   const aspects = parseAspects(raw.aspects, filePath);
@@ -37,6 +38,7 @@ export async function parseNodeYaml(filePath: string): Promise<NodeMeta> {
   return {
     name: (raw.name as string).trim(),
     type: (raw.type as string).trim(),
+    description,
     aspects,
     blackbox: (raw.blackbox as boolean) ?? false,
     relations: relations.length > 0 ? relations : undefined,

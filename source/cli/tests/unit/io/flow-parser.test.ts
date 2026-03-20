@@ -264,4 +264,37 @@ aspects:
 
     await rm(tmpDir, { recursive: true, force: true });
   });
+
+  it('parses description field when present', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-desc');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
+    await writeFile(
+      flowYaml,
+      `
+name: Described Flow
+nodes:
+  - a/b
+description: "test flow desc"
+`,
+      'utf-8',
+    );
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+    expect(flow.description).toBe('test flow desc');
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('description is undefined when not present in YAML', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-flow-no-desc');
+    await mkdir(tmpDir, { recursive: true });
+    const flowYaml = path.join(tmpDir, 'yg-flow.yaml');
+    await writeFile(flowYaml, 'name: No Desc Flow\nnodes: [a/b]', 'utf-8');
+
+    const flow = await parseFlow(tmpDir, flowYaml);
+    expect(flow.description).toBeUndefined();
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
 });
