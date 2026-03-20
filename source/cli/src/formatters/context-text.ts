@@ -22,7 +22,7 @@ export function formatContextYaml(data: ContextMapOutput): string {
     if (output[key] === undefined) delete output[key];
   }
 
-  return stringify(output, { lineWidth: 0 });
+  return stringify(output, { lineWidth: 0, aliasDuplicateObjects: false });
 }
 
 /**
