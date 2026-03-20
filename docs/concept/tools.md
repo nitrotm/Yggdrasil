@@ -458,9 +458,19 @@ Token estimation: ~4 characters per token (heuristic from the [Engine](engine) d
 
 **Result:**
 
-YAML with structural map and artifact paths (default) or artifact content (`--full`), as
-defined in the [Engine](engine) document (Context package format section). Includes token count
-and budget status (`ok`, `warning`, `severe`).
+YAML with structural map (default) or artifact content (`--full`), as defined in the
+[Engine](engine) document (Context package format section). The structural map contains:
+
+- `project` — project name (top).
+- `glossary` — definitions of all aspects and flows referenced in this context, each with
+  name, description, stability, and `files` listing their artifact paths.
+- `node` — target node metadata with inline `files` listing its own artifact paths.
+- `hierarchy` — ancestor modules from root to parent, each with inline `files`.
+- `dependencies` — structural dependencies with inline `files` and their own `hierarchy` chains.
+- `meta` — at the bottom: token count, budget status (`ok`, `warning`, `severe`), and a
+  `breakdown` with per-category token counts (own, hierarchy, aspects, flows, dependencies).
+
+All artifact file paths are relative to `.yggdrasil/`.
 
 **Errors:**
 
