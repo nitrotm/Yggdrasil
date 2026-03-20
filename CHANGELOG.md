@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **W016: missing-description warning.** `yg validate` now emits W016 for nodes, aspects,
+  and flows that lack a `description` field, encouraging richer graph metadata.
+
 ## [2.5.1] - 2026-03-17
 
 ### Fixed
