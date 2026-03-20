@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-03-20
+
+### Changed
+
+- **Context output v3.** Reorganized `yg build-context` output for agent readability:
+  - `glossary` section at top — aspect and flow definitions (name, description, stability,
+    participants, files) before any references
+  - Inline `files` on every element (node, hierarchy, dependencies) — no separate file registry
+  - `meta` (token count, budget, breakdown) moved to bottom
+  - YAML comments before major sections for in-place guidance
+  - `yg-node.yaml`, `yg-aspect.yaml`, `yg-flow.yaml` removed from file lists (metadata
+    already in structured map)
+  - `stability` (aspects) and `participants` (flows) surfaced in glossary
+  - `meta.breakdown` now included in output
+
+### Removed
+
+- **`ArtifactRegistry` type** — replaced by `Glossary` + inline `files`
+
 ## [2.6.0] - 2026-03-20
 
 ### Added
@@ -21,15 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and flows that lack a `description` field, encouraging richer graph metadata.
 - **Agent rules: description maintenance.** Rules now instruct agents to write `description`
   when creating elements and update it when purpose changes.
-- **Agent rules: aspect glossary hint.** Context Assembly section now tells agents to
-  look up aspect/flow descriptions in `artifacts.aspects` and `artifacts.flows` sections
-  when encountering ID-only references in hierarchy and dependencies.
 
 ### Changed
 
 - **Leaner flow refs in context output.** `node.flows` entries now contain only `path`
-  and `aspects` — `name` and `description` moved to the `artifacts.flows` glossary,
-  eliminating redundancy.
+  and `aspects` — `name` and `description` are in the glossary.
 
 ### Fixed
 

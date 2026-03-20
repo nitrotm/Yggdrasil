@@ -1,4 +1,4 @@
-import { Document } from 'yaml';
+import { Document, type Pair, type Scalar, YAMLMap } from 'yaml';
 import type { ContextMapOutput } from '../model/types.js';
 
 /**
@@ -21,8 +21,8 @@ export function formatContextYaml(data: ContextMapOutput): string {
   const doc = new Document(output, { aliasDuplicateObjects: false });
 
   // Add comments before sections
-  const items = (doc.contents as any).items;
-  for (const pair of items) {
+  const map = doc.contents as YAMLMap;
+  for (const pair of map.items as Pair<Scalar>[]) {
     const key = String(pair.key);
     switch (key) {
       case 'glossary':
