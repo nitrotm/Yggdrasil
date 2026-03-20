@@ -184,14 +184,12 @@ glossary:
       description: "Every state-changing operation must produce an audit log entry"
       stability: protocol
       files:
-        - aspects/requires-audit/yg-aspect.yaml
         - aspects/requires-audit/content.md
     requires-saga:
       name: Saga Pattern
       description: "Multi-step operations must be coordinated via saga with compensating actions"
       stability: implementation
       files:
-        - aspects/requires-saga/yg-aspect.yaml
         - aspects/requires-saga/content.md
   flows:
     checkout:
@@ -204,7 +202,6 @@ glossary:
       aspects:
         - requires-saga
       files:
-        - flows/checkout/yg-flow.yaml
         - flows/checkout/description.md
 
 # Target node: the component you are working on.
@@ -222,7 +219,6 @@ node:
       aspects:
         - requires-saga
   files:
-    - model/orders/order-service/yg-node.yaml
     - model/orders/order-service/responsibility.md
     - model/orders/order-service/interface.md
 
@@ -234,7 +230,6 @@ hierarchy:
     aspects:
       - deterministic
     files:
-      - model/orders/yg-node.yaml
       - model/orders/responsibility.md
 
 # Dependencies: components this node directly depends on.
@@ -254,7 +249,6 @@ dependencies:
         type: module
         aspects: []
         files:
-          - model/auth/yg-node.yaml
           - model/auth/responsibility.md
     files:
       - model/auth/auth-api/responsibility.md
