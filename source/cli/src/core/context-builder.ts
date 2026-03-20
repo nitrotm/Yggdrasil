@@ -11,7 +11,9 @@ import type {
   FlowDef,
   Relation,
   ContextMapOutput,
-  ArtifactRegistry,
+  Glossary,
+  GlossaryAspectEntry,
+  GlossaryFlowEntry,
   NodeAspectRef,
   FlowRef,
   AncestorRef,
@@ -23,6 +25,7 @@ import { estimateTokens } from '../utils/tokens.js';
 
 const STRUCTURAL_RELATION_TYPES = new Set(['uses', 'calls', 'extends', 'implements']);
 const EVENT_RELATION_TYPES = new Set(['emits', 'listens']);
+const YG_YAML_FILES = new Set(['yg-node.yaml', 'yg-aspect.yaml', 'yg-flow.yaml']);
 
 export async function buildContext(graph: Graph, nodePath: string): Promise<ContextPackage> {
   const node = graph.nodes.get(nodePath);
@@ -488,7 +491,7 @@ export function toContextMapOutput(
   const hierarchyRefs: AncestorRef[] = ancestors.map((a) => {
     const nodeAspectIds = (a.meta.aspects ?? []).map((e) => e.aspect);
     const expanded = expandAspects(nodeAspectIds, graph.aspects);
-    return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded };
+    return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded, files: buildNodeFiles(a, config, `model/${a.path}`) };
   });
 
   // Dependencies — structural + event
@@ -503,7 +506,8 @@ export function toContextMapOutput(
     const depHierarchy: AncestorRef[] = depAncestors.map((a) => {
       const ids = (a.meta.aspects ?? []).map((e) => e.aspect);
       const expanded = expandAspects(ids, graph.aspects);
-      return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded };
+      const ancestorNode = graph.nodes.get(a.path);
+      return { path: a.path, name: a.meta.name, type: a.meta.type, description: a.meta.description, aspects: expanded, files: ancestorNode ? buildDepNodeFiles(ancestorNode, config, `model/${a.path}`) : [] };
     });
 
     const depEffectiveAspects = [...collectEffectiveAspectIds(graph, target.path)];
@@ -516,6 +520,7 @@ export function toContextMapOutput(
       relation: relation.type,
       aspects: depEffectiveAspects,
       hierarchy: depHierarchy,
+      files: buildDepNodeFiles(target, config, `model/${target.path}`),
     };
     if (relation.consumes?.length) ref.consumes = relation.consumes;
     if (relation.failure) ref.failure = relation.failure;
@@ -523,8 +528,8 @@ export function toContextMapOutput(
     depRefs.push(ref);
   }
 
-  // Artifact registry
-  const registry = buildArtifactRegistry(node, ancestors, depRefs, graph);
+  // Glossary
+  const glossary = buildGlossary(node, depRefs, graph);
 
   // Budget
   const breakdown = computeBudgetBreakdown(pkg, graph);
@@ -546,76 +551,41 @@ export function toContextMapOutput(
       mappings: normalizeMappingPaths(node.meta.mapping),
       aspects: nodeAspects,
       flows: flowRefs,
+      files: buildNodeFiles(node, config, `model/${pkg.nodePath}`),
     },
     hierarchy: hierarchyRefs,
     dependencies: depRefs,
-    artifacts: registry,
+    glossary,
   };
 }
 
-function buildArtifactRegistry(
+function buildNodeFiles(node: GraphNode, config: YggConfig, prefix: string): string[] {
+  const configKeys = Object.keys(config.artifacts ?? {});
+  return configKeys
+    .filter(f => !YG_YAML_FILES.has(f) && node.artifacts.some(a => a.filename === f))
+    .map(f => `${prefix}/${f}`);
+}
+
+function buildDepNodeFiles(node: GraphNode, config: YggConfig, prefix: string): string[] {
+  const structural = Object.entries(config.artifacts ?? {})
+    .filter(([, c]) => c.included_in_relations)
+    .map(([f]) => f);
+  const filenames = structural.length > 0 ? structural : Object.keys(config.artifacts ?? {});
+  return filenames
+    .filter(f => !YG_YAML_FILES.has(f) && node.artifacts.some(a => a.filename === f))
+    .map(f => `${prefix}/${f}`);
+}
+
+function buildGlossary(
   node: GraphNode,
-  ancestors: GraphNode[],
   dependencies: DependencyRef[],
   graph: Graph,
-): ArtifactRegistry {
-  const config = graph.config;
-  const configArtifactKeys = new Set(Object.keys(config.artifacts ?? {}));
-  const structuralFilenames = Object.entries(config.artifacts ?? {})
-    .filter(([, c]) => c.included_in_relations)
-    .map(([filename]) => filename);
+): Glossary {
+  const aspects: Record<string, GlossaryAspectEntry> = {};
+  const flows: Record<string, GlossaryFlowEntry> = {};
 
-  const nodes: Record<string, { files: string[] }> = {};
-  const aspects: Record<string, { name: string; implies?: string[]; files: string[] }> = {};
-  const flows: Record<string, { name: string; aspects?: string[]; files: string[] }> = {};
-
-  function addNodeEntry(n: GraphNode, includeYgNodeYaml: boolean, filter: string[]): void {
-    if (nodes[n.path]) return; // dedup
-    const files: string[] = [];
-    if (includeYgNodeYaml) {
-      files.push(`model/${n.path}/yg-node.yaml`);
-    }
-    for (const filename of filter) {
-      if (n.artifacts.some((a) => a.filename === filename)) {
-        files.push(`model/${n.path}/${filename}`);
-      }
-    }
-    if (files.length > 0) {
-      nodes[n.path] = { files };
-    }
-  }
-
-  // Target node — all config artifacts + yg-node.yaml
-  addNodeEntry(node, true, [...configArtifactKeys]);
-
-  // Hierarchy ancestors — all config artifacts + yg-node.yaml
-  for (const ancestor of ancestors) {
-    addNodeEntry(ancestor, true, [...configArtifactKeys]);
-  }
-
-  // Dependency targets and their ancestors — included_in_relations only, no yg-node.yaml
-  // Pre-seed with hierarchy ancestor paths so addNodeEntry's first-wins dedup
-  // always prefers the fuller hierarchy registration (all config artifacts + yg-node.yaml).
-  // Also include node.path to skip the target node itself.
-  const seenDepAncestors = new Set<string>([node.path, ...ancestors.map((a) => a.path)]);
-  for (const dep of dependencies) {
-    const target = graph.nodes.get(dep.path);
-    if (target) {
-      addNodeEntry(target, false, structuralFilenames);
-    }
-    for (const ancestor of dep.hierarchy) {
-      if (seenDepAncestors.has(ancestor.path)) continue;
-      seenDepAncestors.add(ancestor.path);
-      const ancestorNode = graph.nodes.get(ancestor.path);
-      if (ancestorNode) {
-        addNodeEntry(ancestorNode, false, structuralFilenames);
-      }
-    }
-  }
-
-  // Aspects — collect all effective aspects
+  // Aspects — collect all effective aspects + dependency aspects
   const allAspectIds = collectEffectiveAspectIds(graph, node.path);
-  // Also include aspects from dependencies
   for (const dep of dependencies) {
     for (const id of dep.aspects) {
       allAspectIds.add(id);
@@ -623,16 +593,15 @@ function buildArtifactRegistry(
   }
   const resolvedAspects = resolveAspects(allAspectIds, graph.aspects);
   for (const aspect of resolvedAspects) {
-    const files: string[] = [];
-    files.push(`aspects/${aspect.id}/yg-aspect.yaml`);
-    for (const art of aspect.artifacts) {
-      files.push(`aspects/${aspect.id}/${art.filename}`);
-    }
-    const entry: { name: string; description?: string; implies?: string[]; files: string[] } = {
+    const files = aspect.artifacts
+      .filter(a => !YG_YAML_FILES.has(a.filename))
+      .map(a => `aspects/${aspect.id}/${a.filename}`);
+    const entry: GlossaryAspectEntry = {
       name: aspect.name,
       files,
     };
     if (aspect.description) entry.description = aspect.description;
+    if (aspect.stability) entry.stability = aspect.stability;
     if (aspect.implies?.length) entry.implies = aspect.implies;
     aspects[aspect.id] = entry;
   }
@@ -640,13 +609,12 @@ function buildArtifactRegistry(
   // Flows
   const participatingFlows = collectParticipatingFlows(graph, node);
   for (const flow of participatingFlows) {
-    const files: string[] = [];
-    files.push(`flows/${flow.path}/yg-flow.yaml`);
-    for (const art of flow.artifacts) {
-      files.push(`flows/${flow.path}/${art.filename}`);
-    }
-    const entry: { name: string; description?: string; aspects?: string[]; files: string[] } = {
+    const files = flow.artifacts
+      .filter(a => !YG_YAML_FILES.has(a.filename))
+      .map(a => `flows/${flow.path}/${a.filename}`);
+    const entry: GlossaryFlowEntry = {
       name: flow.name,
+      participants: flow.nodes,
       files,
     };
     if (flow.description) entry.description = flow.description;
@@ -654,7 +622,7 @@ function buildArtifactRegistry(
     flows[flow.path] = entry;
   }
 
-  return { nodes, aspects, flows };
+  return { aspects, flows };
 }
 
 /** Compute effective aspect ids for a node: own + hierarchy + flow + implies expanded. */
