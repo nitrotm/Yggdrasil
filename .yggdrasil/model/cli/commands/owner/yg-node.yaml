@@ -1,5 +1,6 @@
 name: OwnerCommand
 type: library
+description: "Resolves a file path to its owning graph node via yg owner"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract

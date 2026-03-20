@@ -1,5 +1,6 @@
 name: DriftCommands
 type: library
+description: "Detects and syncs divergence between graph metadata and source files via yg drift and yg drift-sync"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract

@@ -1,4 +1,5 @@
 name: Validate
+description: "Validate graph structural integrity and completeness, reporting errors and warnings"
 nodes:
   - cli/commands/validation
   - cli/core/loader

@@ -1,4 +1,5 @@
 name: Init
+description: "Bootstrap .yggdrasil/ structure for a new project or refresh platform rules for an existing one"
 nodes:
   - cli/commands/init
   - cli/templates

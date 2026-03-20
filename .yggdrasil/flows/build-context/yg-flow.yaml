@@ -1,4 +1,5 @@
 name: Build context
+description: "Assemble a context package for a node so agents have the specification needed before working on code"
 nodes:
   - cli/commands/build-context
   - cli/core/loader

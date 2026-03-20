@@ -1,5 +1,6 @@
 name: StatusCommand
 type: library
+description: "Graph health overview with quality metrics via yg status"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract
