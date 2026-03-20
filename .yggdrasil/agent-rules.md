@@ -345,7 +345,7 @@ Projects can define additional artifact types in `yg-config.yaml` under `artifac
 
 **Default mode (paths-only):** Use for all graph operations. Read the YAML map first to understand topology. Then read artifact files from the `artifacts` section using the Read tool. For quick orientation (scoping, blast radius assessment), the map alone is sufficient. For implementation or modification, read all artifact files before changing code.
 
-The YAML map includes `description` for nodes, aspects, and flows when present. Use descriptions for quick orientation without reading full artifacts — they summarize what each element is.
+The YAML map includes `description` for nodes, aspects, and flows when present. Use descriptions for quick orientation without reading full artifacts — they summarize what each element is. Aspect and flow references in `hierarchy` and `dependencies` are IDs only — look up their names and descriptions in the `artifacts.aspects` and `artifacts.flows` sections, which serve as a complete glossary of all aspects and flows referenced anywhere in the map.
 
 **Full mode (`--full`):** Use only when you cannot read files individually — e.g., when pasting context into a prompt, sharing with a user, or when you have no Read tool available.
 

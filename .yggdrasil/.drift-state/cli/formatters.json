@@ -17,8 +17,8 @@
     ".yggdrasil/flows/graph-analysis/yg-flow.yaml": "54691941694d1009a854d5e8b422131342ee6715ce71eb8b685a3aee8559b9d7",
     ".yggdrasil/flows/graph-analysis/description.md": "2c5f6e377cea91a9b447f395971203f02c2a91a816e847269adb6f84c8786603",
     "source/cli/src/formatters/.gitkeep": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-    "source/cli/src/formatters/markdown.ts": "eee5241b18a95bb7a6aae4ed656d0fc43186c15b38fd888278a470e7dbff4c55",
-    "source/cli/src/formatters/context-text.ts": "cfe1292c4d349a9efa102271ad68f065d9000556027617c520aad371f08cab95"
+    "source/cli/src/formatters/context-text.ts": "cfe1292c4d349a9efa102271ad68f065d9000556027617c520aad371f08cab95",
+    "source/cli/src/formatters/markdown.ts": "eee5241b18a95bb7a6aae4ed656d0fc43186c15b38fd888278a470e7dbff4c55"
   },
   "mtimes": {
     ".yggdrasil/model/cli/formatters/yg-node.yaml": 1774000486061.5056,

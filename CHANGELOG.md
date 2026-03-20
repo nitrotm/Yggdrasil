@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and flows that lack a `description` field, encouraging richer graph metadata.
 - **Agent rules: description maintenance.** Rules now instruct agents to write `description`
   when creating elements and update it when purpose changes.
+- **Agent rules: aspect glossary hint.** Context Assembly section now tells agents to
+  look up aspect/flow descriptions in `artifacts.aspects` and `artifacts.flows` sections
+  when encountering ID-only references in hierarchy and dependencies.
+
+### Fixed
+
+- **No more YAML anchors in context output.** The `yaml` serializer created `&a1`/`*a1`
+  aliases for duplicate arrays, making output harder to read. Disabled with
+  `aliasDuplicateObjects: false`.
 
 ## [2.5.1] - 2026-03-17
 
