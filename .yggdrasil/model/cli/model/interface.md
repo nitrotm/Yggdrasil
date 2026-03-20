@@ -14,7 +14,7 @@ Type library — exports TypeScript interfaces and types only. No runtime functi
 
 **Budget:** BudgetBreakdown
 
-**Context Map (v2):** ContextMapOutput, ArtifactRegistry, NodeAspectRef, FlowRef, AncestorRef, DependencyRef
+**Context Map (v3):** ContextMapOutput, Glossary, GlossaryAspectEntry, GlossaryFlowEntry, NodeAspectRef, FlowRef, AncestorRef, DependencyRef
 
 **Dependency resolution:** Stage
 
@@ -60,15 +60,17 @@ Model is a TypeScript type library — it contains no executable code and does n
 - **ContextLayer** — Single layer: type (global/hierarchy/own/relational/aspects/flows), label, content, optional attrs.
 - **ContextSection** — Grouped layers by key: Global, Hierarchy, OwnArtifacts, Aspects, Relational.
 
-## Context Map types (v2 structured output)
+## Context Map types (v3 structured output)
 
 - **BudgetBreakdown** — Per-category token counts: `{ own: number; hierarchy: number; aspects: number; flows: number; dependencies: number; total: number }`. Used in ContextMapOutput.meta and by validator budget checks.
-- **ContextMapOutput** — Top-level structured output for v2 format: meta includes tokenCount, budgetStatus (`'ok' | 'warning' | 'severe'`), and breakdown (BudgetBreakdown). Also includes project string, node summary, hierarchy, dependencies, and artifact registry.
-- **ArtifactRegistry** — Index of all artifact files referenced in a context package: nodes, aspects, and flows keyed by path/id with their associated file lists.
+- **ContextMapOutput** — Top-level structured output for v3 format: `project` at top, `glossary` (aspects + flows with names/descriptions/files), `node` with inline `files`, `hierarchy` with inline `files`, `dependencies` with inline `files`, and `meta` at bottom with tokenCount, budgetStatus (`'ok' | 'warning' | 'severe'`), and `breakdown` (BudgetBreakdown). No separate ArtifactRegistry — files are inlined in each section.
+- **Glossary** — Index of all aspects and flows referenced in the context package: `aspects` and `flows` keyed by id/path, each with name, description, stability/participants, and `files`. Replaces ArtifactRegistry.
+- **GlossaryAspectEntry** — Aspect glossary entry: name, optional description, optional stability, optional implies, files.
+- **GlossaryFlowEntry** — Flow glossary entry: name, optional description, participants (node paths), optional aspects, files.
 - **NodeAspectRef** — Aspect reference on a node: id, optional anchors, optional exceptions.
-- **FlowRef** — Flow reference: path, optional aspects list. Name and description are in the ArtifactRegistry flows glossary.
-- **AncestorRef** — Ancestor node reference: path, name, type, optional description, aspects list.
-- **DependencyRef** — Dependency reference: path, name, type, optional description, relation kind, optional consumes/failure/event-name, aspects list, hierarchy chain.
+- **FlowRef** — Flow reference: path, optional aspects list.
+- **AncestorRef** — Ancestor node reference: path, name, type, optional description, aspects list, optional `files` (artifact paths).
+- **DependencyRef** — Dependency reference: path, name, type, optional description, relation kind, optional consumes/failure/event-name, aspects list, hierarchy chain, optional `files` (artifact paths for included_in_relations artifacts).
 
 ## Validation types
 

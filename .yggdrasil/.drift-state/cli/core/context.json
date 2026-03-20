@@ -1,8 +1,7 @@
 {
-  "hash": "b3eeb061b84fb42db9843f461fff2ca79c0197894d5d562df172fbf6f449a572",
+  "hash": "11c41ca533152bf0a3677f12caad222aba46ac147b11e24aff24df45820fd9f1",
   "files": {
     ".yggdrasil/model/cli/core/context/yg-node.yaml": "c746c47155917f48873666f753716874d6a62a523c2df9d1edc69ceec66e0cd9",
-    ".yggdrasil/model/cli/core/context/interface.md": "b8d61ca3dea63d5fab99e0dab18153cd484c298cf45ea65ec25509841ac751fd",
     ".yggdrasil/model/cli/core/context/internals.md": "e7a9887f2be92756bb76612158e8070eea0337fef65417fb8a96f886e0a54ce3",
     ".yggdrasil/model/cli/core/context/responsibility.md": "2f1639ee31215186bce1ff5060da400d46c890b56963981004712c23d2a9d8ed",
     ".yggdrasil/model/cli/yg-node.yaml": "df8a5321838edda0335736e81375b7219819d8b4065a45f883ed9686a07bd049",
@@ -15,19 +14,20 @@
     ".yggdrasil/aspects/deterministic/yg-aspect.yaml": "20f321091b4f489efbf167feea9d42d73f7cffb21ea2e86958e565b550da164b",
     ".yggdrasil/aspects/deterministic/content.md": "1f1b33f34741a7dbe90f15783e2a11eaa874529b297702423ae503e470a70089",
     ".yggdrasil/model/cli/model/responsibility.md": "b668c6db2090a36a54277f62fb228c266d87c6d119f89e6ed67e140392863a66",
-    ".yggdrasil/model/cli/model/interface.md": "1271b0fed18c7058e811dd7b28039cab84bcb0efe39e2f6c4c1588a5834a95e9",
     ".yggdrasil/model/cli/utils/responsibility.md": "4918c48366c7b3f35bb7b97fa74252c47f14ba72417c5cc5f3e1100b503c7ddd",
     ".yggdrasil/model/cli/utils/interface.md": "19ebc12ccbc4a90f9f016dead73a3592c6a397a010ed9cf39993b9f01bc8d96e",
     ".yggdrasil/flows/build-context/yg-flow.yaml": "ad7b1fd9f74aacd66fe207b87d611c0b39f13903cc2737f6b0a971c110e07359",
     ".yggdrasil/flows/build-context/description.md": "60e4619e480293f028a1c2b756ce30c8800adc613dc9c64e6bd6ef7f3d5fcf87",
     ".yggdrasil/flows/graph-analysis/yg-flow.yaml": "54691941694d1009a854d5e8b422131342ee6715ce71eb8b685a3aee8559b9d7",
     ".yggdrasil/flows/graph-analysis/description.md": "2c5f6e377cea91a9b447f395971203f02c2a91a816e847269adb6f84c8786603",
-    "source/cli/src/core/context-builder.ts": "c0938b458a206b29f21bba6e3cca0b461c084200141a818b8eb4c8f7ce2effb1",
-    "source/cli/src/core/context-files.ts": "d43b1033d4470355f251fab00fcb19331a6bac90453f48f6bac3641dc952a54a"
+    "source/cli/src/core/context-files.ts": "d43b1033d4470355f251fab00fcb19331a6bac90453f48f6bac3641dc952a54a",
+    ".yggdrasil/model/cli/core/context/interface.md": "bfd70e472bdaeed8cdf4d6a0bdb4bfd34ed1cd22641a021a8b047eae1c76ba1f",
+    ".yggdrasil/model/cli/model/interface.md": "55440e4c6a1763bab2b5417515162f5c0e93f9bc547ffe34aea46311bf7fe220",
+    "source/cli/src/core/context-builder.ts": "e8970fe29770a134a839c3ef23d487860c6b690e0d7a8a96eca48335c5735327"
   },
   "mtimes": {
     ".yggdrasil/model/cli/core/context/yg-node.yaml": 1774000470155.2249,
-    ".yggdrasil/model/cli/core/context/interface.md": 1774003213021.8125,
+    ".yggdrasil/model/cli/core/context/interface.md": 1774007604027.473,
     ".yggdrasil/model/cli/core/context/internals.md": 1773400320631.8093,
     ".yggdrasil/model/cli/core/context/responsibility.md": 1773381039569.15,
     ".yggdrasil/model/cli/yg-node.yaml": 1774000445016.46,
@@ -40,14 +40,14 @@
     ".yggdrasil/aspects/deterministic/yg-aspect.yaml": 1774000501917.2544,
     ".yggdrasil/aspects/deterministic/content.md": 1772778780694.5889,
     ".yggdrasil/model/cli/model/responsibility.md": 1772778759688.719,
-    ".yggdrasil/model/cli/model/interface.md": 1774003202105.1316,
+    ".yggdrasil/model/cli/model/interface.md": 1774007579517.6646,
     ".yggdrasil/model/cli/utils/responsibility.md": 1772743197446.85,
     ".yggdrasil/model/cli/utils/interface.md": 1772743197447.6619,
     ".yggdrasil/flows/build-context/yg-flow.yaml": 1774000506860.7622,
     ".yggdrasil/flows/build-context/description.md": 1773381039567.111,
     ".yggdrasil/flows/graph-analysis/yg-flow.yaml": 1774000510053.6604,
     ".yggdrasil/flows/graph-analysis/description.md": 1772743197470.7615,
-    "source/cli/src/core/context-builder.ts": 1774002975278.0227,
+    "source/cli/src/core/context-builder.ts": 1774006764745.2124,
     "source/cli/src/core/context-files.ts": 1773381039573.0894
   }
 }

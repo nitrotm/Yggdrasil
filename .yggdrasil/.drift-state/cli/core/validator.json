@@ -1,5 +1,5 @@
 {
-  "hash": "3d9ab554988b88e4a2948231c58733d85169e8583bdd43ff248b36440e4bf844",
+  "hash": "855be1c9b8945ee9b6b7d28ba295740b4e0bba104e3f8c2fd274d049c977da6c",
   "files": {
     ".yggdrasil/model/cli/core/validator/yg-node.yaml": "2f842e2f16d1cdaf3d7dac0a585b045a87c71f4140d96ff29e1f63c9766ff8df",
     ".yggdrasil/model/cli/core/validator/interface.md": "0f50852b00dc878bc5f6adccf3a27696c6d13f5ffdcd81526d7942eea4853f4a",
@@ -27,8 +27,8 @@
     ".yggdrasil/flows/validate/yg-flow.yaml": "8a174f889d79d489f7b3924877a229134e68c733b720b57a19cdf34d76a179b6",
     ".yggdrasil/flows/validate/description.md": "d934feb76d7186c3665ff605b8ff0d771978248a8c4e8a3cda2e8f38f483577f",
     "source/cli/src/core/validator.ts": "f7d2fdd6a6925a600cf89a76732dfebcb14502614c7d19e6432ae37ed687d962",
-    ".yggdrasil/model/cli/core/context/interface.md": "b8d61ca3dea63d5fab99e0dab18153cd484c298cf45ea65ec25509841ac751fd",
-    ".yggdrasil/model/cli/model/interface.md": "1271b0fed18c7058e811dd7b28039cab84bcb0efe39e2f6c4c1588a5834a95e9"
+    ".yggdrasil/model/cli/core/context/interface.md": "bfd70e472bdaeed8cdf4d6a0bdb4bfd34ed1cd22641a021a8b047eae1c76ba1f",
+    ".yggdrasil/model/cli/model/interface.md": "55440e4c6a1763bab2b5417515162f5c0e93f9bc547ffe34aea46311bf7fe220"
   },
   "mtimes": {
     ".yggdrasil/model/cli/core/validator/yg-node.yaml": 1774000482419.8345,
@@ -47,9 +47,9 @@
     ".yggdrasil/aspects/posix-paths/yg-aspect.yaml": 1772776392187.5386,
     ".yggdrasil/aspects/posix-paths/content.md": 1772743197466.7686,
     ".yggdrasil/model/cli/core/context/responsibility.md": 1773381039569.15,
-    ".yggdrasil/model/cli/core/context/interface.md": 1774003213021.8125,
+    ".yggdrasil/model/cli/core/context/interface.md": 1774007604027.473,
     ".yggdrasil/model/cli/model/responsibility.md": 1772778759688.719,
-    ".yggdrasil/model/cli/model/interface.md": 1774003202105.1316,
+    ".yggdrasil/model/cli/model/interface.md": 1774007579517.6646,
     ".yggdrasil/model/cli/utils/responsibility.md": 1772743197446.85,
     ".yggdrasil/model/cli/utils/interface.md": 1772743197447.6619,
     ".yggdrasil/flows/build-context/yg-flow.yaml": 1774000506860.7622,

@@ -16,7 +16,9 @@
 - `buildEventRelationLayer(target: GraphNode, relation: Relation): ContextLayer`
 - `buildAspectLayer(aspect: AspectDef, exceptionNote?: string): ContextLayer` — renders aspect content; if aspect has `stability`, appends "Stability tier: ..." line; if `exceptionNote` is provided, appends a warning block: "Exception for this node: {note}". The exception note comes from the aspect entry's `exceptions` field in `node.meta.aspects`, joined with '; '.
 - `collectAncestors(node: GraphNode): GraphNode[]` — returns ancestors from parent chain.
-- `collectDependencyAncestors(target: GraphNode, config: YggConfig, graph: Graph): DependencyAncestorInfo[]` — returns ancestor chain for a dependency target node. Each entry includes path, name, type, aspects (own aspects expanded via `implies` only — not effective aspects), and artifactFilenames (filtered by `included_in_relations`, falling back to all config artifacts). Used by context-map output to provide hierarchy context for dependency targets.
+- `collectDependencyAncestors(target: GraphNode, config: YggConfig, graph: Graph): DependencyAncestorInfo[]` — returns ancestor chain for a dependency target node. Each entry includes path, name, type, aspects (own aspects expanded via `implies` only — not effective aspects), and artifactFilenames (filtered by `included_in_relations`, falling back to all config artifacts). Used by `toContextMapOutput` to build the `hierarchy` list inside each `DependencyRef`.
+- `buildNodeFiles(node, config, prefix): string[]` — internal helper; returns artifact file paths for a node (yg-node.yaml + all configured artifact files that exist), prefixed with the given path. Used for `node.files` and `hierarchy[].files` in ContextMapOutput.
+- `buildDepNodeFiles(node, config, prefix): string[]` — internal helper; returns only `included_in_relations` artifact paths for a dependency node (falling back to all artifacts if none marked). Used for `dependencies[].files` and dependency hierarchy `files` in ContextMapOutput.
 
 **Budget analysis:**
 
@@ -24,7 +26,7 @@
 
 **Structured output converter:**
 
-- `toContextMapOutput(pkg: ContextPackage, graph: Graph): ContextMapOutput` — converts a layers-based ContextPackage into the structured ContextMapOutput format. Extracts node aspects (with anchors/exceptions), flow participation (path + aspects only — name/description are in ArtifactRegistry), hierarchy ancestors (with description), dependencies (with description, their own hierarchy, and effective aspects), and builds an ArtifactRegistry mapping all referenced graph files with descriptions. Budget status uses `'severe'` (not `'error'`) for over-budget. Includes `breakdown: BudgetBreakdown` in meta via `computeBudgetBreakdown`.
+- `toContextMapOutput(pkg: ContextPackage, graph: Graph): ContextMapOutput` — converts a layers-based ContextPackage into the v3 structured ContextMapOutput format. Builds a `glossary` (aspects + flows referenced in the package, each with name/description/files via `buildGlossary`), inlines `files` directly into `node`, `hierarchy`, and `dependencies` entries via `buildNodeFiles` and `buildDepNodeFiles` helpers. Budget status uses `'severe'` (not `'error'`) for over-budget. Includes `breakdown: BudgetBreakdown` in meta via `computeBudgetBreakdown`.
 
 **Types:**
 
