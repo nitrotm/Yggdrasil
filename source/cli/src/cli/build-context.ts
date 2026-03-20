@@ -1,6 +1,4 @@
 import { Command } from 'commander';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { loadGraph } from '../core/graph-loader.js';
 import { buildContext, collectAncestors, toContextMapOutput } from '../core/context-builder.js';
 import { formatContextYaml, formatFullContent } from '../formatters/context-text.js';
@@ -73,23 +71,40 @@ export function registerBuildCommand(program: Command): void {
         let output = formatContextYaml(mapOutput);
 
         if (options.full) {
-          // Collect all file contents in order from all registry sections
-          const allFiles: Array<{ path: string; content: string }> = [];
-          const allEntries = [
-            ...Object.values(mapOutput.artifacts.nodes),
-            ...Object.values(mapOutput.artifacts.aspects),
-            ...Object.values(mapOutput.artifacts.flows),
-          ];
           const seen = new Set<string>();
-          for (const entry of allEntries) {
-            for (const filePath of entry.files) {
-              if (seen.has(filePath)) continue; // dedup
-              seen.add(filePath);
-              const content = await findFileContent(filePath, graph);
-              if (content !== undefined) {
-                allFiles.push({ path: filePath, content });
-              }
+          const allFiles: Array<{ path: string; content: string }> = [];
+
+          async function collectFile(filePath: string): Promise<void> {
+            if (seen.has(filePath)) return;
+            seen.add(filePath);
+            const content = await findFileContent(filePath, graph);
+            if (content !== undefined) {
+              allFiles.push({ path: filePath, content });
             }
+          }
+
+          // Glossary files
+          for (const aspect of Object.values(mapOutput.glossary.aspects)) {
+            for (const f of aspect.files) await collectFile(f);
+          }
+          for (const flow of Object.values(mapOutput.glossary.flows)) {
+            for (const f of flow.files) await collectFile(f);
+          }
+
+          // Node files
+          for (const f of mapOutput.node.files) await collectFile(f);
+
+          // Hierarchy files
+          for (const ancestor of mapOutput.hierarchy) {
+            for (const f of ancestor.files ?? []) await collectFile(f);
+          }
+
+          // Dependency files (including their hierarchy)
+          for (const dep of mapOutput.dependencies) {
+            for (const ancestor of dep.hierarchy) {
+              for (const f of ancestor.files ?? []) await collectFile(f);
+            }
+            for (const f of dep.files ?? []) await collectFile(f);
           }
 
           output += formatFullContent(allFiles);
@@ -104,22 +119,10 @@ export function registerBuildCommand(program: Command): void {
 }
 
 /**
- * Find file content from the loaded graph data or disk.
+ * Find file content from the loaded graph data.
  * Paths are relative to .yggdrasil/ (e.g., "model/cli/core/loader/responsibility.md").
- * For YAML definition files (yg-node.yaml, yg-aspect.yaml, yg-flow.yaml) that aren't
- * stored in memory, falls back to reading from disk.
  */
 async function findFileContent(filePath: string, graph: Graph): Promise<string | undefined> {
-  // Helper: read YAML definition file from disk when not available in memory
-  async function readYamlFromDisk(relativePath: string): Promise<string | undefined> {
-    try {
-      const fullPath = path.join(graph.rootPath, relativePath);
-      return (await readFile(fullPath, 'utf-8')).trim();
-    } catch {
-      return undefined;
-    }
-  }
-
   if (filePath.startsWith('model/')) {
     const rest = filePath.slice('model/'.length);
     const parts = rest.split('/');
@@ -127,9 +130,6 @@ async function findFileContent(filePath: string, graph: Graph): Promise<string |
     const nodePath = parts.join('/');
     const node = graph.nodes.get(nodePath);
     if (!node) return undefined;
-    if (filename === 'yg-node.yaml') {
-      return node.nodeYamlRaw?.trim() ?? await readYamlFromDisk(filePath);
-    }
     const art = node.artifacts.find((a) => a.filename === filename);
     return art?.content;
   }
@@ -140,9 +140,6 @@ async function findFileContent(filePath: string, graph: Graph): Promise<string |
     const filename = parts.slice(1).join('/');
     const aspect = graph.aspects.find((a) => a.id === aspectId);
     if (!aspect) return undefined;
-    if (filename === 'yg-aspect.yaml') {
-      return readYamlFromDisk(filePath);
-    }
     const art = aspect.artifacts.find((a) => a.filename === filename);
     return art?.content;
   }
@@ -153,9 +150,6 @@ async function findFileContent(filePath: string, graph: Graph): Promise<string |
     const filename = parts.slice(1).join('/');
     const flow = graph.flows.find((f) => f.path === flowPath);
     if (!flow) return undefined;
-    if (filename === 'yg-flow.yaml') {
-      return readYamlFromDisk(filePath);
-    }
     const art = flow.artifacts.find((a) => a.filename === filename);
     return art?.content;
   }

@@ -19,7 +19,8 @@
 
 ## loadAspects, loadFlows, loadSchemas
 
-- **Aspects, Flows:** readdir category dir; for each item parse YAML, read artifacts.
+- **Aspects:** readdir category dir; for each item parse YAML, read artifacts. Returns `[]` on missing dir.
+- **Flows:** readdir flows dir; for each item parse YAML, read artifacts. Returns `[]` only on missing dir; parse errors in individual flows propagate (unlike the previous behavior which silently swallowed all errors).
 - **Schemas:** `loadSchemas(schemasDir)` readdir; for each `.yaml`/`.yml` call `parseSchema` (validates YAML, infers schemaType from filename). Returns `SchemaDef[]`. On missing dir or parse error returns `[]`.
 
 ## Decisions

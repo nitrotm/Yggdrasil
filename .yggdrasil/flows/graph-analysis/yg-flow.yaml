@@ -1,4 +1,5 @@
 name: Graph analysis
+description: "Analytical queries for blast radius, graph health, aspect inventory, and context assembly"
 aspects: [deterministic]
 nodes:
   - cli/commands/impact

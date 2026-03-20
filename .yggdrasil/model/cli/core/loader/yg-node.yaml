@@ -1,5 +1,6 @@
 name: GraphLoader
 type: library
+description: "Loads the graph from .yggdrasil/ — model nodes, aspects, flows, schemas — into memory"
 aspects:
   - aspect: deterministic
   - aspect: silent-missing-files

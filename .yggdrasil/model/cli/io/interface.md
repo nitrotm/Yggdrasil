@@ -21,7 +21,7 @@ Library used by cli/core (loader, drift-detector). All paths are absolute; calle
 ## flow-parser.ts
 
 - `parseFlow(flowDir: string, flowYamlPath: string): Promise<FlowDef>`
-  - Throws on missing name, invalid or empty nodes array. Reads artifacts from flowDir excluding yg-flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
+  - Accepts both `nodes` and `participants` fields (`nodes` takes precedence when both present). Throws on missing name, invalid or empty nodes/participants array. Reads artifacts from flowDir excluding yg-flow.yaml. Sets `path` from `flowDir` basename (directory name under flows/).
 
 ## schema-parser.ts
 
@@ -51,7 +51,7 @@ Parsers and stores throw `Error` on invalid input. No dedicated error codes — 
 
 **aspect-parser:** Missing name or empty id. Invalid `stability` (not one of: schema, protocol, implementation). Propagates readFile and readArtifacts errors.
 
-**flow-parser:** Missing name, invalid or empty nodes array. Propagates readFile and readArtifacts errors.
+**flow-parser:** Missing name, invalid or empty nodes/participants array. Propagates readFile and readArtifacts errors.
 
 **schema-parser:** Invalid YAML (parseSchema). Propagates ENOENT, EACCES from readFile.
 

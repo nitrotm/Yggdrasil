@@ -1116,6 +1116,62 @@ describe('validator', () => {
     expect(result.issues[0].code).toBe('E001');
   });
 
+  describe('W016 missing-description', () => {
+    it('W016 emitted for a node without description', async () => {
+      const graph = createGraph();
+      graph.nodes.set('svc/no-desc', createNode('svc/no-desc'));
+
+      const result = await validate(graph);
+      const issues = result.issues.filter((i) => i.rule === 'missing-description' && i.nodePath === 'svc/no-desc');
+      expect(issues).toHaveLength(1);
+      expect(issues[0].code).toBe('W016');
+      expect(issues[0].severity).toBe('warning');
+      expect(issues[0].message).toContain('no description');
+    });
+
+    it('no W016 when node has description set', async () => {
+      const graph = createGraph();
+      graph.nodes.set('svc/with-desc', createNode('svc/with-desc', { description: 'A useful service.' }));
+
+      const result = await validate(graph);
+      const issues = result.issues.filter((i) => i.rule === 'missing-description' && i.nodePath === 'svc/with-desc');
+      expect(issues).toHaveLength(0);
+    });
+
+    it('W016 emitted for an aspect without description', async () => {
+      const graph = createGraph({
+        aspects: [{ name: 'NoDesc', id: 'no-desc-aspect', artifacts: [] }],
+      });
+      graph.nodes.set('a', createNode('a'));
+
+      const result = await validate(graph);
+      const issues = result.issues.filter(
+        (i) => i.rule === 'missing-description' && i.message.includes("'no-desc-aspect'"),
+      );
+      expect(issues).toHaveLength(1);
+      expect(issues[0].code).toBe('W016');
+      expect(issues[0].severity).toBe('warning');
+    });
+
+    it('W016 emitted for a flow without description', async () => {
+      const graph = createGraph();
+      graph.nodes.set('a', createNode('a'));
+      graph.flows.push({
+        name: 'checkout-flow',
+        nodes: ['a'],
+        artifacts: [{ filename: 'description.md', content: 'x'.repeat(60) }],
+      });
+
+      const result = await validate(graph);
+      const issues = result.issues.filter(
+        (i) => i.rule === 'missing-description' && i.message.includes("'checkout-flow'"),
+      );
+      expect(issues).toHaveLength(1);
+      expect(issues[0].code).toBe('W016');
+      expect(issues[0].severity).toBe('warning');
+    });
+  });
+
   describe('CLI exit codes', () => {
     it('exit code 0 when no errors', () => {
       const fixturePath = path.resolve(CLI_ROOT, 'tests', 'fixtures', 'sample-project');

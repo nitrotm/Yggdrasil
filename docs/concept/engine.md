@@ -173,33 +173,71 @@ The structural map includes the node's metadata, its ancestor hierarchy, depende
 (each dependency includes its own ancestor chain for domain context), aspects, and flows.
 
 ```yaml
-meta:
-  token-count: 1234
-  budget-status: ok
 project: MyProject
+
+# Glossary: definitions of all aspects and flows referenced in this context.
+# Read this first — IDs below (in node, hierarchy, dependencies) refer to entries here.
+glossary:
+  aspects:
+    requires-audit:
+      name: Audit Logging
+      description: "Every state-changing operation must produce an audit log entry"
+      stability: protocol
+      files:
+        - aspects/requires-audit/content.md
+    requires-saga:
+      name: Saga Pattern
+      description: "Multi-step operations must be coordinated via saga with compensating actions"
+      stability: implementation
+      files:
+        - aspects/requires-saga/content.md
+  flows:
+    checkout:
+      name: Checkout Flow
+      description: "End-to-end purchase flow from cart to payment confirmation"
+      participants:
+        - orders/order-service
+        - auth/auth-api
+        - payments/payment-service
+      aspects:
+        - requires-saga
+      files:
+        - flows/checkout/description.md
+
+# Target node: the component you are working on.
 node:
   path: orders/order-service
   name: OrderService
   type: service
+  description: "Manages order lifecycle from placement to fulfilment"
   mappings:
     - src/orders/order.service.ts
   aspects:
     - id: requires-audit
   flows:
     - path: checkout
-      name: Checkout Flow
       aspects:
         - requires-saga
+  files:
+    - model/orders/order-service/responsibility.md
+    - model/orders/order-service/interface.md
+
+# Hierarchy: ancestor modules from root to parent. Context is inherited top-down.
 hierarchy:
   - path: orders
     name: Orders
     type: module
     aspects:
       - deterministic
+    files:
+      - model/orders/responsibility.md
+
+# Dependencies: components this node directly depends on.
 dependencies:
   - path: auth/auth-api
     name: Auth API
     type: service
+    description: "Validates tokens and resolves caller identity"
     relation: uses
     consumes:
       - validateToken
@@ -210,34 +248,22 @@ dependencies:
         name: Auth
         type: module
         aspects: []
-artifacts:
-  nodes:
-    orders/order-service:
-      files:
-        - model/orders/order-service/yg-node.yaml
-        - model/orders/order-service/responsibility.md
-        - model/orders/order-service/interface.md
-    orders:
-      files:
-        - model/orders/yg-node.yaml
-        - model/orders/responsibility.md
-    auth/auth-api:
-      files:
-        - model/auth/auth-api/interface.md
-  aspects:
-    requires-audit:
-      name: Audit
-      files:
-        - aspects/requires-audit/yg-aspect.yaml
-        - aspects/requires-audit/content.md
-  flows:
-    checkout:
-      name: Checkout Flow
-      aspects:
-        - requires-saga
-      files:
-        - flows/checkout/yg-flow.yaml
-        - flows/checkout/description.md
+        files:
+          - model/auth/responsibility.md
+    files:
+      - model/auth/auth-api/responsibility.md
+      - model/auth/auth-api/interface.md
+
+meta:
+  token-count: 1234
+  budget-status: ok
+  breakdown:
+    own: 420
+    hierarchy: 180
+    aspects: 310
+    flows: 195
+    dependencies: 129
+    total: 1234
 ```
 
 The format is fixed — the same YAML structure regardless of project. Content within the

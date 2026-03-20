@@ -653,4 +653,43 @@ aspects:
 
     await rm(tmpDir, { recursive: true, force: true });
   });
+
+  it('parses description field when present', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-desc');
+    await mkdir(tmpDir, { recursive: true });
+    const nodePath = path.join(tmpDir, 'yg-node.yaml');
+    await writeFile(
+      nodePath,
+      `
+name: DescNode
+type: service
+description: "test desc"
+`,
+      'utf-8',
+    );
+
+    const meta = await parseNodeYaml(nodePath);
+    expect(meta.description).toBe('test desc');
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('description is undefined when not present in YAML', async () => {
+    const tmpDir = path.join(__dirname, '../../fixtures/tmp-node-no-desc');
+    await mkdir(tmpDir, { recursive: true });
+    const nodePath = path.join(tmpDir, 'yg-node.yaml');
+    await writeFile(
+      nodePath,
+      `
+name: NoDescNode
+type: service
+`,
+      'utf-8',
+    );
+
+    const meta = await parseNodeYaml(nodePath);
+    expect(meta.description).toBeUndefined();
+
+    await rm(tmpDir, { recursive: true, force: true });
+  });
 });

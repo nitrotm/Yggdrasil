@@ -1,5 +1,6 @@
 name: PreflightCommand
 type: library
+description: "Unified session diagnostic combining drift, status, and validation via yg preflight"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract

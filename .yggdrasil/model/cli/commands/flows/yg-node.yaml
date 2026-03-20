@@ -1,5 +1,6 @@
 name: FlowsCommand
 type: library
+description: "Lists all flows with metadata in YAML format via yg flows"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract

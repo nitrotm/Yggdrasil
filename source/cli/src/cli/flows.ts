@@ -19,6 +19,7 @@ export function registerFlowsCommand(program: Command): void {
               participants: flow.nodes.length,
               nodes: flow.nodes.sort(),
             };
+            if (flow.description) entry.description = flow.description;
             if (flow.aspects && flow.aspects.length > 0) entry.aspects = flow.aspects;
             return entry;
           });

@@ -1,5 +1,6 @@
 name: NodeSelector
 type: library
+description: "Task-based node selection using keyword matching against graph artifacts"
 aspects:
   - aspect: deterministic
 

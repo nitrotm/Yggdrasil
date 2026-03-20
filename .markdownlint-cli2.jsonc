@@ -8,6 +8,7 @@
     "MD060": false,
     "MD040": false,
     "MD028": false,
+    "MD034": false,
   },
   "ignores": [
     "node_modules",

@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-03-20
+
+### Changed
+
+- **Context output v3.** Reorganized `yg build-context` output for agent readability:
+  - `glossary` section at top — aspect and flow definitions (name, description, stability,
+    participants, files) before any references
+  - Inline `files` on every element (node, hierarchy, dependencies) — no separate file registry
+  - `meta` (token count, budget, breakdown) moved to bottom
+  - YAML comments before major sections for in-place guidance
+  - `yg-node.yaml`, `yg-aspect.yaml`, `yg-flow.yaml` removed from file lists (metadata
+    already in structured map)
+  - `stability` (aspects) and `participants` (flows) surfaced in glossary
+  - `meta.breakdown` now included in output
+
+### Removed
+
+- **`ArtifactRegistry` type** — replaced by `Glossary` + inline `files`
+
+## [2.6.0] - 2026-03-20
+
+### Added
+
+- **Uniform `description` field.** Optional `description` field for nodes (`yg-node.yaml`)
+  and flows (`yg-flow.yaml`) — provides quick orientation in context maps without reading
+  full artifacts. Aspects already had this field.
+- **Description in context output.** `yg build-context` now surfaces `description` for
+  nodes, hierarchy ancestors, dependencies, aspects, and flows in the YAML map.
+- **Description in `yg flows`.** `yg flows` output now includes `description` when present.
+- **W016: missing-description warning.** `yg validate` now emits W016 for nodes, aspects,
+  and flows that lack a `description` field, encouraging richer graph metadata.
+- **Agent rules: description maintenance.** Rules now instruct agents to write `description`
+  when creating elements and update it when purpose changes.
+
+### Changed
+
+- **Leaner flow refs in context output.** `node.flows` entries now contain only `path`
+  and `aspects` — `name` and `description` are in the glossary.
+
+### Fixed
+
+- **No more YAML anchors in context output.** The `yaml` serializer created `&a1`/`*a1`
+  aliases for duplicate arrays, making output harder to read. Disabled with
+  `aliasDuplicateObjects: false`.
+
+## [2.5.1] - 2026-03-17
+
+### Fixed
+
+- **Rules: flow field name mismatch.** Agent rules referenced `participants` as the
+  flow YAML field name, but the schema and parser use `nodes`. Corrected rules to say
+  `nodes`. Parser now also accepts `participants` as an alias for backward compatibility.
+- **Flow loading resilience.** `loadFlows` no longer silently swallows parse errors
+  from individual flows — only a missing `flows/` directory is tolerated.
+
 ## [2.5.0] - 2026-03-13
 
 ### Changed

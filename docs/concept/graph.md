@@ -213,6 +213,7 @@ context assembly algorithm guarantees this.
 ```yaml
 name: OrderService
 type: service
+description: "Manages order lifecycle from placement to fulfilment"  # optional
 
 aspects:
   - aspect: requires-audit
@@ -240,6 +241,7 @@ mapping:
 | -------------------- | -------- | ------------------------------------------------------------ |
 | `name`               | Yes      | Display name                                                 |
 | `type`               | Yes      | Node type from `config.node_types`                           |
+| `description`        | No       | Short summary shown in context maps for quick orientation    |
 | `aspects`            | No       | Aspect entries with embedded exceptions and anchors          |
 | `relations`          | No       | Outgoing dependencies to other nodes                         |
 | `mapping`            | No       | Link to source files (see Mapping section)                   |
@@ -482,7 +484,7 @@ flow behavior, sequence, error handling, and edge cases. One flow directory repr
 one business process with all its paths — happy path, exceptions, cancellations. The
 `description.md` describes the full scope of that process, not just the success path.
 
-- `nodes` lists flow participants — paths are relative to `model/`.
+- `nodes` lists flow participants — paths are relative to `model/`. `participants` is accepted as an alias.
 - `aspects` (optional) lists aspect identifiers; those aspects propagate to all participants.
   Every participant receives these aspects in its context package (with `source="flow:Name"`)
   even if the node itself does not carry the aspect.

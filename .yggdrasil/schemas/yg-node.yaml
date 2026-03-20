@@ -4,6 +4,7 @@
 
 name: ComponentName           # required — display name
 type: service                 # required — must match a type from config.node_types
+description: "Short description of what this node does"  # optional
 blackbox: false               # optional, default false — if true, coarse-grained coverage without deep artifacts
 
 aspects:                      # optional — list of aspect configurations

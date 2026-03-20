@@ -86,6 +86,7 @@ Node identity and all its outgoing connections.
 ```yaml
 name: OrderService # string, required
 type: service # string, required — from config.node_types
+description: "Manages order lifecycle from placement to fulfilment" # string, optional — short summary for context maps
 aspects: # list of objects, optional — unified aspect entries
   - aspect: requires-audit # string, required — aspect identifier (directory path under aspects/)
     exceptions: # list of strings, optional — per-node deviations from this aspect's pattern
@@ -175,7 +176,8 @@ End-to-end flow metadata.
 
 ```yaml
 name: Checkout flow # string, required
-nodes: # list of strings, required, non-empty
+description: "End-to-end purchase flow from cart to payment confirmation" # string, optional — short summary for context maps
+nodes: # list of strings, required, non-empty (alias: participants)
   - orders/order-service # path relative to model/
   - payments/payment-service
 aspects: # list of strings, optional — aspect ids propagated to all participants
@@ -456,9 +458,19 @@ Token estimation: ~4 characters per token (heuristic from the [Engine](engine) d
 
 **Result:**
 
-YAML with structural map and artifact paths (default) or artifact content (`--full`), as
-defined in the [Engine](engine) document (Context package format section). Includes token count
-and budget status (`ok`, `warning`, `severe`).
+YAML with structural map (default) or artifact content (`--full`), as defined in the
+[Engine](engine) document (Context package format section). The structural map contains:
+
+- `project` — project name (top).
+- `glossary` — definitions of all aspects and flows referenced in this context, each with
+  name, description, stability, and `files` listing their artifact paths.
+- `node` — target node metadata with inline `files` listing its own artifact paths.
+- `hierarchy` — ancestor modules from root to parent, each with inline `files`.
+- `dependencies` — structural dependencies with inline `files` and their own `hierarchy` chains.
+- `meta` — at the bottom: token count, budget status (`ok`, `warning`, `severe`), and a
+  `breakdown` with per-category token counts (own, hierarchy, aspects, flows, dependencies).
+
+All artifact file paths are relative to `.yggdrasil/`.
 
 **Errors:**
 
@@ -553,7 +565,7 @@ their participants, and associated aspects.
 1. Resolve `.yggdrasil/` root (repository root or nearest parent).
 2. Load the graph — find all flow directories under `.yggdrasil/flows/`.
 3. Sort by flow name.
-4. Output YAML with `name`, `nodes` (participants), `aspects` (if present).
+4. Output YAML with `name`, `nodes` (participants), `description` (if present), `aspects` (if present).
 
 **Result:**
 
@@ -562,6 +574,7 @@ their participants, and associated aspects.
   nodes:
     - orders/order-service
     - auth/auth-api
+  description: "End-to-end purchase flow from cart to confirmation"
   aspects:
     - requires-audit
 ```
@@ -972,6 +985,7 @@ Two levels of severity defined in the [Engine](engine) document.
 | `W013` | `directory-without-node`           | Directory in `model/` has only subdirectories but no `yg-node.yaml` — bare intermediate directory    |
 | `W014` | `anchor-not-found`                 | Anchor string for aspect not found in node's mapped source files                                  |
 | `W015` | `own-budget-warning`               | Own artifacts exceed threshold                                                                    |
+| `W016` | `missing-description`              | Node, aspect, or flow has no `description` field in its YAML                                      |
 
 **Message format:**
 

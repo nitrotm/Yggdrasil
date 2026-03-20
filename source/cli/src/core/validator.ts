@@ -47,6 +47,7 @@ export async function validate(graph: Graph, scope: string = 'all'): Promise<Val
     issues.push(...checkInvalidArtifactConditions(graph));
     issues.push(...(await checkContextBudget(graph)));
     issues.push(...checkHighFanOut(graph));
+    issues.push(...checkMissingDescriptions(graph));
   }
 
   issues.push(...checkSchemas(graph));
@@ -937,4 +938,49 @@ async function checkContextBudget(graph: Graph): Promise<ValidationIssue[]> {
 function pct(value: number, total: number): string {
   if (total === 0) return '0%';
   return `${Math.round((value / total) * 100)}%`;
+}
+
+// --- W016: Missing description on nodes, aspects, and flows ---
+
+function checkMissingDescriptions(graph: Graph): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  // Nodes
+  for (const [nodePath, node] of graph.nodes) {
+    if (!node.meta.description?.trim()) {
+      issues.push({
+        severity: 'warning',
+        code: 'W016',
+        rule: 'missing-description',
+        message: `Node has no description`,
+        nodePath,
+      });
+    }
+  }
+
+  // Aspects
+  for (const aspect of graph.aspects) {
+    if (!aspect.description?.trim()) {
+      issues.push({
+        severity: 'warning',
+        code: 'W016',
+        rule: 'missing-description',
+        message: `Aspect '${aspect.id}' has no description`,
+      });
+    }
+  }
+
+  // Flows
+  for (const flow of graph.flows) {
+    if (!flow.description?.trim()) {
+      issues.push({
+        severity: 'warning',
+        code: 'W016',
+        rule: 'missing-description',
+        message: `Flow '${flow.name}' has no description`,
+      });
+    }
+  }
+
+  return issues;
 }

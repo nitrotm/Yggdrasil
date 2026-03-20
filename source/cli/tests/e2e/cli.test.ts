@@ -97,7 +97,7 @@ describe.skipIf(!distExists)('CLI E2E', () => {
     expect(stdout).toContain('meta:');
     expect(stdout).toContain('name: OrderService');
     expect(stdout).toContain('project:');
-    expect(stdout).toContain('artifacts:');
+    expect(stdout).toContain('glossary:');
   });
 
   it('yg build-context nonexistent node', () => {

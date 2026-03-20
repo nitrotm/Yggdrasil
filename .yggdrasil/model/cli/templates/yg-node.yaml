@@ -1,5 +1,6 @@
 name: Templates
 type: library
+description: "Default config, graph schemas, and platform-specific agent rules used by yg init"
 aspects:
   - aspect: deterministic
 

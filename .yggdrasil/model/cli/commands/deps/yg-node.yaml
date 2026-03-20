@@ -1,5 +1,6 @@
 name: DepsCommand
 type: library
+description: "Shows forward dependency tree for a node via yg deps"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract

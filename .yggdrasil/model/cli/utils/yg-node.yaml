@@ -1,5 +1,6 @@
 name: Utils
 type: library
+description: "Shared helper functions for path normalization, SHA-256 hashing, and token estimation"
 aspects:
   - aspect: posix-paths
 

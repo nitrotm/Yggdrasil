@@ -1,5 +1,6 @@
 name: SelectCommand
 type: library
+description: "Finds graph nodes relevant to a natural-language task description via yg select"
 aspects:
   - aspect: deterministic
   - aspect: cli-command-contract
