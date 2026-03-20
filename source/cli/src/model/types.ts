@@ -198,12 +198,34 @@ export interface FlowRef {
   aspects?: string[];
 }
 
+export interface GlossaryAspectEntry {
+  name: string;
+  description?: string;
+  stability?: AspectStability;
+  implies?: string[];
+  files: string[];
+}
+
+export interface GlossaryFlowEntry {
+  name: string;
+  description?: string;
+  participants: string[];
+  aspects?: string[];
+  files: string[];
+}
+
+export interface Glossary {
+  aspects: Record<string, GlossaryAspectEntry>;
+  flows: Record<string, GlossaryFlowEntry>;
+}
+
 export interface AncestorRef {
   path: string;
   name: string;
   type: string;
   description?: string;
   aspects: string[];
+  files?: string[];
 }
 
 export interface DependencyRef {
@@ -217,6 +239,7 @@ export interface DependencyRef {
   'event-name'?: string;
   aspects: string[];
   hierarchy: AncestorRef[];
+  files?: string[];
 }
 
 export interface BudgetBreakdown {
@@ -239,16 +262,11 @@ export interface ContextMapOutput {
     mappings: string[];
     aspects: NodeAspectRef[];
     flows: FlowRef[];
+    files: string[];
   };
   hierarchy: AncestorRef[];
   dependencies: DependencyRef[];
-  artifacts: ArtifactRegistry;
-}
-
-export interface ArtifactRegistry {
-  nodes: Record<string, { files: string[] }>;
-  aspects: Record<string, { name: string; description?: string; implies?: string[]; files: string[] }>;
-  flows: Record<string, { name: string; description?: string; aspects?: string[]; files: string[] }>;
+  glossary: Glossary;
 }
 
 // ============================================================
