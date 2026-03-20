@@ -3,6 +3,7 @@
 # plus description.md with required sections (see rules).
 
 name: EndToEndProcessName     # required — display name
+description: "Short description of this business process"  # optional
 nodes:                        # required, non-empty — participant nodes (alias: participants)
   - orders/order-service      # paths relative to model/
   - payments/payment-service
