@@ -9,8 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Uniform `description` field.** Optional `description` field for nodes (`yg-node.yaml`)
+  and flows (`yg-flow.yaml`) — provides quick orientation in context maps without reading
+  full artifacts. Aspects already had this field.
+- **Description in context output.** `yg build-context` now surfaces `description` for
+  nodes, hierarchy ancestors, dependencies, aspects, and flows in the YAML map.
+- **Description in `yg flows`.** `yg flows` output now includes `description` when present.
 - **W016: missing-description warning.** `yg validate` now emits W016 for nodes, aspects,
   and flows that lack a `description` field, encouraging richer graph metadata.
+- **Agent rules: description maintenance.** Rules now instruct agents to write `description`
+  when creating elements and update it when purpose changes.
 
 ## [2.5.1] - 2026-03-17
 
