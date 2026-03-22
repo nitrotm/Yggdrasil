@@ -29,4 +29,4 @@ The Yggdrasil CLI (`yg`) is a local-only tool that reads and writes files. It ma
 
 | Version | Supported |
 | ------- | --------- |
-| 0.3.x   | Yes       |
+| 2.x.x   | Yes       |
