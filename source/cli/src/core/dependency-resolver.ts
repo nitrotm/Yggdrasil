@@ -1,5 +1,5 @@
 import type { Graph, Stage } from '../model/types.js';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 export interface ResolveOptions {
@@ -43,7 +43,7 @@ export function findChangedNodes(graph: Graph, ref?: string): string[] {
 
   let changedFiles: string[];
   try {
-    const output = execSync(`git diff --name-only ${gitRef} -- ${yggDirName}/`, {
+    const output = execFileSync('git', ['diff', '--name-only', gitRef, '--', `${yggDirName}/`], {
       cwd: projectRoot,
       encoding: 'utf-8',
     }).trim();

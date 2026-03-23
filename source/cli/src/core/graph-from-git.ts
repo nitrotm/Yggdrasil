@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { loadGraph } from './graph-loader.js';
 import type { Graph } from '../model/types.js';
 
@@ -17,7 +17,7 @@ export async function loadGraphFromRef(
   let tmpDir: string | null = null;
 
   try {
-    execSync(`git rev-parse ${ref}`, { cwd: projectRoot, stdio: 'pipe' });
+    execFileSync('git', ['rev-parse', ref], { cwd: projectRoot, stdio: 'pipe' });
   } catch {
     return null;
   }
@@ -25,11 +25,11 @@ export async function loadGraphFromRef(
   try {
     tmpDir = await mkdtemp(path.join(tmpdir(), 'ygg-git-'));
     const archivePath = path.join(tmpDir, 'archive.tar');
-    execSync(`git archive ${ref} ${yggPath} -o "${archivePath}"`, {
+    execFileSync('git', ['archive', ref, yggPath, '-o', archivePath], {
       cwd: projectRoot,
       stdio: 'pipe',
     });
-    execSync(`tar -xf "${archivePath}" -C "${tmpDir}"`, { stdio: 'pipe' });
+    execFileSync('tar', ['-xf', archivePath, '-C', tmpDir], { stdio: 'pipe' });
     const graph = await loadGraph(tmpDir);
     return graph;
   } catch {

@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
 /**
@@ -9,7 +9,7 @@ import path from 'node:path';
 export function getLastCommitTimestamp(projectRoot: string, relativePath: string): number | null {
   const normalized = path.normalize(relativePath).replace(/\\/g, '/');
   try {
-    const out = execSync(`git log -1 --format=%ct -- "${normalized}"`, {
+    const out = execFileSync('git', ['log', '-1', '--format=%ct', '--', normalized], {
       cwd: projectRoot,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],

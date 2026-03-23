@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 import {
   resolveDeps,
@@ -266,7 +266,7 @@ describe('dependency-resolver', () => {
 
   describe('resolveDeps - changed mode', () => {
     it('uses changed mode to filter nodes', async () => {
-      vi.mocked(execSync).mockReturnValue('.yggdrasil/changed/yg-node.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('.yggdrasil/changed/yg-node.yaml\n');
 
       const graph = createGraph(
         [
@@ -291,7 +291,7 @@ describe('dependency-resolver', () => {
     });
 
     it('skips blackbox nodes', () => {
-      vi.mocked(execSync).mockReturnValue('.yggdrasil/blackbox-node/yg-node.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('.yggdrasil/blackbox-node/yg-node.yaml\n');
 
       const graph = createGraph(
         [
@@ -312,7 +312,7 @@ describe('dependency-resolver', () => {
     it('skips nodes without mapping', () => {
       // Git reports changes but node has no mapping — findChangedNodes still returns it,
       // resolveDeps filters later
-      vi.mocked(execSync).mockReturnValue('');
+      vi.mocked(execFileSync).mockReturnValue('');
 
       const graph = createGraph(
         [
@@ -326,7 +326,7 @@ describe('dependency-resolver', () => {
     });
 
     it('maps git diff output to correct node paths', () => {
-      vi.mocked(execSync).mockReturnValue(
+      vi.mocked(execFileSync).mockReturnValue(
         '.yggdrasil/auth/login-service/yg-node.yaml\n.yggdrasil/auth/login-service/aspects/api.yaml\n',
       );
 
@@ -344,7 +344,7 @@ describe('dependency-resolver', () => {
     });
 
     it('returns empty when git diff fails', () => {
-      vi.mocked(execSync).mockImplementation(() => {
+      vi.mocked(execFileSync).mockImplementation(() => {
         throw new Error('not a git repo');
       });
 
@@ -355,19 +355,20 @@ describe('dependency-resolver', () => {
     });
 
     it('uses custom ref when provided', () => {
-      vi.mocked(execSync).mockReturnValue('.yggdrasil/my-node/yg-node.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('.yggdrasil/my-node/yg-node.yaml\n');
 
       const graph = createGraph([createNode('my-node', [], { path: 'src/my.ts' })], rootPath);
 
       findChangedNodes(graph, 'main');
-      expect(vi.mocked(execSync)).toHaveBeenCalledWith(
-        'git diff --name-only main -- .yggdrasil/',
+      expect(vi.mocked(execFileSync)).toHaveBeenCalledWith(
+        'git',
+        ['diff', '--name-only', 'main', '--', '.yggdrasil/'],
         expect.objectContaining({ cwd: '/tmp/test-ygg', encoding: 'utf-8' }),
       );
     });
 
     it('expands with one-level dependents only (no cascade)', () => {
-      vi.mocked(execSync).mockReturnValue('.yggdrasil/base/yg-node.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('.yggdrasil/base/yg-node.yaml\n');
 
       const graph = createGraph(
         [
@@ -385,7 +386,7 @@ describe('dependency-resolver', () => {
     });
 
     it('handles file path without ygg prefix (relative path)', () => {
-      vi.mocked(execSync).mockReturnValue('model/svc/yg-node.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('model/svc/yg-node.yaml\n');
 
       const graph = createGraph([createNode('svc', [], { path: 'src/svc.ts' })], rootPath);
 
@@ -394,7 +395,7 @@ describe('dependency-resolver', () => {
     });
 
     it('handles path without model segment (skips non-node paths)', () => {
-      vi.mocked(execSync).mockReturnValue('yg-config.yaml\naspects/audit/yg-aspect.yaml\n');
+      vi.mocked(execFileSync).mockReturnValue('yg-config.yaml\naspects/audit/yg-aspect.yaml\n');
 
       const graph = createGraph([createNode('svc', [], { path: 'src/svc.ts' })], rootPath);
 
